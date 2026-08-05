@@ -6,6 +6,12 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# The Supabase Project URL and its anon (publishable) key are PUBLIC by design
+# (they are safe to expose in client code). They are also configured as Netlify
+# env vars, so Netlify's secrets scanner would otherwise flag the build output
+# that legitimately inlines them. Omit these specific keys from the scan.
+SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,VITE_SUPABASE_PUBLISHABLE_KEY,VITE_SUPABASE_ANON_KEY"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

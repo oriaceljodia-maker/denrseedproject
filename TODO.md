@@ -1,6 +1,19 @@
 # DENR Seed Inventory - Auth Login 500 Error Fix Tasks
 
-## SQL Execution Order (run in Supabase SQL Editor)
+## ROOT CAUSE (confirmed via live diagnostics)
+The auth server is healthy (200) and auth works end-to-end. The login 500 /
+`AuthRetryableFetchError` is caused by the **live Supabase database missing the
+schema, grants, and functions**. The REST API returns:
+- `42501 permission denied for schema public` on `profiles`
+- `PGRST202` function `create_new_user_account` not found
+
+The post-login `profiles` lookup fails, which GoTrue wraps into a 500.
+
+## SQL Execution (run in Supabase SQL Editor)
+**EASIEST:** Run the single combined file `jodia/supabase/setup.sql` all at once.
+It contains all four parts in order (schema → functions/triggers → seed → admin).
+
+Otherwise run these individually in order:
 1. [ ] **`schema.sql`** — creates `profiles`, `seeds`, `requests` tables (REQUIRED first — the trigger fails when tables don't exist, which blocks user creation)
 2. [ ] **`functions_and_triggers.sql`** — functions, triggers, policies (idempotent)
 3. [ ] **`seed.sql`** — seed data
