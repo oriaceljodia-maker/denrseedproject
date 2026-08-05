@@ -20,6 +20,7 @@ import { PersonnelMyRequestsPage } from '../pages/personnel/my-requests.page.js'
 export const Router = {
   async navigate(user, path = window.location.pathname) {
     const targetPath = Guards.determineTargetRoute(user, path);
+    console.debug('Navigating to', targetPath, 'for user', user?.role || 'guest');
 
     if (window.location.pathname !== targetPath) {
       window.history.pushState({}, '', targetPath);

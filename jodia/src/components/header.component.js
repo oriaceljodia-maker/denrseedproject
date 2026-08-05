@@ -12,22 +12,22 @@ export const HeaderComponent = {
       return;
     }
 
+    console.debug('Rendering header for user:', user?.email);
+
     headerEl.classList.remove('hidden');
     headerEl.innerHTML = `
-      <div class="nav-brand" style="display: flex; align-items: center; gap: 0.75rem;">
-        <img src="/assets/images/denr-logo.png" alt="DENR Logo" style="height: 38px; width: 38px;" onerror="this.style.display='none'" />
-        <div>
-          <div style="font-weight: 700; font-size: 1rem; line-height: 1.2;">DENR Seed Inventory</div>
-          <div style="font-size: 0.7rem; color: #A0AEC0;">Forest Management Sector</div>
+      <div class="header-brand">
+        <img src="/assets/images/denr-logo.png" alt="DENR Logo" class="header-logo" onerror="this.style.display='none'" />
+        <div class="header-brand-copy">
+          <div class="header-title">DENR Seed Inventory</div>
+          <div class="header-subtitle">Forest Resource Distribution</div>
         </div>
       </div>
 
-      <div class="nav-right" style="display: flex; align-items: center; gap: 1.25rem;">
+      <div class="header-actions">
         <span class="badge badge-${escapeHtml(user.role)}">${escapeHtml(user.role)}</span>
-        <span style="font-size: 0.875rem; font-weight: 500;">${escapeHtml(user.fullName)}</span>
-        <button id="btn-global-logout" class="btn btn-secondary">
-          Logout
-        </button>
+        <span class="header-user">${escapeHtml(user.fullName)}</span>
+        <button id="btn-global-logout" class="btn btn-secondary btn-logout">Logout</button>
       </div>
     `;
 

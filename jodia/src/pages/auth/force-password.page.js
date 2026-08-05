@@ -5,34 +5,38 @@ import { ToastComponent } from '../../components/toast.component.js';
 export const ForcePasswordPage = {
   render() {
     return `
-      <div class="auth-wrapper">
-        <div class="auth-card">
-          <div class="auth-header">
-            <h1 class="auth-title">Password Reset Required</h1>
-            <div class="auth-subtitle">Account Security Protocol</div>
+      <div class="auth-layout">
+        <section class="auth-hero auth-hero-simple">
+          <div class="auth-hero-copy">
+            <span class="eyebrow">Account Protection</span>
+            <h1>Secure Password Setup</h1>
+            <p>Complete your first-time sign-in by setting a strong password for continued access.</p>
           </div>
-          <form id="password-reset-form" class="auth-body">
-            <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom: 1.25rem;">
-              First-time login detected. Please establish a new secure password to proceed.
-            </p>
-            
-            <div id="reset-error" class="auth-alert"></div>
 
-            <div class="form-group">
-              <label for="new-password">New Password</label>
-              <input type="password" id="new-password" class="form-input" minlength="8" required placeholder="Minimum 8 characters" />
+          <div class="auth-card">
+            <div class="auth-header">
+              <h1 class="auth-title">Set Your New Password</h1>
+              <div class="auth-subtitle">Required before continuing</div>
             </div>
+            <form id="password-reset-form" class="auth-body">
+              <div id="reset-error" class="auth-alert"></div>
 
-            <div class="form-group">
-              <label for="confirm-password">Confirm Password</label>
-              <input type="password" id="confirm-password" class="form-input" minlength="8" required placeholder="Re-enter password" />
-            </div>
+              <div class="form-group">
+                <label for="new-password">New Password</label>
+                <input type="password" id="new-password" class="form-input" minlength="8" required placeholder="Minimum 8 characters" />
+              </div>
 
-            <button type="submit" id="btn-reset-submit" class="btn btn-primary auth-btn">
-              Update Password & Continue
-            </button>
-          </form>
-        </div>
+              <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" id="confirm-password" class="form-input" minlength="8" required placeholder="Re-enter password" />
+              </div>
+
+              <button type="submit" id="btn-reset-submit" class="btn btn-primary auth-btn">
+                Update Password & Continue
+              </button>
+            </form>
+          </div>
+        </section>
       </div>
     `;
   },
@@ -47,6 +51,7 @@ export const ForcePasswordPage = {
       errBox.style.display = 'none';
       submitBtn.disabled = true;
       submitBtn.textContent = 'Updating...';
+      console.info('Password update initiated for authenticated user');
 
       const newPassword = document.getElementById('new-password').value;
       const confirmPassword = document.getElementById('confirm-password').value;

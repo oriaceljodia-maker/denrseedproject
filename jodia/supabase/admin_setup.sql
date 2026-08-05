@@ -18,6 +18,10 @@
 --   Promotes that user to an admin and forces a password change
 --   on first login.
 
+-- Grant auth.users read permission to the authenticated role so this
+-- script can resolve the auth user by email.
+GRANT SELECT ON auth.users TO authenticated;
+
 -- Promote to admin (find the auth user by email, update profile by id)
 UPDATE public.profiles p
 SET role = 'admin',

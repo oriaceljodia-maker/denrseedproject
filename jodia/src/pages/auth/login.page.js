@@ -5,31 +5,47 @@ import { ToastComponent } from '../../components/toast.component.js';
 export const LoginPage = {
   render() {
     return `
-      <div class="auth-wrapper">
-        <div class="auth-card">
-          <div class="auth-header">
-            <img src="/assets/images/denr-logo.png" alt="DENR Logo" class="auth-logo" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Department_of_Environment_and_Natural_Resources_%28DENR%29.svg/1200px-Department_of_Environment_and_Natural_Resources_%28DENR%29.svg.png';" />
-            <h1 class="auth-title">Department of Environment and Natural Resources</h1>
-            <div class="auth-subtitle">Seed Inventory & Management System</div>
+      <div class="auth-layout">
+        <section class="auth-hero">
+          <div class="auth-hero-copy">
+            <span class="eyebrow">Secure Seed Management</span>
+            <h1>DENR Seed Inventory & Distribution</h1>
+            <p>Access inventory, submit seed requests, and manage approvals with a streamlined system designed for Philippine forestry operations.</p>
+            <div class="hero-features">
+              <span>Inventory control</span>
+              <span>Request tracking</span>
+              <span>Role-based access</span>
+            </div>
           </div>
-          <form id="login-form" class="auth-body">
-            <div id="auth-error" class="auth-alert"></div>
 
-            <div class="form-group">
-              <label for="email">User Email</label>
-              <input type="email" id="email" class="form-input" placeholder="user@denr.gov.ph" required />
+          <div class="auth-card">
+            <div class="auth-header">
+              <img src="/assets/images/denr-logo.png" alt="DENR Logo" class="auth-logo" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Department_of_Environment_and_Natural_Resources_%28DENR%29.svg/1200px-Department_of_Environment_and_Natural_Resources_%28DENR%29.svg.png';" />
+              <h1 class="auth-title">Welcome Back</h1>
+              <div class="auth-subtitle">Sign in to continue</div>
             </div>
 
-            <div class="form-group">
-              <label for="password">Password</label>
-              <input type="password" id="password" class="form-input" placeholder="••••••••" required />
-            </div>
+            <form id="login-form" class="auth-body">
+              <div id="auth-error" class="auth-alert"></div>
 
-            <button type="submit" id="btn-submit" class="btn btn-primary auth-btn">
-              Sign In to System
-            </button>
-          </form>
-        </div>
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="user@denr.gov.ph" required />
+              </div>
+
+              <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="••••••••" required />
+              </div>
+
+              <button type="submit" id="btn-submit" class="btn btn-primary auth-btn">
+                Sign In to System
+              </button>
+
+              <p class="auth-footnote">Need help? Contact the administrator if your account is inactive or unregistered.</p>
+            </form>
+          </div>
+        </section>
       </div>
     `;
   },
@@ -47,6 +63,7 @@ export const LoginPage = {
 
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
+      console.info('Login attempt started for', email);
 
       try {
         await AuthService.login(email, password);
