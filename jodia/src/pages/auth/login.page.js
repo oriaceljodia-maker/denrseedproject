@@ -50,9 +50,17 @@ export const LoginPage = {
 
       try {
         await AuthService.login(email, password);
-        const user = await AuthService.getCurrentUser();
+        let user = await AuthService.getCurrentUser();
+
+        // The profile may take a moment to settle right after sign-in. Retry
+        // a few times before declaring the account unusable.
+        for (let i = 0; i < 4 && !user; i++) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          user = await AuthService.getCurrentUser();
+        }
+
         if (!user) {
-          // Session exists but profile lookup failed / user inactive.
+          // Session exists but profile lookup consistently failed / inactive.
           throw new Error('Your account is inactive or has no profile. Please contact the administrator.');
         }
         ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');

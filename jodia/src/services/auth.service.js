@@ -6,14 +6,39 @@ export const AuthService = {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session) return null;
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
+    // Retry the profile lookup a few times. Immediately after sign-in the
+    // session may be present but the profile query can still be settling
+    // (e.g., the on_auth_user_created trigger or Row Level Security cache).
+    // Calling logout() here would kill the session the user just created,
+    // leaving them stuck on the login page.
+    let profile = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-    if (profileError || !profile || !profile.is_active) {
+      if (!error && data) {
+        profile = data;
+        break;
+      }
+
+      if (attempt < 2) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
+    }
+
+    // Only log out if we definitively know the profile exists but is inactive.
+    if (profile && !profile.is_active) {
       await this.logout();
+      return null;
+    }
+
+    // If the profile could not be fetched (transient), do NOT log out —
+    // return null so callers can decide (e.g., show a message) rather than
+    // destroying the freshly-created session.
+    if (!profile) {
       return null;
     }
 
