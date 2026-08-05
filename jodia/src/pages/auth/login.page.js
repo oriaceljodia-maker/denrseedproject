@@ -54,7 +54,11 @@ export const LoginPage = {
         ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');
         await Router.navigate(user);
       } catch (err) {
-        errBox.textContent = err.message || 'Invalid login credentials.';
+        console.error('Login error:', err);
+        const msg = typeof err.message === 'string' && err.message.trim()
+          ? err.message
+          : 'Invalid login credentials. Please check your email and password.';
+        errBox.textContent = msg;
         errBox.style.display = 'block';
       } finally {
         submitBtn.disabled = false;
