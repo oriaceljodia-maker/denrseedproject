@@ -1,35 +1,35 @@
 :root {
-  /* Official DENR Brand Colors */
-  --denr-green-primary: #0E7A36;
+  --denr-green-primary: #0F7A38;
   --denr-green-hover: #0B632B;
-  --denr-green-light: #E8F5E9;
-  
-  --denr-navy-primary: #0C2B4E;
-  --denr-navy-hover: #081F38;
-  --denr-navy-light: #EBF3FA;
+  --denr-green-light: #E7F8EB;
+  --denr-green-soft: #CFEED6;
 
-  /* Neutral Surface Palette */
-  --bg-main: #F8FAFC;
-  --bg-surface: #FFFFFF;
-  --border-color: #E2E8F0;
-  
-  /* Typography Colors */
-  --text-main: #0F172A;
-  --text-muted: #64748B;
-  --text-white: #FFFFFF;
+  --denr-navy-primary: #0B2745;
+  --denr-navy-hover: #071C32;
+  --denr-navy-light: #EAF5FF;
 
-  /* Alert States */
+  --bg-main: #f4f9f6;
+  --bg-surface: rgba(255,255,255,0.82);
+  --bg-strong: #ffffff;
+  --border-color: rgba(15, 122, 56, 0.12);
+  --border-strong: rgba(255,255,255,0.4);
+
+  --text-main: #10223c;
+  --text-muted: #5f728b;
+  --text-white: #ffffff;
+
   --status-success: #16A34A;
   --status-warning: #D97706;
   --status-danger: #DC2626;
   --status-info: #2563EB;
 
-  /* Shadows & Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 10px 30px rgba(2, 18, 37, 0.08);
+  --shadow-md: 0 18px 40px rgba(2, 18, 37, 0.14);
+  --shadow-lg: 0 24px 60px rgba(2, 18, 37, 0.16);
 }
 
 * {
@@ -40,37 +40,52 @@
 }
 
 body {
-  background-color: var(--bg-main);
+  background:
+    linear-gradient(135deg, rgba(15, 122, 56, 0.16), rgba(11, 39, 69, 0.08)),
+    url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
   color: var(--text-main);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-/* Layout Shell */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.82), rgba(241,248,247,0.75));
+  pointer-events: none;
+  z-index: -1;
+}
+
 .app-header {
-  height: 64px;
-  background-color: var(--denr-navy-primary);
+  min-height: 74px;
+  background: rgba(11, 39, 69, 0.84);
   color: var(--text-white);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
-  border-bottom: 3px solid var(--denr-green-primary);
+  border-bottom: 1px solid rgba(255,255,255,0.16);
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .app-root {
   flex: 1;
   display: flex;
   flex-direction: column;
+  padding-bottom: 2rem;
 }
 
 .hidden {
   display: none !important;
 }
 
-/* Initial Loading Spinner */
 .app-loader {
   display: flex;
   flex-direction: column;
@@ -82,17 +97,16 @@ body {
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-color);
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(255,255,255,0.58);
   border-top-color: var(--denr-green-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-/* Auth layouts and hero sections */
 .auth-layout {
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 74px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,9 +115,9 @@ body {
 
 .auth-hero {
   width: 100%;
-  max-width: 1180px;
+  max-width: 1200px;
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 2rem;
   align-items: center;
 }
@@ -113,18 +127,20 @@ body {
 }
 
 .auth-hero-copy {
-  padding: 2.5rem;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, rgba(14,122,54,0.12), rgba(14,122,54,0.02));
-  box-shadow: var(--shadow-sm);
+  padding: 2.4rem;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,255,255,0.68));
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(18px);
 }
 
 .eyebrow {
   display: inline-flex;
   margin-bottom: 1rem;
-  padding: 0.35rem 0.85rem;
+  padding: 0.4rem 0.85rem;
   border-radius: 999px;
-  background: rgba(14, 122, 54, 0.12);
+  background: rgba(15, 122, 56, 0.14);
   color: var(--denr-green-primary);
   font-size: 0.78rem;
   font-weight: 700;
@@ -141,7 +157,7 @@ body {
 
 .auth-hero-copy p {
   max-width: 42rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   color: var(--text-muted);
   line-height: 1.75;
 }
@@ -150,12 +166,13 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .hero-features span {
   display: inline-flex;
   padding: 0.65rem 0.95rem;
-  background: #F0FDF4;
+  background: rgba(15, 122, 56, 0.1);
   color: var(--denr-green-primary);
   border-radius: 999px;
   font-size: 0.85rem;
@@ -164,26 +181,28 @@ body {
 
 .auth-card {
   width: 100%;
-  max-width: 460px;
-  background-color: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  max-width: 470px;
+  background: rgba(255,255,255,0.82);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
-  border: 1px solid rgba(14, 122, 54, 0.08);
+  border: 1px solid rgba(255,255,255,0.45);
+  backdrop-filter: blur(18px);
 }
 
 .auth-header {
   padding: 2rem 2rem 1.5rem;
-  background-color: #F9FBFA;
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, rgba(15, 122, 56, 0.08), rgba(255,255,255,0.7));
+  border-bottom: 1px solid rgba(11, 39, 69, 0.08);
   text-align: center;
 }
 
 .auth-logo {
-  width: 78px;
-  height: 78px;
+  width: 84px;
+  height: 84px;
   margin-bottom: 1rem;
   object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(11, 39, 69, 0.16));
 }
 
 .auth-title {
@@ -195,8 +214,9 @@ body {
 
 .auth-subtitle {
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--denr-green-primary);
   letter-spacing: 0.02em;
+  font-weight: 600;
 }
 
 .auth-body {
@@ -213,7 +233,7 @@ body {
 .auth-alert {
   padding: 0.85rem 1rem;
   border-radius: var(--radius-sm);
-  background-color: #FEE2E2;
+  background-color: rgba(220, 38, 38, 0.1);
   color: var(--status-danger);
   font-size: 0.9rem;
   margin-bottom: 1rem;

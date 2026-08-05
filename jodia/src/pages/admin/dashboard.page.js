@@ -11,7 +11,12 @@ export const AdminDashboardPage = {
           <div class="hero-copy">
             <span class="eyebrow">Operational dashboard</span>
             <h1 class="hero-title">DENR Seed Control Center</h1>
-            <p class="hero-text">Monitor inventory, pending requests, and low-stock alerts from a unified modern admin experience.</p>
+            <p class="hero-text">Monitor inventory, pending requests, and low-stock alerts through a field-focused operations hub for reforestation and conservation teams.</p>
+            <div class="hero-badges">
+              <span class="hero-badge">Reforestation focused</span>
+              <span class="hero-badge">Quick approvals</span>
+              <span class="hero-badge">Field-ready insights</span>
+            </div>
           </div>
           <div class="hero-card">
             <div class="hero-card-top">
@@ -48,7 +53,12 @@ export const AdminDashboardPage = {
         <section class="dashboard-main-grid">
           <div class="card chart-card">
             <div class="section-title">Request activity</div>
-            <div class="chart-placeholder">Live trend visualization</div>
+            <div class="chart-placeholder">
+              <div>
+                <img class="dashboard-visual" src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=900&q=80" alt="Forest landscape" />
+                <div class="chart-caption">Priority requests and seed movement are visualized to support immediate field coordination and nursery replenishment.</div>
+              </div>
+            </div>
           </div>
 
           <div class="card">
@@ -69,6 +79,17 @@ export const AdminDashboardPage = {
                 </tbody>
               </table>
             </div>
+          </div>
+        </section>
+
+        <section class="dashboard-support-grid">
+          <div class="support-card">
+            <h3>Mission alignment</h3>
+            <p>Every request and inventory decision helps strengthen biodiversity programs and field restoration initiatives.</p>
+          </div>
+          <div class="support-card">
+            <h3>Operations note</h3>
+            <p>High-priority requests are surfaced so planning teams can respond quickly to regional restoration needs.</p>
           </div>
         </section>
       </div>

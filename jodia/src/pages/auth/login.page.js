@@ -8,13 +8,20 @@ export const LoginPage = {
       <div class="auth-layout">
         <section class="auth-hero">
           <div class="auth-hero-copy">
-            <span class="eyebrow">Secure Seed Management</span>
-            <h1>DENR Seed Inventory & Distribution</h1>
-            <p>Access inventory, submit seed requests, and manage approvals with a streamlined system designed for Philippine forestry operations.</p>
+            <span class="eyebrow">DENR field operations</span>
+            <h1>Stewardship for resilient forests and thriving nurseries</h1>
+            <p>Access inventory, submit seed requests, and coordinate approval workflows with a streamlined platform built for Philippine environmental management teams.</p>
             <div class="hero-features">
-              <span>Inventory control</span>
-              <span>Request tracking</span>
-              <span>Role-based access</span>
+              <span>Inventory visibility</span>
+              <span>Fast approvals</span>
+              <span>Mission-ready access</span>
+            </div>
+            <div class="hero-highlight-card">
+              <img src="https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=800&q=80" alt="DENR field team" />
+              <div>
+                <strong>Purpose-built for conservation</strong>
+                <p>Every request supports reforestation, biodiversity, and long-term ecosystem recovery.</p>
+              </div>
             </div>
           </div>
 
