@@ -17,10 +17,10 @@ export const HeaderComponent = {
     headerEl.classList.remove('hidden');
     headerEl.innerHTML = `
       <div class="header-brand">
-        <img src="/assets/images/denr-logo.png" alt="DENR Logo" class="header-logo" onerror="this.style.display='none'" />
+        <img src="/assets/images/denr-logo.svg" alt="DENR Seed Inventory logo" class="header-logo" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Department_of_Environment_and_Natural_Resources_%28DENR%29.svg/1200px-Department_of_Environment_and_Natural_Resources_%28DENR%29.svg.png';" />
         <div class="header-brand-copy">
           <div class="header-title">DENR Seed Inventory</div>
-          <div class="header-subtitle">Forest Resource Distribution</div>
+          <div class="header-subtitle">Philippine forestry seed system</div>
         </div>
       </div>
 

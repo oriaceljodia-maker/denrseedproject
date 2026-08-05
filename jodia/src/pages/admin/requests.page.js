@@ -54,7 +54,7 @@ export const AdminRequestsPage = {
         const isPending = req.status === 'PENDING';
         return `
           <tr>
-            <td><strong>${escapeHtml(req.profiles?.full_name) || 'Personnel'}</strong><br/><small style="color:var(--text-muted);">${escapeHtml(req.profiles?.email) || ''}</small></td>
+            <td><strong>${escapeHtml(req.profiles?.full_name) || 'Personnel'}</strong></td>
             <td>${escapeHtml(req.seeds?.species_name) || 'N/A'}</td>
             <td><strong>${req.quantity}</strong> packs</td>
             <td style="max-width: 250px; font-size: 0.8125rem;">${escapeHtml(req.purpose) || 'N/A'}</td>

@@ -2,6 +2,7 @@ import { Guards } from './guards.js';
 import { ROUTES } from '../config/constants.js';
 import { HeaderComponent } from '../components/header.component.js';
 import { NavbarComponent } from '../components/navbar.component.js';
+import { MaintenanceBannerComponent } from '../components/maintenance-banner.component.js';
 
 // Page Controller Imports
 import { LoginPage } from '../pages/auth/login.page.js';
@@ -12,6 +13,7 @@ import { AdminDashboardPage } from '../pages/admin/dashboard.page.js';
 import { AdminInventoryPage } from '../pages/admin/inventory.page.js';
 import { AdminRequestsPage } from '../pages/admin/requests.page.js';
 import { AdminAccountsPage } from '../pages/admin/accounts.page.js';
+import { AdminMaintenancePage } from '../pages/admin/maintenance.page.js';
 
 // Personnel Pages
 import { PersonnelCatalogPage } from '../pages/personnel/catalog.page.js';
@@ -69,6 +71,11 @@ export const Router = {
         binder = () => AdminAccountsPage.init();
         break;
 
+      case ROUTES.ADMIN_MAINTENANCE:
+        content = AdminMaintenancePage.render();
+        binder = () => AdminMaintenancePage.init();
+        break;
+
       // Personnel Views
       case ROUTES.PERSONNEL_CATALOG:
         content = PersonnelCatalogPage.render();
@@ -91,7 +98,8 @@ export const Router = {
       content = navbar + content;
     }
 
-    root.innerHTML = content;
+    const bannerHtml = MaintenanceBannerComponent.render();
+    root.innerHTML = bannerHtml + content;
     if (binder) binder();
   }
 };

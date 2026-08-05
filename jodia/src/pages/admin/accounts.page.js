@@ -11,30 +11,98 @@ export const AdminAccountsPage = {
           <p style="font-size: 0.875rem; color: var(--text-muted);">Manage registered personnel, roles, and status controls</p>
         </div>
 
-        <div class="card">
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Full Name</th>
-                  <th>Role</th>
-                  <th>Password Reset Status</th>
-                  <th>Account Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="accounts-table-body">
-                <tr><td colspan="5" style="text-align:center;">Loading personnel accounts...</td></tr>
-              </tbody>
-            </table>
+      <div class="card">
+        <div class="section-block">
+          <h2 class="section-title">Create new personnel account</h2>
+          <p>Enter registration details for a new personnel account. Admins can assign role and optional password.</p>
+          <div class="form-row">
+            <div class="form-group" style="flex: 1; min-width: 220px;">
+              <label for="new-user-email">Email address</label>
+              <input type="email" id="new-user-email" class="form-input" placeholder="email@denr.gov.ph" />
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 220px;">
+              <label for="new-user-fullname">Full name</label>
+              <input type="text" id="new-user-fullname" class="form-input" placeholder="Juan Dela Cruz" />
+            </div>
           </div>
+          <div class="form-row">
+            <div class="form-group" style="flex: 1; min-width: 220px;">
+              <label for="new-user-role">Role</label>
+              <select id="new-user-role" class="form-input">
+                <option value="personnel" selected>Personnel</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 220px;">
+              <label for="new-user-password">Temporary password</label>
+              <input type="text" id="new-user-password" class="form-input" placeholder="Leave blank to auto-generate" />
+            </div>
+          </div>
+          <button id="btn-create-user" class="btn btn-secondary">Create account</button>
+          <div id="create-user-message" class="table-empty-message" style="display:none; margin-top:1rem;"></div>
         </div>
       </div>
+
+      <div class="card">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Full Name</th>
+                <th>Role</th>
+                <th>Password Status</th>
+                <th>Account Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="accounts-table-body">
+              <tr><td colspan="5" style="text-align:center;">Loading personnel accounts...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     `;
   },
 
   async init() {
     await this.loadAccounts();
+    this.bindCreateUser();
+  },
+
+  async createUser() {
+    const email = document.getElementById('new-user-email').value.trim();
+    const fullName = document.getElementById('new-user-fullname').value.trim();
+    const role = document.getElementById('new-user-role').value;
+    const password = document.getElementById('new-user-password').value.trim() || null;
+    const messageEl = document.getElementById('create-user-message');
+
+    if (!email || !fullName) {
+      messageEl.style.display = 'block';
+      messageEl.textContent = 'Email and full name are required to create a new account.';
+      return;
+    }
+
+    try {
+      await UserService.createPersonnelAccount(email, fullName, role, password);
+      messageEl.style.display = 'block';
+      messageEl.textContent = 'Account created successfully. Temporary password has been issued.';
+      messageEl.style.color = 'var(--denr-green-primary)';
+      document.getElementById('new-user-email').value = '';
+      document.getElementById('new-user-fullname').value = '';
+      document.getElementById('new-user-password').value = '';
+      await this.loadAccounts();
+    } catch (err) {
+      messageEl.style.display = 'block';
+      messageEl.textContent = err.message || 'Failed to create the account.';
+      messageEl.style.color = 'var(--status-danger)';
+    }
+  },
+
+  bindCreateUser() {
+    document.getElementById('btn-create-user')?.addEventListener('click', async () => {
+      await this.createUser();
+    });
   },
 
   async loadAccounts() {

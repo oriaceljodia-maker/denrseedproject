@@ -292,7 +292,7 @@ WHERE NOT EXISTS (SELECT 1 FROM existing_admin);
 INSERT INTO public.profiles (id, full_name, role, requires_password_change, is_active, created_at, updated_at)
 SELECT au.id, 'Admin User', 'admin', true, true, NOW(), NOW()
 FROM auth.users au
-WHERE lower(au.email) = lower((SELECT email FROM desired_admin))
+WHERE lower(au.email) = lower('admin@denr.gov.ph')
   AND NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = au.id)
 ON CONFLICT (id) DO NOTHING;
 
@@ -306,4 +306,4 @@ SELECT
   p.is_active
 FROM auth.users au
 JOIN public.profiles p ON p.id = au.id
-WHERE lower(au.email) = lower((SELECT email FROM desired_admin));
+WHERE lower(au.email) = lower('admin@denr.gov.ph');

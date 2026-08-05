@@ -8,8 +8,8 @@ export const RequestsService = {
       .select(`
         *,
         seeds ( species_name, category ),
-        profiles:user_id ( full_name, email )
-      `)
+        profiles ( full_name )
+      `, { count: 'exact' })
       .order('created_at', { ascending: false });
 
     if (userId) {

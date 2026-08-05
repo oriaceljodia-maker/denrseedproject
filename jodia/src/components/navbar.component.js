@@ -11,7 +11,8 @@ export const NavbarComponent = {
       { path: ROUTES.ADMIN_DASHBOARD, label: 'Overview' },
       { path: ROUTES.ADMIN_INVENTORY, label: 'Inventory' },
       { path: ROUTES.ADMIN_REQUESTS, label: 'Requests Queue' },
-      { path: ROUTES.ADMIN_ACCOUNTS, label: 'Personnel Accounts' }
+      { path: ROUTES.ADMIN_ACCOUNTS, label: 'Personnel Accounts' },
+      { path: ROUTES.ADMIN_MAINTENANCE, label: 'Maintenance' }
     ];
 
     const personnelLinks = [

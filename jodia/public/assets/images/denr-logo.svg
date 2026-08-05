@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 140" role="img" aria-labelledby="denrTitle denrDesc">
+  <title id="denrTitle">DENR Seed Inventory logo</title>
+  <desc id="denrDesc">A modern DENR brand badge with a seed, leaf, and sun motif paired with bold text.</desc>
+  <defs>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E7A36"/>
+      <stop offset="100%" stop-color="#4BB273"/>
+    </linearGradient>
+    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8D243"/>
+      <stop offset="100%" stop-color="#F4B43C"/>
+    </linearGradient>
+    <filter id="softDrop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0C2B4E" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <g filter="url(#softDrop)">
+    <rect x="12" y="12" width="116" height="116" rx="30" fill="#0C2B4E" opacity="0.08"/>
+    <path d="M68 26C51 26 42 46 42 66c0 14 7 28 20 35 0 0 2-14 8-24 6-10 18-18 30-18 0 0-10-11-16-17-5-5-9-8-14-9z" fill="url(#leafGradient)"/>
+    <path d="M97 57a20 20 0 1 1-30 18c-5-9-3-20 4-26 7-5 18-4 26 2Z" fill="#FFFFFF" opacity="0.16"/>
+    <circle cx="70" cy="76" r="14" fill="url(#sunGradient)"/>
+    <path d="M54 39c0-5 4-9 9-9s9 4 9 9-4 9-9 9-9-4-9-9Zm-9 63c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9Zm34-66c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9Z" fill="#F8D243" opacity="0.35"/>
+  </g>
+  <g transform="translate(154 40)">
+    <text x="0" y="18" font-family="Inter, Arial, sans-serif" font-size="54" font-weight="800" letter-spacing="-1" fill="#0C2B4E">DENR</text>
+    <text x="0" y="60" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600" letter-spacing="0.1em" fill="#0E7A36" text-transform="uppercase">Seed Inventory System</text>
+    <path d="M0 74h280" stroke="#0E7A36" stroke-width="3" opacity="0.18"/>
+  </g>
+</svg>
