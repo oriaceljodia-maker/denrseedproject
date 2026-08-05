@@ -1,27 +1,28 @@
 /* src/styles/pages/personnel.css */
 .catalog-container {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  gap: 1.25rem;
   margin-top: 1.5rem;
 }
 
 .seed-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78));
+  border: 1px solid rgba(255,255,255,0.56);
+  border-radius: var(--radius-xl);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(14px);
 }
 
 .seed-card:hover {
@@ -30,13 +31,55 @@
 }
 
 .seed-title {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.08rem;
+  font-weight: 800;
   color: var(--denr-navy-primary);
 }
 
 .seed-stock {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
-  margin: 0.5rem 0 1rem 0;
+  margin: 0.65rem 0 1rem 0;
+  line-height: 1.6;
+}
+
+.seed-badge {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  background: rgba(15,122,56,0.1);
+  color: var(--denr-green-primary);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 0.4rem;
+}
+
+.catalog-hero {
+  padding: 1.25rem 1.4rem;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(15,122,56,0.12), rgba(11,39,69,0.08));
+  border: 1px solid rgba(15,122,56,0.14);
+  margin-bottom: 1.25rem;
+}
+
+.catalog-hero h1 {
+  font-size: 1.5rem;
+  color: var(--denr-navy-primary);
+  margin-bottom: 0.35rem;
+}
+
+.catalog-hero p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.catalog-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--denr-green-primary);
 }

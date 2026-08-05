@@ -7,9 +7,10 @@ export const AdminRequestsPage = {
   render() {
     return `
       <div class="admin-container">
-        <div style="margin-bottom: 1.5rem;">
-          <h1 style="font-size: 1.5rem; color: var(--denr-navy-primary);">Seed Distribution Requests</h1>
-          <p style="font-size: 0.875rem; color: var(--text-muted);">Review and process incoming personnel seed allocation requests</p>
+        <div class="catalog-hero" style="margin-bottom: 1.25rem;">
+          <div class="eyebrow">Request oversight</div>
+          <h1>Seed Distribution Requests</h1>
+          <p>Review incoming allocation requests from field personnel and keep restoration operations moving with clear approvals.</p>
         </div>
 
         <div class="card">

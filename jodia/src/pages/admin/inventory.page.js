@@ -7,10 +7,12 @@ export const AdminInventoryPage = {
   render() {
     return `
       <div class="admin-container">
-        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div class="catalog-hero" style="display:flex; justify-content: space-between; align-items: center; gap:1rem; flex-wrap:wrap;">
           <div>
-            <h1 style="font-size: 1.5rem; color: var(--denr-navy-primary);">Seed Inventory Management</h1>
-            <p style="font-size: 0.875rem; color: var(--text-muted);">Manage stock quantities, categories, and reorder alerts</p>
+            <div class="eyebrow">Inventory stewardship</div>
+            <h1>Seed Inventory Management</h1>
+            <p>Track stock health, maintain nursery readiness, and ensure restoration programs have the right materials at the right time.</p>
+            <div class="catalog-indicator">• Supports reforestation and biodiversity programs</div>
           </div>
           <button id="btn-add-seed" class="btn btn-primary">+ Add New Seed Variety</button>
         </div>

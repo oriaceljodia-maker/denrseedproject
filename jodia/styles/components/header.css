@@ -4,14 +4,22 @@
   gap: 0.95rem;
 }
 
+.header-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(15,122,56,0.18));
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
 .header-logo {
-  width: 58px;
-  height: 58px;
+  width: 46px;
+  height: 46px;
   object-fit: contain;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(15,122,56,0.2), rgba(11,39,69,0.15));
-  padding: 0.55rem;
-  border: 1px solid rgba(255,255,255,0.15);
 }
 
 .header-brand-copy {

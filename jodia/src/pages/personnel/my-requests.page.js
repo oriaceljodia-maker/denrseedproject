@@ -8,9 +8,10 @@ export const PersonnelMyRequestsPage = {
   render() {
     return `
       <div class="catalog-container">
-        <div style="margin-bottom: 1.5rem;">
-          <h1 style="font-size: 1.5rem; color: var(--denr-navy-primary);">My Seed Requests</h1>
-          <p style="font-size: 0.875rem; color: var(--text-muted);">Track real-time status and review feedback for requested seeds</p>
+        <div class="catalog-hero">
+          <div class="eyebrow">Request history</div>
+          <h1>My Seed Requests</h1>
+          <p>Track every request, review approval decisions, and keep your field program aligned with available stock.</p>
         </div>
 
         <div class="card">
