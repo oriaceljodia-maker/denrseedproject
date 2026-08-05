@@ -3,7 +3,7 @@ import { ROUTES } from '../config/constants.js';
 
 export const NavbarComponent = {
   render(user) {
-    if (!user || user.requires_password_change) return '';
+    if (!user || user.requiresPasswordChange) return '';
 
     const currentPath = window.location.pathname;
 

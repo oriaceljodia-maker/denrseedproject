@@ -1,19 +1,26 @@
-import { TableComponent } from '../components/table.component.js';
+import { escapeHtml } from '../../utils/formatters.js';
 
-const html = TableComponent.render({
-  headers: ['Species Name', 'Category', 'Stock Quantity', 'Status'],
-  data: seedsList,
-  emptyMessage: 'No seeds available in the inventory.',
-  renderRow: (seed) => `
-    <tr>
-      <td><strong>${seed.species_name}</strong></td>
-      <td>${seed.category || 'N/A'}</td>
-      <td>${seed.quantity} packs</td>
-      <td>
-        <span class="badge ${seed.quantity > 10 ? 'badge-approved' : 'badge-rejected'}">
-          ${seed.quantity > 10 ? 'In Stock' : 'Low Stock'}
-        </span>
-      </td>
-    </tr>
-  `
-});
+export const TableComponent = {
+  render({ headers = [], data = [], emptyMessage = 'No records found.', renderRow }) {
+    if (!Array.isArray(data) || data.length === 0) {
+      return `
+        <div class="table-empty-message">
+          ${escapeHtml(emptyMessage)}
+        </div>
+      `;
+    }
+
+    return `
+      <table class="data-table">
+        <thead>
+          <tr>
+            ${headers.map(header => `<th>${escapeHtml(header)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(item => renderRow(item)).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+};

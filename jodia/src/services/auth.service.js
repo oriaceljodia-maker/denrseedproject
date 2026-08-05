@@ -39,7 +39,26 @@ export const AuthService = {
     // return null so callers can decide (e.g., show a message) rather than
     // destroying the freshly-created session.
     if (!profile) {
-      return null;
+      // Attempt to derive fallback user data from auth metadata when the
+      // profiles row is missing. This can happen if the Supabase trigger or
+      // database seed is incomplete, but the auth user still exists.
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData?.user) {
+        return null;
+      }
+
+      const rawMeta = userData.user.raw_user_meta_data || {};
+      const fallbackRole = rawMeta.role || 'personnel';
+      const fallbackFullName = rawMeta.full_name || session.user.email?.split('@')[0] || 'User';
+      const fallbackRequiresPasswordChange = rawMeta.requires_password_change === true;
+
+      return {
+        id: session.user.id,
+        email: session.user.email,
+        fullName: fallbackFullName,
+        role: fallbackRole,
+        requiresPasswordChange: fallbackRequiresPasswordChange
+      };
     }
 
     return {
@@ -56,6 +75,11 @@ export const AuthService = {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
+  },
+
+  async getSessionDebug() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    return { session, error };
   },
 
   // Force first-login password update

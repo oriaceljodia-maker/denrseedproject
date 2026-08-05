@@ -1,5 +1,6 @@
 import { RequestsService } from '../../services/requests.service.js';
 import { AuthService } from '../../services/auth.service.js';
+import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 
@@ -40,6 +41,7 @@ export const PersonnelMyRequestsPage = {
       const currentUser = await AuthService.getCurrentUser();
       if (!currentUser) {
         ToastComponent.show('Session expired. Please log in again.', 'error');
+        await Router.navigate(null);
         return;
       }
       const requests = await RequestsService.getRequests(currentUser.id);

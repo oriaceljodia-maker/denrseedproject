@@ -40,10 +40,13 @@ export const ForcePasswordPage = {
   bindEvents() {
     const form = document.getElementById('password-reset-form');
     const errBox = document.getElementById('reset-error');
+    const submitBtn = document.getElementById('btn-reset-submit');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       errBox.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Updating...';
 
       const newPassword = document.getElementById('new-password').value;
       const confirmPassword = document.getElementById('confirm-password').value;
@@ -51,6 +54,8 @@ export const ForcePasswordPage = {
       if (newPassword !== confirmPassword) {
         errBox.textContent = "Passwords do not match.";
         errBox.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Update Password & Continue';
         return;
       }
 
@@ -62,6 +67,9 @@ export const ForcePasswordPage = {
       } catch (err) {
         errBox.textContent = err.message || 'Failed to update password.';
         errBox.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Update Password & Continue';
       }
     });
   }

@@ -61,6 +61,8 @@ export const LoginPage = {
 
         if (!user) {
           // Session exists but profile lookup consistently failed / inactive.
+          const sessionData = await AuthService.getSessionDebug();
+          console.error('Login failed with active session but missing profile.', sessionData);
           throw new Error('Your account is inactive or has no profile. Please contact the administrator.');
         }
         ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');
