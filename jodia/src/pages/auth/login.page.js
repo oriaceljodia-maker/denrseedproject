@@ -1,4 +1,5 @@
 import { AuthService } from '../../services/auth.service.js';
+import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 
 export const LoginPage = {
@@ -50,8 +51,14 @@ export const LoginPage = {
       try {
         await AuthService.login(email, password);
         const user = await AuthService.getCurrentUser();
+        if (!user) {
+          // Session exists but profile lookup failed / user inactive.
+          throw new Error('Your account is inactive or has no profile. Please contact the administrator.');
+        }
         ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');
-        // Navigation is handled by the global onAuthStateChange (SIGNED_IN) listener.
+        // Explicitly navigate (the global onAuthStateChange listener may race
+        // and re-route to login before the session is fully settled).
+        await Router.navigate(user);
       } catch (err) {
         console.error('Login error:', err);
         const status = err?.status || err?.statusCode;

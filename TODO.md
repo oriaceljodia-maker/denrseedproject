@@ -1,24 +1,39 @@
 # DENR Seed Inventory - Auth Login 500 Error Fix Tasks
 
-## ROOT CAUSE (confirmed via live diagnostics)
-The auth server is healthy (200) and auth works end-to-end. The login 500 /
-`AuthRetryableFetchError` is caused by the **live Supabase database missing the
-schema, grants, and functions**. The REST API returns:
-- `42501 permission denied for schema public` on `profiles`
-- `PGRST202` function `create_new_user_account` not found
+## LIVE DB STATUS (verified via curl diagnostics)
 
-The post-login `profiles` lookup fails, which GoTrue wraps into a 500.
+| Check | Status | Meaning |
+|-------|--------|---------|
+| Auth health | ✅ 200 | Project online, NOT paused |
+| Auth login test | ✅ 400 (invalid_credentials) | Auth works end-to-end |
+| `profiles` table query | ✅ Returns data | Schema grants FIXED |
+| `create_new_user_account` RPC | ✅ Exists ("Unauthorized" for anon) | Function working |
+| `seeds` table | ❌ **Empty array** | Seed.sql NOT applied |
+| Adding new user via Dashboard | ❌ Fails | Trigger broken/missing |
+| Login 500 error | ✅ Fixed | Schema grants applied; server reachable |
+| Login navigation | ✅ Fixed | Explicit navigate in login.page.js + removed SIGNED_IN race in main.js |
 
-## SQL Execution (run in Supabase SQL Editor)
-**EASIEST:** Run the single combined file `jodia/supabase/setup.sql` all at once.
-It contains all four parts in order (schema → functions/triggers → seed → admin).
+## ROOT CAUSE (verified)
+The auth server is healthy and works correctly. The login 500 was caused by
+the `42501 permission denied for schema public` error. The schema grants have
+now been applied, but the **trigger + seed data** were either not applied or
+failed.
 
-Otherwise run these individually in order:
-1. [ ] **`schema.sql`** — creates `profiles`, `seeds`, `requests` tables (REQUIRED first — the trigger fails when tables don't exist, which blocks user creation)
-2. [ ] **`functions_and_triggers.sql`** — functions, triggers, policies (idempotent)
-3. [ ] **`seed.sql`** — seed data
-4. [ ] **Create admin user via Dashboard** (Authentication → Users → Add user) — fires trigger to auto-create profile
-5. [ ] **`admin_setup.sql`** — promote admin user to admin role
+The "failed to create/add" user error is likely because the `on_auth_user_created`
+trigger on `auth.users` is broken or missing — it cannot auto-create a `profiles`
+row when a new user is added, so the Dashboard creation fails.
+
+## Next Action
+Run `jodia/supabase/repair_trigger_and_seed.sql` in the Supabase SQL Editor.
+This 6-part script:
+1. Re-creates a **hardened** `handle_new_user()` trigger function with
+   exception handling (won't block user creation)
+2. Re-creates the `on_auth_user_created` trigger on `auth.users`
+3. Re-grants privileges defensively
+4. Re-inserts seed data into `seeds` (idempotent)
+5. Verifies counts at the end
+6. After this, adding users via Dashboard should work, and the app login
+   should work (if the DB was the only issue).
 
 ## Completed Code Changes
 - [x] `functions_and_triggers.sql`: on_auth_user_created trigger + real-auth-user RPC + idempotent policies/triggers + GRANT EXECUTE

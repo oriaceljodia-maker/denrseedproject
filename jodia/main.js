@@ -14,9 +14,14 @@ class App {
       await Router.navigate(currentUser);
     });
 
-    // Realtime auth state listener
+    // Realtime auth state listener.
+    // NOTE: SIGNED_IN is intentionally NOT handled here — the LoginPage performs
+    // an explicit Router.navigate() after a successful sign-in. Handling SIGNED_IN
+    // here too causes a race: getCurrentUser() can temporarily return null (before
+    // the session/profile fully settles), which would call logout() and bounce the
+    // user right back to the login page.
     supabase.auth.onAuthStateChange(async (event) => {
-      if (['SIGNED_IN', 'SIGNED_OUT', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
+      if (['SIGNED_OUT', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
         const currentUser = await AuthService.getCurrentUser();
         await Router.navigate(currentUser);
       }
