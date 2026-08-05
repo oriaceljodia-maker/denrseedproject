@@ -1,0 +1,42 @@
+/* src/styles/pages/personnel.css */
+.catalog-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.seed-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.seed-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.seed-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--denr-navy-primary);
+}
+
+.seed-stock {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 1rem 0;
+}
