@@ -64,17 +64,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created'
-  ) THEN
-    CREATE TRIGGER on_auth_user_created
-      AFTER INSERT ON auth.users
-      FOR EACH ROW
-      EXECUTE FUNCTION public.handle_new_user();
-  END IF;
-END $$;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
 
 -- 2. Admin RPC Function to Provision User Accounts
 -- Creates a REAL auth user (inserted into auth.users). The trigger above
@@ -150,10 +144,12 @@ ALTER TABLE public.seeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.requests ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
+DROP POLICY IF EXISTS "Public profiles reading" ON public.profiles;
 CREATE POLICY "Public profiles reading" ON public.profiles FOR SELECT USING (true);
 
--- Users can update their own profile BUT cannot change role or is_active
+DROP POLICY IF EXISTS "Users update own profile" ON public.profiles;
 CREATE POLICY "Users update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users cannot escalate role or reactivate" ON public.profiles;
 CREATE POLICY "Users cannot escalate role or reactivate" ON public.profiles FOR UPDATE
   USING (auth.uid() = id)
   WITH CHECK (
@@ -163,27 +159,37 @@ CREATE POLICY "Users cannot escalate role or reactivate" ON public.profiles FOR 
   );
 
 -- Seeds Policies
+DROP POLICY IF EXISTS "Anyone authenticated can view seeds" ON public.seeds;
 CREATE POLICY "Anyone authenticated can view seeds" ON public.seeds FOR SELECT USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Admins can insert seeds" ON public.seeds;
 CREATE POLICY "Admins can insert seeds" ON public.seeds FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
+DROP POLICY IF EXISTS "Admins can update seeds" ON public.seeds;
 CREATE POLICY "Admins can update seeds" ON public.seeds FOR UPDATE USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
+DROP POLICY IF EXISTS "Admins can delete seeds" ON public.seeds;
 CREATE POLICY "Admins can delete seeds" ON public.seeds FOR DELETE USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- Requests Policies
+DROP POLICY IF EXISTS "Users view own or admin views all requests" ON public.requests;
 CREATE POLICY "Users view own or admin views all requests" ON public.requests FOR SELECT USING (
   user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- Personnel can only submit requests for themselves
+DROP POLICY IF EXISTS "Personnel can submit own requests" ON public.requests;
 CREATE POLICY "Personnel can submit own requests" ON public.requests FOR INSERT WITH CHECK (
   user_id = auth.uid() AND auth.role() = 'authenticated'
 );
 
+DROP POLICY IF EXISTS "Admins can update request status" ON public.requests;
 CREATE POLICY "Admins can update request status" ON public.requests FOR UPDATE USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
+
+-- Grant execute on the RPC to the app roles (must come after the function is created)
+GRANT EXECUTE ON FUNCTION public.create_new_user_account(TEXT, TEXT, TEXT, TEXT) TO authenticated, anon;
