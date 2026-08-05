@@ -54,9 +54,18 @@ export const LoginPage = {
         // Navigation is handled by the global onAuthStateChange (SIGNED_IN) listener.
       } catch (err) {
         console.error('Login error:', err);
-        const msg = typeof err.message === 'string' && err.message.trim()
-          ? err.message
-          : 'Invalid login credentials. Please check your email and password.';
+        const status = err?.status || err?.statusCode;
+        const isServerError = status >= 500 || /AuthRetryableFetchError|fetch failed|network|ECONN|Failed to fetch/i.test(err?.message || '');
+        let msg;
+
+        if (isServerError) {
+          msg = 'Unable to reach the server. The Denr Seed system may be temporarily offline or the database is paused. Please try again in a moment or contact the administrator.';
+        } else if (typeof err.message === 'string' && err.message.trim()) {
+          msg = err.message;
+        } else {
+          msg = 'Invalid login credentials. Please check your email and password.';
+        }
+
         errBox.textContent = msg;
         errBox.style.display = 'block';
       } finally {

@@ -41,19 +41,56 @@ CREATE OR REPLACE TRIGGER on_request_approved
   EXECUTE FUNCTION handle_seed_request_approval();
 
 
--- 2. Admin RPC Function to Provision Personnel Accounts
--- NOTE: This function creates a profile record. For a fully working
--- account, pair this with a Supabase Edge Function using the Admin API
--- (service_role) to create the actual auth user, then insert the profile
--- with the real auth user id. The profile id MUST match the auth.users.id.
+-- 1b. Auto-create profiles record whenever a new auth user is created.
+-- The profile id MUST match auth.users.id so that login lookups resolve
+-- correctly. This is the key fix for orphaned profiles that could never log in.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (
+    id, full_name, role, requires_password_change, is_active, created_at, updated_at
+  )
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'personnel'),
+    COALESCE((NEW.raw_user_meta_data->>'requires_password_change')::boolean, true),
+    true,
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created'
+  ) THEN
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW
+      EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END $$;
+
+-- 2. Admin RPC Function to Provision User Accounts
+-- Creates a REAL auth user (inserted into auth.users). The trigger above
+-- then auto-creates the matching profiles row with the exact same id.
+-- NOTE: This function must be executed by the postgres role (it is SECURITY
+-- DEFINER defaulting to the creating role) so it can write to auth.users.
 CREATE OR REPLACE FUNCTION create_new_user_account(
   user_email TEXT,
   user_full_name TEXT,
-  user_role TEXT DEFAULT 'personnel'
+  user_role TEXT DEFAULT 'personnel',
+  user_password TEXT DEFAULT NULL
 )
 RETURNS JSONB AS $$
 DECLARE
-  new_user_id UUID;
+  new_user_id UUID := gen_random_uuid();
+  temp_password TEXT;
 BEGIN
   -- Ensure caller is an admin
   IF NOT EXISTS (
@@ -68,15 +105,41 @@ BEGIN
     RAISE EXCEPTION 'Invalid role. Must be "admin" or "personnel".';
   END IF;
 
-  -- Create profile row (id must match an existing auth.users.id)
-  -- IMPORTANT: This requires the auth user to already exist.
-  -- Use the Supabase Admin API / Edge Function to create the auth user first,
-  -- then pass the returned user id to this function.
-  INSERT INTO public.profiles (id, full_name, role, requires_password_change, is_active)
-  VALUES (gen_random_uuid(), user_full_name, user_role, true, true)
-  RETURNING id INTO new_user_id;
+  -- Generate a temporary password if none was provided
+  IF user_password IS NULL OR user_password = '' THEN
+    temp_password := 'Temp@' || (floor(random() * 1000000))::text;
+  ELSE
+    temp_password := user_password;
+  END IF;
 
-  RETURN jsonb_build_object('user_id', new_user_id, 'status', 'success');
+  -- Create the actual auth user. The on_auth_user_created trigger will
+  -- automatically create the matching profiles row.
+  INSERT INTO auth.users (
+    instance_id, id, aud, role, email,
+    encrypted_password, email_confirmed_at,
+    invited_at, confirmation_token, recovery_token,
+    email_change_token_new, email_change, created_at,
+    updated_at, raw_app_meta_data, raw_user_meta_data,
+    is_super_admin, is_sso_user, is_anonymous
+  )
+  VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    new_user_id, 'authenticated', 'authenticated', user_email,
+    crypt(temp_password, gen_salt('bf')),
+    NOW(),
+    NOW(), '', '',
+    '', '', NOW(), NOW(),
+    jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+    jsonb_build_object('full_name', user_full_name, 'role', user_role),
+    false, false, false
+  );
+
+  RETURN jsonb_build_object(
+    'user_id', new_user_id,
+    'email', user_email,
+    'temporary_password', temp_password,
+    'status', 'success'
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

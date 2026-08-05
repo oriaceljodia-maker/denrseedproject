@@ -25,14 +25,16 @@ export const UserService = {
     return data;
   },
 
-  // Create new user profile record (Triggered post Supabase Auth creation or RPC)
-  async createPersonnelAccount(email, fullName, role = 'personnel') {
-    // Note: Creating auth users client-side usually requires a dedicated RPC function
-    // or Supabase Admin API on a secure backend.
+  // Create new user account (auth user + profile via on_auth_user_created trigger)
+  // NOTE: create_new_user_account RPC must be exposed to the 'authenticated' role
+  // with EXECUTE privilege for the anon/authenticated key to call it. It inserts
+  // into auth.users (SECURITY DEFINER) and the trigger auto-creates the profile.
+  async createPersonnelAccount(email, fullName, role = 'personnel', password = null) {
     const { data, error } = await supabase.rpc('create_new_user_account', {
       user_email: email,
       user_full_name: fullName,
-      user_role: role
+      user_role: role,
+      user_password: password
     });
 
     if (error) throw error;
