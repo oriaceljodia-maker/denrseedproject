@@ -14,6 +14,8 @@
 - [x] `schema.sql`: CREATE TABLE definitions for profiles/seeds/requests + GRANT USAGE/ALL on public schema & tables to anon/authenticated (fixes "permission denied for schema public" 42501)
 - [x] `login.page.js`: hardened error messaging
 - [x] `user.service.js`: createPersonnelAccount passes user_password to RPC
+- [x] `supabase.js`: map plain env var names (SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) + window.ENV + fallbacks
+- [x] `.env`: added VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY / VITE_SUPABASE_PUBLISHABLE_KEY (Vite-compatible) + server-side vars
 - [x] Build passes (`vite build`)
 
 ## Verified Supabase Project Status
