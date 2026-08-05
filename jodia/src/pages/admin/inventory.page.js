@@ -4,6 +4,8 @@ import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
 
 export const AdminInventoryPage = {
+  allSeeds: [],
+
   render() {
     return `
       <div class="admin-container">
@@ -15,6 +17,22 @@ export const AdminInventoryPage = {
             <div class="catalog-indicator">• Supports reforestation and biodiversity programs</div>
           </div>
           <button id="btn-add-seed" class="btn btn-primary">+ Add New Seed Variety</button>
+        </div>
+
+        <div class="filter-bar" style="margin-bottom: 1rem;">
+          <div class="search-wrapper">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="inventory-search" class="form-input" placeholder="Search inventory..." />
+          </div>
+          <select id="inventory-stock-filter" class="form-input">
+            <option value="">All Stock Levels</option>
+            <option value="low">Low Stock Only</option>
+            <option value="in-stock">In Stock</option>
+            <option value="out">Out of Stock</option>
+          </select>
         </div>
 
         <div class="card">
@@ -42,42 +60,76 @@ export const AdminInventoryPage = {
   async init() {
     await this.loadInventory();
     this.bindAddButton();
+    this.bindSearchAndFilter();
   },
 
   async loadInventory() {
     try {
-      const seeds = await SeedsService.getAllSeeds();
-      const tbody = document.getElementById('inventory-table-body');
-
-      if (!seeds || seeds.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No seed items recorded yet.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = seeds.map(seed => {
-        const isLowStock = seed.quantity <= seed.reorder_level;
-        return `
-          <tr>
-            <td><strong>${escapeHtml(seed.species_name)}</strong></td>
-            <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
-            <td>
-              ${seed.quantity} 
-              ${isLowStock ? '<span class="badge badge-rejected" style="margin-left: 0.5rem;">Low Stock</span>' : ''}
-            </td>
-            <td>${seed.reorder_level || 10}</td>
-            <td>
-              <button class="btn btn-secondary btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
-                Update Stock
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-      this.bindEditButtons();
+      this.allSeeds = await SeedsService.getAllSeeds();
+      this.renderInventory(this.allSeeds);
     } catch (err) {
       ToastComponent.show('Failed to fetch seed inventory.', 'error');
     }
+  },
+
+  renderInventory(seeds) {
+    const tbody = document.getElementById('inventory-table-body');
+
+    if (!seeds || seeds.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No seed items recorded yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = seeds.map(seed => {
+      const isLowStock = seed.quantity <= seed.reorder_level;
+      const isOutOfStock = seed.quantity <= 0;
+      return `
+        <tr>
+          <td><strong>${escapeHtml(seed.species_name)}</strong></td>
+          <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
+          <td>
+            ${seed.quantity} 
+            ${isOutOfStock ? '<span class="badge badge-rejected" style="margin-left: 0.5rem;">Out of Stock</span>' : (isLowStock ? '<span class="badge badge-pending" style="margin-left: 0.5rem;">Low Stock</span>' : '')}
+          </td>
+          <td>${seed.reorder_level || 10}</td>
+          <td>
+            <button class="btn btn-secondary btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
+              Update Stock
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    this.bindEditButtons();
+  },
+
+  bindSearchAndFilter() {
+    const searchInput = document.getElementById('inventory-search');
+    const stockFilter = document.getElementById('inventory-stock-filter');
+
+    const applyFilters = () => {
+      const query = (searchInput?.value || '').toLowerCase().trim();
+      const stockLevel = stockFilter?.value || '';
+
+      const filtered = this.allSeeds.filter(seed => {
+        const matchesQuery = !query || 
+          (seed.species_name || '').toLowerCase().includes(query) ||
+          (seed.category || '').toLowerCase().includes(query);
+        
+        let matchesStock = true;
+        if (stockLevel === 'low') matchesStock = seed.quantity > 0 && seed.quantity <= seed.reorder_level;
+        else if (stockLevel === 'in-stock') matchesStock = seed.quantity > seed.reorder_level;
+        else if (stockLevel === 'out') matchesStock = seed.quantity <= 0;
+
+        return matchesQuery && matchesStock;
+      });
+
+      this.renderInventory(filtered);
+    };
+
+    searchInput?.addEventListener('input', applyFilters);
+    stockFilter?.addEventListener('change', applyFilters);
   },
 
   bindAddButton() {

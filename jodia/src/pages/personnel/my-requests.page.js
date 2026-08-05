@@ -14,6 +14,25 @@ export const PersonnelMyRequestsPage = {
           <p>Track every request, review approval decisions, and keep your field program aligned with available stock.</p>
         </div>
 
+        <div class="request-summary">
+          <div class="request-summary-card">
+            <span>Total Requests</span>
+            <strong id="summary-total">-</strong>
+          </div>
+          <div class="request-summary-card">
+            <span>Pending</span>
+            <strong id="summary-pending" style="color: var(--status-warning);">-</strong>
+          </div>
+          <div class="request-summary-card">
+            <span>Approved</span>
+            <strong id="summary-approved" style="color: var(--status-success);">-</strong>
+          </div>
+          <div class="request-summary-card">
+            <span>Rejected</span>
+            <strong id="summary-rejected" style="color: var(--status-danger);">-</strong>
+          </div>
+        </div>
+
         <div class="card">
           <div class="table-container">
             <table class="data-table">
@@ -47,6 +66,16 @@ export const PersonnelMyRequestsPage = {
       }
       const requests = await RequestsService.getRequests(currentUser.id);
       const tbody = document.getElementById('my-requests-table-body');
+
+      // Update summary cards
+      const pendingCount = requests.filter(r => r.status === 'PENDING').length;
+      const approvedCount = requests.filter(r => r.status === 'APPROVED').length;
+      const rejectedCount = requests.filter(r => r.status === 'REJECTED').length;
+
+      document.getElementById('summary-total').textContent = requests.length;
+      document.getElementById('summary-pending').textContent = pendingCount;
+      document.getElementById('summary-approved').textContent = approvedCount;
+      document.getElementById('summary-rejected').textContent = rejectedCount;
 
       if (!requests || requests.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">You have not submitted any seed requests yet.</td></tr>`;

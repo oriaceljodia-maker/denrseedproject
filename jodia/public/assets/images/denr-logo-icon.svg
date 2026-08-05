@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="denrIconTitle denrIconDesc">
+  <title id="denrIconTitle">DENR Seed Inventory icon</title>
+  <desc id="denrIconDesc">A modern DENR brand badge with a seed, leaf, and sun motif.</desc>
+  <defs>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E7A36"/>
+      <stop offset="100%" stop-color="#4BB273"/>
+    </linearGradient>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8D243"/>
+      <stop offset="100%" stop-color="#F4B43C"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0C2B4E"/>
+      <stop offset="100%" stop-color="#0A1F38"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0C2B4E" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <rect x="4" y="4" width="112" height="112" rx="28" fill="url(#bgGrad)"/>
+    <circle cx="60" cy="60" r="44" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <path d="M60 30C46 30 38 46 38 62c0 12 6 24 17 30 0 0 2-12 7-20 5-9 15-16 26-16 0 0-9-9-14-14-4-4-8-7-12-8z" fill="url(#leafGrad)"/>
+    <path d="M84 58a17 17 0 1 1-26 15c-4-8-3-17 3-22 6-4 15-3 22 2Z" fill="#FFFFFF" opacity="0.14"/>
+    <circle cx="62" cy="68" r="12" fill="url(#sunGrad)"/>
+    <path d="M48 36c0-4 3-7 7-7s7 3 7 7-3 7-7 7-7-3-7-7Zm-8 54c-4 0-7 3-7 7s3 7 7 7 7-3 7-7-3-7-7-7Zm29-57c-4 0-7 3-7 7s3 7 7 7 7-3 7-7-3-7-7-7Z" fill="#F8D243" opacity="0.3"/>
+  </g>
+</svg>

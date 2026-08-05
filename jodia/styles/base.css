@@ -30,6 +30,7 @@
   --shadow-sm: 0 10px 30px rgba(2, 18, 37, 0.08);
   --shadow-md: 0 18px 40px rgba(2, 18, 37, 0.14);
   --shadow-lg: 0 24px 60px rgba(2, 18, 37, 0.16);
+  --shadow-glow: 0 0 0 4px rgba(15, 122, 56, 0.1);
 }
 
 * {
@@ -39,10 +40,15 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background:
     linear-gradient(135deg, rgba(15, 122, 56, 0.16), rgba(11, 39, 69, 0.08)),
     url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+  background-attachment: fixed;
   color: var(--text-main);
   min-height: 100vh;
   display: flex;
@@ -59,9 +65,21 @@ body::before {
   z-index: -1;
 }
 
+body::after {
+  content: '';
+  position: fixed;
+  top: -20%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(15, 122, 56, 0.08), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
 .app-header {
   min-height: 74px;
-  background: rgba(11, 39, 69, 0.84);
+  background: linear-gradient(135deg, rgba(11, 39, 69, 0.92), rgba(7, 28, 50, 0.88));
   color: var(--text-white);
   display: flex;
   align-items: center;
@@ -94,6 +112,11 @@ body::before {
   height: 80vh;
   gap: 1rem;
   color: var(--text-muted);
+}
+
+.app-loader p {
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .spinner {
@@ -245,6 +268,112 @@ body::before {
   font-size: 0.85rem;
   color: var(--text-muted);
   line-height: 1.6;
+}
+
+/* Footer */
+.app-footer {
+  margin-top: auto;
+  background: linear-gradient(135deg, rgba(11, 39, 69, 0.92), rgba(7, 28, 50, 0.88));
+  color: rgba(255,255,255,0.7);
+  padding: 1.5rem 2rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(18px);
+}
+
+.footer-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.footer-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.footer-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+}
+
+.footer-subtitle {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.55);
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.footer-sep {
+  opacity: 0.4;
+}
+
+@media (max-width: 640px) {
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(11, 39, 69, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 122, 56, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 122, 56, 0.5);
+}
+
+/* Focus visibility for accessibility */
+:focus-visible {
+  outline: 2px solid var(--denr-green-primary);
+  outline-offset: 2px;
+}
+
+/* Smooth entrance animation for page content */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-root > * {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (max-width: 900px) {

@@ -43,10 +43,29 @@ export const AdminDashboardPage = {
             <div class="hero-graph">
               <div class="graph-label">
                 <span>Request trend</span>
-                <strong>+8.4%</strong>
+                <strong id="stat-request-trend">-</strong>
               </div>
               <div class="graph-line"></div>
             </div>
+          </div>
+        </section>
+
+        <section class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-title">Total Inventory</div>
+            <div class="stat-value" id="stat-total-packs">-</div>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--status-warning);">
+            <div class="stat-title">Approved Requests</div>
+            <div class="stat-value" id="stat-approved">-</div>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--status-info);">
+            <div class="stat-title">Total Requests</div>
+            <div class="stat-value" id="stat-total-requests">-</div>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--status-danger);">
+            <div class="stat-title">Rejected Requests</div>
+            <div class="stat-value" id="stat-rejected">-</div>
           </div>
         </section>
 
@@ -103,9 +122,28 @@ export const AdminDashboardPage = {
         RequestsService.getRequests()
       ]);
 
+      const pendingCount = requests.filter(r => r.status === 'PENDING').length;
+      const approvedCount = requests.filter(r => r.status === 'APPROVED').length;
+      const rejectedCount = requests.filter(r => r.status === 'REJECTED').length;
+      const lowStockCount = seeds.filter(s => s.quantity <= s.reorder_level).length;
+      const totalPacks = seeds.reduce((sum, s) => sum + (s.quantity || 0), 0);
+
       document.getElementById('stat-total-seeds').textContent = seeds.length;
-      document.getElementById('stat-pending-requests').textContent = requests.filter(r => r.status === 'PENDING').length;
-      document.getElementById('stat-low-stock').textContent = seeds.filter(s => s.quantity <= s.reorder_level).length;
+      document.getElementById('stat-pending-requests').textContent = pendingCount;
+      document.getElementById('stat-low-stock').textContent = lowStockCount;
+      document.getElementById('stat-total-packs').textContent = totalPacks;
+      document.getElementById('stat-approved').textContent = approvedCount;
+      document.getElementById('stat-total-requests').textContent = requests.length;
+      document.getElementById('stat-rejected').textContent = rejectedCount;
+
+      // Calculate request trend percentage
+      const trendEl = document.getElementById('stat-request-trend');
+      if (requests.length > 0) {
+        const approvedPct = Math.round((approvedCount / requests.length) * 100);
+        trendEl.textContent = `${approvedPct}% approved`;
+      } else {
+        trendEl.textContent = 'No data';
+      }
 
       const tbody = document.getElementById('dashboard-requests-body');
       if (!requests || requests.length === 0) {

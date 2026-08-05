@@ -2,6 +2,7 @@ import { Guards } from './guards.js';
 import { ROUTES } from '../config/constants.js';
 import { HeaderComponent } from '../components/header.component.js';
 import { NavbarComponent } from '../components/navbar.component.js';
+import { FooterComponent } from '../components/footer.component.js';
 import { MaintenanceBannerComponent } from '../components/maintenance-banner.component.js';
 
 // Page Controller Imports
@@ -99,7 +100,8 @@ export const Router = {
     }
 
     const bannerHtml = MaintenanceBannerComponent.render();
-    root.innerHTML = bannerHtml + content;
+    const footerHtml = FooterComponent.render();
+    root.innerHTML = bannerHtml + content + footerHtml;
     if (binder) binder();
   }
 };

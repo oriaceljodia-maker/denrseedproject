@@ -15,6 +15,7 @@ export const ForcePasswordPage = {
 
           <div class="auth-card">
             <div class="auth-header">
+              <img src="/assets/images/denr-logo-icon.svg" alt="DENR Seed Inventory logo" class="auth-logo" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Department_of_Environment_and_Natural_Resources_%28DENR%29.svg/1200px-Department_of_Environment_and_Natural_Resources_%28DENR%29.svg.png';" />
               <h1 class="auth-title">Set Your New Password</h1>
               <div class="auth-subtitle">Required before continuing</div>
             </div>
@@ -23,12 +24,28 @@ export const ForcePasswordPage = {
 
               <div class="form-group">
                 <label for="new-password">New Password</label>
-                <input type="password" id="new-password" class="form-input" minlength="8" required placeholder="Minimum 8 characters" />
+                <div class="password-wrapper">
+                  <input type="password" id="new-password" class="form-input" minlength="8" required placeholder="Minimum 8 characters" />
+                  <button type="button" class="password-toggle" data-toggle-target="new-password" aria-label="Toggle password visibility">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div class="form-group">
                 <label for="confirm-password">Confirm Password</label>
-                <input type="password" id="confirm-password" class="form-input" minlength="8" required placeholder="Re-enter password" />
+                <div class="password-wrapper">
+                  <input type="password" id="confirm-password" class="form-input" minlength="8" required placeholder="Re-enter password" />
+                  <button type="button" class="password-toggle" data-toggle-target="confirm-password" aria-label="Toggle password visibility">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <button type="submit" id="btn-reset-submit" class="btn btn-primary auth-btn">
@@ -45,6 +62,20 @@ export const ForcePasswordPage = {
     const form = document.getElementById('password-reset-form');
     const errBox = document.getElementById('reset-error');
     const submitBtn = document.getElementById('btn-reset-submit');
+
+    // Password visibility toggles
+    document.querySelectorAll('.password-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-toggle-target');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.innerHTML = isPassword 
+          ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+          : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+      });
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
