@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+jodia/node_modules/
+
+# Build output
+dist/
+jodia/dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+jodia/.env
+jodia/.env.local
+jodia/.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
