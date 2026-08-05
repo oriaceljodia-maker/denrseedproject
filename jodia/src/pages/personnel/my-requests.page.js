@@ -1,6 +1,7 @@
 import { RequestsService } from '../../services/requests.service.js';
 import { AuthService } from '../../services/auth.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { escapeHtml } from '../../../utils/formatters.js';
 
 export const PersonnelMyRequestsPage = {
   render() {
@@ -37,6 +38,10 @@ export const PersonnelMyRequestsPage = {
   async init() {
     try {
       const currentUser = await AuthService.getCurrentUser();
+      if (!currentUser) {
+        ToastComponent.show('Session expired. Please log in again.', 'error');
+        return;
+      }
       const requests = await RequestsService.getRequests(currentUser.id);
       const tbody = document.getElementById('my-requests-table-body');
 
@@ -47,12 +52,12 @@ export const PersonnelMyRequestsPage = {
 
       tbody.innerHTML = requests.map(req => `
         <tr>
-          <td><strong>${req.seeds?.species_name || 'N/A'}</strong></td>
+          <td><strong>${escapeHtml(req.seeds?.species_name) || 'N/A'}</strong></td>
           <td>${req.quantity} packs</td>
-          <td style="max-width: 200px; font-size:0.8125rem;">${req.purpose || 'N/A'}</td>
+          <td style="max-width: 200px; font-size:0.8125rem;">${escapeHtml(req.purpose) || 'N/A'}</td>
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
-          <td><span class="badge badge-${req.status.toLowerCase()}">${req.status}</span></td>
-          <td style="font-size:0.8125rem; color:var(--text-muted);">${req.review_notes || '-'}</td>
+          <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status)}</span></td>
+          <td style="font-size:0.8125rem; color:var(--text-muted);">${escapeHtml(req.review_notes) || '-'}</td>
         </tr>
       `).join('');
     } catch (err) {

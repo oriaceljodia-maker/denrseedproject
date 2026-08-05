@@ -1,5 +1,6 @@
 import { AuthService } from '../services/auth.service.js';
 import { Router } from '../router/router.js';
+import { escapeHtml } from '../../utils/formatters.js';
 
 export const HeaderComponent = {
   render(user) {
@@ -22,8 +23,8 @@ export const HeaderComponent = {
       </div>
 
       <div class="nav-right" style="display: flex; align-items: center; gap: 1.25rem;">
-        <span class="badge badge-${user.role}">${user.role}</span>
-        <span style="font-size: 0.875rem; font-weight: 500;">${user.fullName}</span>
+        <span class="badge badge-${escapeHtml(user.role)}">${escapeHtml(user.role)}</span>
+        <span style="font-size: 0.875rem; font-weight: 500;">${escapeHtml(user.fullName)}</span>
         <button id="btn-global-logout" class="btn btn-secondary">
           Logout
         </button>

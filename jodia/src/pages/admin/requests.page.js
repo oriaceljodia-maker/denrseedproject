@@ -1,6 +1,7 @@
 import { RequestsService } from '../../services/requests.service.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
 
 export const AdminRequestsPage = {
   render() {
@@ -53,16 +54,16 @@ export const AdminRequestsPage = {
         const isPending = req.status === 'PENDING';
         return `
           <tr>
-            <td><strong>${req.profiles?.full_name || 'Personnel'}</strong><br/><small style="color:var(--text-muted);">${req.profiles?.email || ''}</small></td>
-            <td>${req.seeds?.species_name || 'N/A'}</td>
+            <td><strong>${escapeHtml(req.profiles?.full_name) || 'Personnel'}</strong><br/><small style="color:var(--text-muted);">${escapeHtml(req.profiles?.email) || ''}</small></td>
+            <td>${escapeHtml(req.seeds?.species_name) || 'N/A'}</td>
             <td><strong>${req.quantity}</strong> packs</td>
-            <td style="max-width: 250px; font-size: 0.8125rem;">${req.purpose || 'N/A'}</td>
+            <td style="max-width: 250px; font-size: 0.8125rem;">${escapeHtml(req.purpose) || 'N/A'}</td>
             <td>${new Date(req.created_at).toLocaleDateString()}</td>
-            <td><span class="badge badge-${req.status.toLowerCase()}">${req.status}</span></td>
+            <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status)}</span></td>
             <td>
               ${isPending ? `
-                <button class="btn btn-primary btn-approve" data-id="${req.id}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Approve</button>
-                <button class="btn btn-danger btn-reject" data-id="${req.id}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Reject</button>
+                <button class="btn btn-primary btn-approve" data-id="${escapeAttr(req.id)}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Approve</button>
+                <button class="btn btn-danger btn-reject" data-id="${escapeAttr(req.id)}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Reject</button>
               ` : `<small style="color:var(--text-muted);">Processed</small>`}
             </td>
           </tr>

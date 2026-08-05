@@ -1,6 +1,7 @@
 import { SeedsService } from '../../services/seeds.service.js';
 import { RequestsService } from '../../services/requests.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { escapeHtml } from '../../../utils/formatters.js';
 
 export const AdminDashboardPage = {
   render() {
@@ -74,10 +75,10 @@ export const AdminDashboardPage = {
 
       tbody.innerHTML = requests.slice(0, 5).map(req => `
         <tr>
-          <td>${req.profiles?.full_name || 'N/A'}</td>
-          <td>${req.seeds?.species_name || 'N/A'}</td>
+          <td>${escapeHtml(req.profiles?.full_name) || 'N/A'}</td>
+          <td>${escapeHtml(req.seeds?.species_name) || 'N/A'}</td>
           <td>${req.quantity}</td>
-          <td><span class="badge badge-${req.status.toLowerCase()}">${req.status}</span></td>
+          <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status)}</span></td>
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
         </tr>
       `).join('');

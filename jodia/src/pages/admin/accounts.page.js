@@ -1,5 +1,6 @@
 import { UserService } from '../../services/user.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { escapeHtml } from '../../../utils/formatters.js';
 
 export const AdminAccountsPage = {
   render() {
@@ -48,8 +49,8 @@ export const AdminAccountsPage = {
 
       tbody.innerHTML = users.map(u => `
         <tr>
-          <td><strong>${u.full_name}</strong></td>
-          <td><span class="badge badge-${u.role}">${u.role}</span></td>
+          <td><strong>${escapeHtml(u.full_name)}</strong></td>
+          <td><span class="badge badge-${escapeHtml(u.role)}">${escapeHtml(u.role)}</span></td>
           <td>
             ${u.requires_password_change ? 
               '<span style="color:var(--status-warning); font-weight:600;">Pending Setup</span>' : 
@@ -61,7 +62,7 @@ export const AdminAccountsPage = {
               '<span class="badge badge-rejected">Disabled</span>'}
           </td>
           <td>
-            <button class="btn btn-secondary btn-toggle-status" data-id="${u.id}" data-active="${u.is_active}" style="color: var(--denr-navy-primary); border-color: var(--border-color); font-size:0.75rem; padding: 0.25rem 0.5rem;">
+            <button class="btn btn-secondary btn-toggle-status" data-id="${escapeHtml(u.id)}" data-active="${u.is_active}" style="color: var(--denr-navy-primary); border-color: var(--border-color); font-size:0.75rem; padding: 0.25rem 0.5rem;">
               ${u.is_active ? 'Disable Account' : 'Enable Account'}
             </button>
           </td>

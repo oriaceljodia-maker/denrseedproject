@@ -1,6 +1,7 @@
 import { SeedsService } from '../../services/seeds.service.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
 
 export const AdminInventoryPage = {
   render() {
@@ -55,15 +56,15 @@ export const AdminInventoryPage = {
         const isLowStock = seed.quantity <= seed.reorder_level;
         return `
           <tr>
-            <td><strong>${seed.species_name}</strong></td>
-            <td>${seed.category || 'Uncategorized'}</td>
+            <td><strong>${escapeHtml(seed.species_name)}</strong></td>
+            <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
             <td>
               ${seed.quantity} 
               ${isLowStock ? '<span class="badge badge-rejected" style="margin-left: 0.5rem;">Low Stock</span>' : ''}
             </td>
             <td>${seed.reorder_level || 10}</td>
             <td>
-              <button class="btn btn-secondary btn-edit-seed" data-id="${seed.id}" data-name="${seed.species_name}" data-category="${seed.category || ''}" data-qty="${seed.quantity}" data-reorder="${seed.reorder_level || 10}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
+              <button class="btn btn-secondary btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
                 Update Stock
               </button>
             </td>
@@ -134,19 +135,19 @@ export const AdminInventoryPage = {
         const reorder = target.getAttribute('data-reorder');
 
         ModalComponent.open({
-          title: `Update Stock: ${name}`,
+          title: `Update Stock: ${escapeHtml(name)}`,
           bodyHtml: `
             <div class="form-group">
               <label for="edit-category">Category</label>
-              <input type="text" id="edit-category" class="form-input" value="${category}" />
+              <input type="text" id="edit-category" class="form-input" value="${escapeAttr(category)}" />
             </div>
             <div class="form-group">
               <label for="edit-quantity">Current Quantity</label>
-              <input type="number" id="edit-quantity" class="form-input" min="0" value="${qty}" required />
+              <input type="number" id="edit-quantity" class="form-input" min="0" value="${escapeAttr(qty)}" required />
             </div>
             <div class="form-group">
               <label for="edit-reorder">Reorder Threshold Level</label>
-              <input type="number" id="edit-reorder" class="form-input" min="1" value="${reorder}" required />
+              <input type="number" id="edit-reorder" class="form-input" min="1" value="${escapeAttr(reorder)}" required />
             </div>
           `,
           confirmText: 'Update Inventory',

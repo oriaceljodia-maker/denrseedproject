@@ -2,6 +2,7 @@ import { SeedsService } from '../../services/seeds.service.js';
 import { RequestsService } from '../../services/requests.service.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
 
 export const PersonnelCatalogPage = {
   render() {
@@ -32,11 +33,11 @@ export const PersonnelCatalogPage = {
       container.innerHTML = seeds.map(seed => `
         <div class="seed-card">
           <div>
-            <div class="seed-title">${seed.species_name}</div>
-            <div style="font-size:0.75rem; color:var(--denr-green-primary); font-weight:600; margin-top:0.25rem;">${seed.category || 'General'}</div>
+            <div class="seed-title">${escapeHtml(seed.species_name)}</div>
+            <div style="font-size:0.75rem; color:var(--denr-green-primary); font-weight:600; margin-top:0.25rem;">${escapeHtml(seed.category) || 'General'}</div>
             <div class="seed-stock">Available Quantity: <strong>${seed.quantity} packs</strong></div>
           </div>
-          <button class="btn btn-primary btn-request" data-id="${seed.id}" data-name="${seed.species_name}" ${seed.quantity <= 0 ? 'disabled' : ''}>
+          <button class="btn btn-primary btn-request" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" ${seed.quantity <= 0 ? 'disabled' : ''}>
             ${seed.quantity <= 0 ? 'Out of Stock' : 'Request Seeds'}
           </button>
         </div>

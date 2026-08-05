@@ -1,6 +1,7 @@
 import { Guards } from './guards.js';
 import { ROUTES } from '../config/constants.js';
 import { HeaderComponent } from '../components/header.component.js';
+import { NavbarComponent } from '../components/navbar.component.js';
 
 // Page Controller Imports
 import { LoginPage } from '../pages/auth/login.page.js';
@@ -28,53 +29,68 @@ export const Router = {
     HeaderComponent.render(user);
 
     const root = document.getElementById('app-root');
+    const isAuthPage = targetPath === ROUTES.LOGIN || targetPath === ROUTES.FORCE_PASSWORD;
+
+    // Build page content
+    let content = '';
+    let binder = null;
 
     switch (targetPath) {
       // Auth Views
       case ROUTES.LOGIN:
-        root.innerHTML = LoginPage.render();
-        LoginPage.bindEvents();
+        content = LoginPage.render();
+        binder = () => LoginPage.bindEvents();
         break;
 
       case ROUTES.FORCE_PASSWORD:
-        root.innerHTML = ForcePasswordPage.render();
-        ForcePasswordPage.bindEvents();
+        content = ForcePasswordPage.render();
+        binder = () => ForcePasswordPage.bindEvents();
         break;
 
       // Admin Views
       case ROUTES.ADMIN_DASHBOARD:
-        root.innerHTML = AdminDashboardPage.render();
-        AdminDashboardPage.init();
+        content = AdminDashboardPage.render();
+        binder = () => AdminDashboardPage.init();
         break;
 
       case ROUTES.ADMIN_INVENTORY:
-        root.innerHTML = AdminInventoryPage.render();
-        AdminInventoryPage.init();
+        content = AdminInventoryPage.render();
+        binder = () => AdminInventoryPage.init();
         break;
 
       case ROUTES.ADMIN_REQUESTS:
-        root.innerHTML = AdminRequestsPage.render();
-        AdminRequestsPage.init();
+        content = AdminRequestsPage.render();
+        binder = () => AdminRequestsPage.init();
         break;
 
       case ROUTES.ADMIN_ACCOUNTS:
-        root.innerHTML = AdminAccountsPage.render();
-        AdminAccountsPage.init();
+        content = AdminAccountsPage.render();
+        binder = () => AdminAccountsPage.init();
         break;
 
       // Personnel Views
       case ROUTES.PERSONNEL_CATALOG:
-        root.innerHTML = PersonnelCatalogPage.render();
-        PersonnelCatalogPage.init();
+        content = PersonnelCatalogPage.render();
+        binder = () => PersonnelCatalogPage.init();
         break;
 
       case ROUTES.PERSONNEL_REQUESTS:
-        root.innerHTML = PersonnelMyRequestsPage.render();
-        PersonnelMyRequestsPage.init();
+        content = PersonnelMyRequestsPage.render();
+        binder = () => PersonnelMyRequestsPage.init();
         break;
 
       default:
-        root.innerHTML = `<div style="padding: 2rem; text-align:center;"><h3>404 - Page Not Found</h3></div>`;
+        content = `<div style="padding: 2rem; text-align:center;"><h3>404 - Page Not Found</h3></div>`;
     }
+
+    // Prepend sub-navigation for authenticated (non-auth) pages
+    if (!isAuthPage) {
+      const navbar = NavbarComponent.render(user);
+      NavbarComponent.bindEvents(user);
+      content = navbar + content;
+    }
+
+    root.innerHTML = content;
+    if (binder) binder();
   }
 };

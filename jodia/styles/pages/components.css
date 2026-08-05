@@ -68,6 +68,8 @@
 .badge-pending { background-color: #FEF3C7; color: var(--status-warning); }
 .badge-approved { background-color: #DCFCE7; color: var(--status-success); }
 .badge-rejected { background-color: #FEE2E2; color: var(--status-danger); }
+.badge-disbursed { background-color: #DBEAFE; color: var(--status-info); }
+.badge-cancelled { background-color: #F1F5F9; color: var(--text-muted); }
 
 /* Form Elements */
 .form-group {

@@ -1,5 +1,4 @@
 import { AuthService } from '../../services/auth.service.js';
-import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 
 export const LoginPage = {
@@ -14,7 +13,7 @@ export const LoginPage = {
           </div>
           <form id="login-form" class="auth-body">
             <div id="auth-error" class="auth-alert"></div>
-            
+
             <div class="form-group">
               <label for="email">User Email</label>
               <input type="email" id="email" class="form-input" placeholder="user@denr.gov.ph" required />
@@ -52,7 +51,7 @@ export const LoginPage = {
         await AuthService.login(email, password);
         const user = await AuthService.getCurrentUser();
         ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');
-        await Router.navigate(user);
+        // Navigation is handled by the global onAuthStateChange (SIGNED_IN) listener.
       } catch (err) {
         console.error('Login error:', err);
         const msg = typeof err.message === 'string' && err.message.trim()
