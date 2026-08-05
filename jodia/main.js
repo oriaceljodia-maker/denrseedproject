@@ -1,6 +1,6 @@
-import { supabase } from './config/supabase.js';
-import { AuthService } from './services/auth.service.js';
-import { Router } from './router/router.js';
+import { supabase } from './src/config/supabase.js';
+import { AuthService } from './src/services/auth.service.js';
+import { Router } from './src/router/router.js';
 
 class App {
   static async init() {

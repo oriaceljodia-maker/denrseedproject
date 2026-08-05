@@ -51,8 +51,8 @@ export const PersonnelCatalogPage = {
   bindRequestButtons() {
     document.querySelectorAll('.btn-request').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const seedId = e.target.getAttribute('data-id');
-        const seedName = e.target.getAttribute('data-name');
+        const seedId = e.currentTarget.getAttribute('data-id');
+        const seedName = e.currentTarget.getAttribute('data-name');
 
         ModalComponent.open({
           title: `Request ${seedName}`,

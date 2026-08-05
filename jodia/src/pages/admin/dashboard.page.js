@@ -6,7 +6,7 @@ export const AdminDashboardPage = {
   render() {
     return `
       <div class="admin-container">
-        <div style="display:flex; justify-between; align-items:center; margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 1.5rem;">
           <div>
             <h1 style="font-size: 1.5rem; color: var(--denr-navy-primary);">Admin Overview</h1>
             <p style="font-size: 0.875rem; color: var(--text-muted);">Real-time inventory and request status dashboard</p>

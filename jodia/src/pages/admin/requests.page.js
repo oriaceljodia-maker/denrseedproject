@@ -78,7 +78,7 @@ export const AdminRequestsPage = {
   bindActionButtons() {
     document.querySelectorAll('.btn-approve').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const reqId = e.target.getAttribute('data-id');
+        const reqId = e.currentTarget.getAttribute('data-id');
         ModalComponent.open({
           title: 'Approve Seed Request',
           bodyHtml: '<p>Are you sure you want to approve this request? The quantity will be deducted upon distribution.</p>',
@@ -98,7 +98,7 @@ export const AdminRequestsPage = {
 
     document.querySelectorAll('.btn-reject').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const reqId = e.target.getAttribute('data-id');
+        const reqId = e.currentTarget.getAttribute('data-id');
         ModalComponent.open({
           title: 'Reject Seed Request',
           bodyHtml: `
