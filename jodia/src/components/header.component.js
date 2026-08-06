@@ -15,6 +15,7 @@ export const HeaderComponent = {
     console.debug('Rendering header for user:', user?.email);
 
     const roleLabel = user.role === 'admin' ? 'Administrator' : 'Field Personnel';
+    const portalLabel = user.role === 'admin' ? 'Administration Console' : 'Personnel Portal';
 
     headerEl.classList.remove('hidden');
     headerEl.innerHTML = `
@@ -23,8 +24,8 @@ export const HeaderComponent = {
           <img src="/assets/images/denr-logo-icon.svg" alt="DENR Seed Inventory logo" class="header-logo" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Department_of_Environment_and_Natural_Resources_%28DENR%29.svg/1200px-Department_of_Environment_and_Natural_Resources_%28DENR%29.svg.png';" />
         </div>
         <div class="header-brand-copy">
-          <div class="header-title">DENR Seed Inventory</div>
-          <div class="header-subtitle">Forestry seed stewardship for conservation and restoration</div>
+          <div class="header-title">DENR Talipan</div>
+          <div class="header-subtitle">${portalLabel} — seed inventory management</div>
         </div>
       </div>
 

@@ -1,5 +1,8 @@
 import { SeedsService } from '../../services/seeds.service.js';
 import { RequestsService } from '../../services/requests.service.js';
+import { AuthService } from '../../services/auth.service.js';
+import { Router } from '../../router/router.js';
+import { ROUTES } from '../../config/constants.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
@@ -10,11 +13,23 @@ export const PersonnelCatalogPage = {
   render() {
     return `
       <div class="catalog-container">
-        <div class="catalog-hero">
-          <div class="eyebrow">Seed catalog</div>
-          <h1>Available Seed Catalog</h1>
-          <p>Browse nursery-ready species and request the materials your restoration or planting activity needs.</p>
-          <div class="catalog-indicator">• Curated for field operations and reforestation planning</div>
+        <div class="page-header">
+          <div>
+            <div class="eyebrow">Personnel portal</div>
+            <h1 class="page-title">Available Seed Catalog</h1>
+            <p class="page-subtitle">Browse nursery-ready species and request the materials your restoration or planting activity needs.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary" id="view-requests-button">View My Requests</button>
+          </div>
+        </div>
+
+        <div class="banner-card">
+          <div>
+            <h2>Inventory snapshot</h2>
+            <p>Live stock details for your field operations, with low-stock alerts and quick access to request forms.</p>
+          </div>
+          <div class="catalog-overview-grid" id="catalog-overview-grid"></div>
         </div>
 
         <div class="catalog-toolbar">
@@ -43,11 +58,49 @@ export const PersonnelCatalogPage = {
     try {
       this.allSeeds = await SeedsService.getAllSeeds();
       this.populateCategoryFilter();
+      this.renderOverview(this.allSeeds);
       this.renderCatalog(this.allSeeds);
       this.bindSearchAndFilter();
+      this.bindGlobalActions();
     } catch (err) {
       ToastComponent.show('Failed to fetch catalog.', 'error');
     }
+  },
+
+  renderOverview(seeds) {
+    const totalSeeds = seeds.length;
+    const categories = new Set(seeds.map(s => s.category).filter(Boolean)).size;
+    const lowStock = seeds.filter(s => s.quantity <= s.reorder_level).length;
+    const totalAvailable = seeds.reduce((sum, seed) => sum + (seed.quantity || 0), 0);
+
+    const container = document.getElementById('catalog-overview-grid');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="overview-card">
+        <span>Total varieties</span>
+        <strong>${totalSeeds}</strong>
+      </div>
+      <div class="overview-card">
+        <span>Available packs</span>
+        <strong>${totalAvailable}</strong>
+      </div>
+      <div class="overview-card">
+        <span>Low stock alerts</span>
+        <strong>${lowStock}</strong>
+      </div>
+      <div class="overview-card">
+        <span>Seed categories</span>
+        <strong>${categories}</strong>
+      </div>
+    `;
+  },
+
+  bindGlobalActions() {
+    document.getElementById('view-requests-button')?.addEventListener('click', async () => {
+      const currentUser = await AuthService.getCurrentUser();
+      await Router.navigate(currentUser, ROUTES.PERSONNEL_REQUESTS);
+    });
   },
 
   populateCategoryFilter() {
