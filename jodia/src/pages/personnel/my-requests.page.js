@@ -1,6 +1,7 @@
 import { RequestsService } from '../../services/requests.service.js';
 import { AuthService } from '../../services/auth.service.js';
 import { Router } from '../../router/router.js';
+import { ROUTES } from '../../config/constants.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 
@@ -8,10 +9,15 @@ export const PersonnelMyRequestsPage = {
   render() {
     return `
       <div class="catalog-container">
-        <div class="catalog-hero">
-          <div class="eyebrow">Request history</div>
-          <h1>My Seed Requests</h1>
-          <p>Track every request, review approval decisions, and keep your field program aligned with available stock.</p>
+        <div class="page-header">
+          <div>
+            <div class="eyebrow">Personnel portal</div>
+            <h1 class="page-title">My Seed Requests</h1>
+            <p class="page-subtitle">Track every request, review approval decisions, and keep your field program aligned with available stock.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-secondary" id="view-catalog-button">Browse Seed Catalog</button>
+          </div>
         </div>
 
         <div class="request-summary">
@@ -21,15 +27,15 @@ export const PersonnelMyRequestsPage = {
           </div>
           <div class="request-summary-card">
             <span>Pending</span>
-            <strong id="summary-pending" style="color: var(--status-warning);">-</strong>
+            <strong id="summary-pending" class="status-warning">-</strong>
           </div>
           <div class="request-summary-card">
             <span>Approved</span>
-            <strong id="summary-approved" style="color: var(--status-success);">-</strong>
+            <strong id="summary-approved" class="status-success">-</strong>
           </div>
           <div class="request-summary-card">
             <span>Rejected</span>
-            <strong id="summary-rejected" style="color: var(--status-danger);">-</strong>
+            <strong id="summary-rejected" class="status-danger">-</strong>
           </div>
         </div>
 
@@ -56,8 +62,16 @@ export const PersonnelMyRequestsPage = {
     `;
   },
 
+  bindGlobalActions() {
+    document.getElementById('view-catalog-button')?.addEventListener('click', async () => {
+      const currentUser = await AuthService.getCurrentUser();
+      await Router.navigate(currentUser, ROUTES.PERSONNEL_CATALOG);
+    });
+  },
+
   async init() {
     try {
+      this.bindGlobalActions();
       const currentUser = await AuthService.getCurrentUser();
       if (!currentUser) {
         ToastComponent.show('Session expired. Please log in again.', 'error');

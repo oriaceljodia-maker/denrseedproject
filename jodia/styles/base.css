@@ -46,9 +46,8 @@ html {
 
 body {
   background:
-    linear-gradient(135deg, rgba(15, 122, 56, 0.16), rgba(11, 39, 69, 0.08)),
-    url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
-  background-attachment: fixed;
+    radial-gradient(circle at top left, rgba(15, 122, 56, 0.12), transparent 24%),
+    linear-gradient(180deg, #f4f9f6 0%, #eef6ee 100%);
   color: var(--text-main);
   min-height: 100vh;
   display: flex;
@@ -60,7 +59,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: linear-gradient(120deg, rgba(255,255,255,0.82), rgba(241,248,247,0.75));
+  background: linear-gradient(120deg, rgba(255,255,255,0.92), rgba(241,248,247,0.92));
   pointer-events: none;
   z-index: -1;
 }
@@ -68,11 +67,11 @@ body::before {
 body::after {
   content: '';
   position: fixed;
-  top: -20%;
-  right: -10%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(15, 122, 56, 0.08), transparent 70%);
+  top: -10%;
+  right: -8%;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(15, 122, 56, 0.16), transparent 70%);
   pointer-events: none;
   z-index: -1;
 }

@@ -228,9 +228,45 @@
   color: var(--denr-navy-primary);
 }
 
-@media (max-width: 760px) {
-  .catalog-container {
-    padding: 1rem;
+  .catalog-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .overview-card {
+    padding: 1rem 1.1rem;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(15, 122, 56, 0.12);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .overview-card span {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .overview-card strong {
+    font-size: 1.4rem;
+    color: var(--denr-navy-primary);
+  }
+
+  .status-warning {
+    color: var(--status-warning);
+  }
+
+  .status-success {
+    color: var(--status-success);
+  }
+
+  .status-danger {
+    color: var(--status-danger);
   }
 
   .catalog-toolbar {
@@ -245,4 +281,3 @@
   .catalog-toolbar select {
     width: 100%;
   }
-}
