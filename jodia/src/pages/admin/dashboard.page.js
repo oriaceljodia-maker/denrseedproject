@@ -1,6 +1,7 @@
 import { SeedsService } from '../../services/seeds.service.js';
 import { RequestsService } from '../../services/requests.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { DemandInsightsComponent } from '../../components/demand-insights.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 
 export const AdminDashboardPage = {
@@ -69,6 +70,8 @@ export const AdminDashboardPage = {
           </div>
         </section>
 
+        ${DemandInsightsComponent.render()}
+
         <section class="dashboard-main-grid">
           <div class="card chart-card">
             <div class="section-title">Request activity</div>
@@ -135,6 +138,7 @@ export const AdminDashboardPage = {
       document.getElementById('stat-approved').textContent = approvedCount;
       document.getElementById('stat-total-requests').textContent = requests.length;
       document.getElementById('stat-rejected').textContent = rejectedCount;
+      DemandInsightsComponent.renderData(requests);
 
       // Calculate request trend percentage
       const trendEl = document.getElementById('stat-request-trend');
