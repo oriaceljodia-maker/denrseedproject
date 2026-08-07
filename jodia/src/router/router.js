@@ -19,6 +19,7 @@ import { AdminMaintenancePage } from '../pages/admin/maintenance.page.js';
 // Personnel Pages
 import { PersonnelCatalogPage } from '../pages/personnel/catalog.page.js';
 import { PersonnelMyRequestsPage } from '../pages/personnel/my-requests.page.js';
+import { ProfilePage } from '../pages/profile/profile.page.js';
 
 export const Router = {
   async navigate(user, path = window.location.pathname) {
@@ -49,6 +50,11 @@ export const Router = {
       case ROUTES.FORCE_PASSWORD:
         content = ForcePasswordPage.render();
         binder = () => ForcePasswordPage.bindEvents();
+        break;
+
+      case ROUTES.PROFILE:
+        content = ProfilePage.render();
+        binder = () => ProfilePage.init();
         break;
 
       // Admin Views
@@ -96,7 +102,7 @@ export const Router = {
     if (!isAuthPage) {
       const navbar = NavbarComponent.render(user);
       NavbarComponent.bindEvents(user);
-      content = navbar + content;
+      content = `<div class="app-shell">${navbar}<div class="app-content">${content}</div></div>`;
     }
 
     const bannerHtml = MaintenanceBannerComponent.render();

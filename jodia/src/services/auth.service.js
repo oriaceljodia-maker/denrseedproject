@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { ProfileService } from './profile.service.js';
 
 export const AuthService = {
   // Retrieve session user profile and status
@@ -57,7 +58,12 @@ export const AuthService = {
         email: session.user.email,
         fullName: fallbackFullName,
         role: fallbackRole,
-        requiresPasswordChange: fallbackRequiresPasswordChange
+        requiresPasswordChange: fallbackRequiresPasswordChange,
+        department: '',
+        phone: '',
+        office: '',
+        avatarPath: '',
+        avatarUrl: ''
       };
     }
 
@@ -66,7 +72,12 @@ export const AuthService = {
       email: session.user.email,
       fullName: profile.full_name,
       role: profile.role,
-      requiresPasswordChange: profile.requires_password_change
+      requiresPasswordChange: profile.requires_password_change,
+      department: profile.department || '',
+      phone: profile.phone || '',
+      office: profile.office || '',
+      avatarPath: profile.avatar_path || '',
+      avatarUrl: ProfileService.getAvatarUrl(profile.avatar_path)
     };
   },
 
