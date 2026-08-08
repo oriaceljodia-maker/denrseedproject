@@ -147,6 +147,7 @@ export const PersonnelCatalogPage = {
 
       return `
         <div class="seed-card ${isOutOfStock ? 'out-of-stock' : ''}">
+          <img class="seed-card-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="${escapeAttr(seed.species_name)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=900&q=80';" />
           <div>
             <div class="seed-title">${escapeHtml(seed.species_name)}</div>
             <div class="seed-badge">${escapeHtml(seed.category) || 'General'}</div>

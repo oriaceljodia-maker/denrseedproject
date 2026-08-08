@@ -1,6 +1,11 @@
 import { supabase } from '../config/supabase.js';
 
 export const SeedsService = {
+  // Use a calm, consistent fallback when a legacy seed record has no image yet.
+  getImageUrl(seed) {
+    return seed?.image_url || 'https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=900&q=80';
+  },
+
   // Fetch all seeds inventory
   async getAllSeeds() {
     const { data, error } = await supabase

@@ -534,3 +534,6 @@
     padding: 1rem;
   }
 }
+
+.inventory-seed-cell { display: flex; align-items: center; gap: .7rem; }
+.inventory-seed-image { width: 42px; height: 42px; object-fit: cover; border-radius: 9px; background: #edf4ed; }

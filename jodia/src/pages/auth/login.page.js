@@ -108,6 +108,10 @@ export const LoginPage = {
           console.error('Login failed with active session but missing profile.', sessionData);
           throw new Error('Your account is inactive or has no profile. Please contact the administrator.');
         }
+        // Audit logging must not prevent a legitimate user from entering the app.
+        AuthService.recordSuccessfulLogin(user).catch((auditError) => {
+          console.warn('Unable to record successful login activity.', auditError);
+        });
         ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');
         // Explicitly navigate (the global onAuthStateChange listener may race
         // and re-route to login before the session is fully settled).

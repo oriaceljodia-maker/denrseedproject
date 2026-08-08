@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.seeds (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   species_name TEXT NOT NULL,
   category TEXT,
+  image_url TEXT,
   quantity INTEGER NOT NULL DEFAULT 0,
   reorder_level INTEGER NOT NULL DEFAULT 10,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -42,10 +43,19 @@ CREATE TABLE IF NOT EXISTS public.requests (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.login_activity (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  outcome TEXT NOT NULL DEFAULT 'SUCCESS' CHECK (outcome IN ('SUCCESS')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- 2) Indexes
 CREATE INDEX IF NOT EXISTS idx_requests_user_id ON public.requests (user_id);
 CREATE INDEX IF NOT EXISTS idx_requests_seed_id ON public.requests (seed_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles (role);
+CREATE INDEX IF NOT EXISTS idx_login_activity_user_id ON public.login_activity (user_id, created_at DESC);
 
 -- 3) Grants for the app schema
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
@@ -54,6 +64,7 @@ GRANT ALL ON SCHEMA public TO postgres, service_role;
 GRANT ALL ON public.profiles TO anon, authenticated, service_role;
 GRANT ALL ON public.seeds TO anon, authenticated, service_role;
 GRANT ALL ON public.requests TO anon, authenticated, service_role;
+GRANT ALL ON public.login_activity TO anon, authenticated, service_role;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT ALL ON TABLES TO anon, authenticated, service_role;
@@ -186,6 +197,7 @@ GRANT EXECUTE ON FUNCTION public.create_new_user_account(TEXT, TEXT, TEXT, TEXT)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.seeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.login_activity ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public profiles reading" ON public.profiles;
 CREATE POLICY "Public profiles reading" ON public.profiles
@@ -244,14 +256,24 @@ CREATE POLICY "Admins can update request status" ON public.requests
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
+DROP POLICY IF EXISTS "Users can record their successful login" ON public.login_activity;
+CREATE POLICY "Users can record their successful login" ON public.login_activity
+  FOR INSERT WITH CHECK (user_id = auth.uid() AND outcome = 'SUCCESS');
+
+DROP POLICY IF EXISTS "Admins can view login activity" ON public.login_activity;
+CREATE POLICY "Admins can view login activity" ON public.login_activity
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
 -- 6) Seed inventory data
-INSERT INTO public.seeds (species_name, category, quantity, reorder_level) VALUES
-('Narra (Pterocarpus indicus)', 'Indigenous Tree', 250, 20),
-('Mahogany (Swietenia macrophylla)', 'Exotic Timber', 180, 25),
-('Banaba (Lagerstroemia speciosa)', 'Medicinal / Ornamental', 95, 15),
-('Katmon (Dillenia philippinensis)', 'Endemic Fruit Tree', 40, 10),
-('Molave (Vitex parviflora)', 'Hardwood Timber', 8, 15),
-('Agoho (Casuarina equisetifolia)', 'Coastal Tree', 120, 20)
+INSERT INTO public.seeds (species_name, category, image_url, quantity, reorder_level) VALUES
+('Narra (Pterocarpus indicus)', 'Indigenous Tree', 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=900&q=80', 250, 20),
+('Mahogany (Swietenia macrophylla)', 'Exotic Timber', 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=80', 180, 25),
+('Banaba (Lagerstroemia speciosa)', 'Medicinal / Ornamental', 'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=900&q=80', 95, 15),
+('Katmon (Dillenia philippinensis)', 'Endemic Fruit Tree', 'https://images.unsplash.com/photo-1488837092640-4ec78d1b4c5c?auto=format&fit=crop&w=900&q=80', 40, 10),
+('Molave (Vitex parviflora)', 'Hardwood Timber', 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=900&q=80', 8, 15),
+('Agoho (Casuarina equisetifolia)', 'Coastal Tree', 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80', 120, 20)
 ON CONFLICT DO NOTHING;
 
 -- 7) Create admin auth user if it does not already exist

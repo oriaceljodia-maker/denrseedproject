@@ -88,6 +88,18 @@ export const AuthService = {
     return data;
   },
 
+  // Audit successful sign-ins only. Passwords, tokens, and failed credential
+  // attempts are intentionally never stored by the browser application.
+  async recordSuccessfulLogin(user) {
+    if (!user?.id) return;
+
+    const { error } = await supabase
+      .from('login_activity')
+      .insert({ user_id: user.id, email: user.email, outcome: 'SUCCESS' });
+
+    if (error) throw error;
+  },
+
   async getSessionDebug() {
     const { data: { session }, error } = await supabase.auth.getSession();
     return { session, error };

@@ -40,7 +40,7 @@ export const AdminInventoryPage = {
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Species / Variety</th>
+                  <th>Seed</th>
                   <th>Category</th>
                   <th>Current Stock (Packs)</th>
                   <th>Reorder Level</th>
@@ -85,7 +85,7 @@ export const AdminInventoryPage = {
       const isOutOfStock = seed.quantity <= 0;
       return `
         <tr>
-          <td><strong>${escapeHtml(seed.species_name)}</strong></td>
+          <td class="inventory-seed-cell"><img class="inventory-seed-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><strong>${escapeHtml(seed.species_name)}</strong></td>
           <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
           <td>
             ${seed.quantity} 
@@ -93,7 +93,7 @@ export const AdminInventoryPage = {
           </td>
           <td>${seed.reorder_level || 10}</td>
           <td>
-            <button class="btn btn-secondary btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
+            <button class="btn btn-secondary btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-image-url="${escapeAttr(seed.image_url || '')}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
               Update Stock
             </button>
           </td>
@@ -146,6 +146,10 @@ export const AdminInventoryPage = {
             <input type="text" id="new-category" class="form-input" placeholder="e.g. Indigenous Tree, Fruit Tree" />
           </div>
           <div class="form-group">
+            <label for="new-image-url">Seed Image URL <span class="field-optional">(optional)</span></label>
+            <input type="url" id="new-image-url" class="form-input" placeholder="https://example.com/seedling.jpg" />
+          </div>
+          <div class="form-group">
             <label for="new-quantity">Initial Stock Quantity</label>
             <input type="number" id="new-quantity" class="form-input" min="0" value="100" required />
           </div>
@@ -158,6 +162,7 @@ export const AdminInventoryPage = {
         onConfirm: async () => {
           const species_name = document.getElementById('new-species').value.trim();
           const category = document.getElementById('new-category').value.trim();
+          const image_url = document.getElementById('new-image-url').value.trim() || null;
           const quantity = parseInt(document.getElementById('new-quantity').value, 10);
           const reorder_level = parseInt(document.getElementById('new-reorder').value, 10);
 
@@ -167,7 +172,7 @@ export const AdminInventoryPage = {
           }
 
           try {
-            await SeedsService.addSeed({ species_name, category, quantity, reorder_level });
+            await SeedsService.addSeed({ species_name, category, image_url, quantity, reorder_level });
             ToastComponent.show('New seed entry created.', 'success');
             await this.loadInventory();
           } catch (err) {
@@ -185,6 +190,7 @@ export const AdminInventoryPage = {
         const id = target.getAttribute('data-id');
         const name = target.getAttribute('data-name');
         const category = target.getAttribute('data-category');
+        const imageUrl = target.getAttribute('data-image-url');
         const qty = target.getAttribute('data-qty');
         const reorder = target.getAttribute('data-reorder');
 
@@ -194,6 +200,10 @@ export const AdminInventoryPage = {
             <div class="form-group">
               <label for="edit-category">Category</label>
               <input type="text" id="edit-category" class="form-input" value="${escapeAttr(category)}" />
+            </div>
+            <div class="form-group">
+              <label for="edit-image-url">Seed Image URL <span class="field-optional">(optional)</span></label>
+              <input type="url" id="edit-image-url" class="form-input" value="${escapeAttr(imageUrl)}" placeholder="https://example.com/seedling.jpg" />
             </div>
             <div class="form-group">
               <label for="edit-quantity">Current Quantity</label>
@@ -207,12 +217,14 @@ export const AdminInventoryPage = {
           confirmText: 'Update Inventory',
           onConfirm: async () => {
             const updatedCategory = document.getElementById('edit-category').value.trim();
+            const updatedImageUrl = document.getElementById('edit-image-url').value.trim() || null;
             const updatedQty = parseInt(document.getElementById('edit-quantity').value, 10);
             const updatedReorder = parseInt(document.getElementById('edit-reorder').value, 10);
 
             try {
               await SeedsService.updateSeed(id, {
                 category: updatedCategory,
+                image_url: updatedImageUrl,
                 quantity: updatedQty,
                 reorder_level: updatedReorder
               });
