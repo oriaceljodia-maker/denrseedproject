@@ -14,6 +14,7 @@ import { AdminDashboardPage } from '../pages/admin/dashboard.page.js';
 import { AdminInventoryPage } from '../pages/admin/inventory.page.js';
 import { AdminRequestsPage } from '../pages/admin/requests.page.js';
 import { AdminAccountsPage } from '../pages/admin/accounts.page.js';
+import { AdminLoginTrailsPage } from '../pages/admin/login-trails.page.js';
 import { AdminMaintenancePage } from '../pages/admin/maintenance.page.js';
 
 // Personnel Pages
@@ -76,6 +77,11 @@ export const Router = {
       case ROUTES.ADMIN_ACCOUNTS:
         content = AdminAccountsPage.render();
         binder = () => AdminAccountsPage.init();
+        break;
+
+      case ROUTES.ADMIN_LOGIN_TRAILS:
+        content = AdminLoginTrailsPage.render();
+        binder = () => AdminLoginTrailsPage.init();
         break;
 
       case ROUTES.ADMIN_MAINTENANCE:

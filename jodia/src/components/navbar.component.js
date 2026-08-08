@@ -14,6 +14,7 @@ export const NavbarComponent = {
       { path: ROUTES.ADMIN_INVENTORY, label: 'Seeds' },
       { path: ROUTES.ADMIN_REQUESTS, label: 'Approve Requests' },
       { path: ROUTES.ADMIN_ACCOUNTS, label: 'Users' },
+      { path: ROUTES.ADMIN_LOGIN_TRAILS, label: 'Login Trails' },
       { path: ROUTES.ADMIN_MAINTENANCE, label: 'Maintenance' }
     ];
 

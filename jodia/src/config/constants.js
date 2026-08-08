@@ -11,6 +11,7 @@ export const ROUTES = {
   ADMIN_INVENTORY: '/admin/inventory',
   ADMIN_REQUESTS: '/admin/requests',
   ADMIN_ACCOUNTS: '/admin/accounts',
+  ADMIN_LOGIN_TRAILS: '/admin/login-trails',
   ADMIN_MAINTENANCE: '/admin/maintenance',
   PERSONNEL_CATALOG: '/personnel/catalog',
   PERSONNEL_REQUESTS: '/personnel/my-requests'
