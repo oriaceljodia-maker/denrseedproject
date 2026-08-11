@@ -5,7 +5,7 @@ export const FooterComponent = {
       <footer class="app-footer">
         <div class="footer-inner">
           <div class="footer-brand">
-            <img src="/assets/images/denr-logo-icon.svg" alt="DENR logo" class="footer-logo" onerror="this.style.display='none'" />
+            <img src="/assets/images/logs.jpg" alt="DENR logo" class="footer-logo" />
             <div>
               <div class="footer-title">DENR Seed Inventory</div>
               <div class="footer-subtitle">Forestry seed stewardship for conservation and restoration</div>

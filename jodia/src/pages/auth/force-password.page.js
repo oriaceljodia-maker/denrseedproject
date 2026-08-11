@@ -15,7 +15,7 @@ export const ForcePasswordPage = {
 
           <div class="auth-card">
             <div class="auth-header">
-              <img src="/assets/images/denr-logo-icon.svg" alt="DENR Seed Inventory logo" class="auth-logo" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Department_of_Environment_and_Natural_Resources_%28DENR%29.svg/1200px-Department_of_Environment_and_Natural_Resources_%28DENR%29.svg.png';" />
+              <img src="/assets/images/logs.jpg" alt="DENR logo" class="auth-logo" />
               <h1 class="auth-title">Set Your New Password</h1>
               <div class="auth-subtitle">Required before continuing</div>
             </div>

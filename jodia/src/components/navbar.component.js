@@ -1,6 +1,5 @@
 import { Router } from '../router/router.js';
 import { ROUTES } from '../config/constants.js';
-import { AuthService } from '../services/auth.service.js';
 import { escapeAttr, escapeHtml } from '../../utils/formatters.js';
 
 const navigationIcons = {
@@ -40,10 +39,10 @@ export const NavbarComponent = {
     const avatar = user.avatarUrl ? `<img src="${escapeAttr(user.avatarUrl)}" alt="" />` : '';
     return `
       <aside class="app-sidebar">
-        <div class="sidebar-brand"><img src="/assets/images/denr-logo-icon.svg" alt="DENR" /><div><strong>DENR Talipan</strong><span>Seed Inventory System</span></div></div>
+        <div class="sidebar-brand"><img src="/assets/images/logs.jpg" alt="DENR logo" /><div><strong>DENR Talipan</strong><span>Seed Inventory System</span></div></div>
         <a href="${ROUTES.PROFILE}" class="sidebar-profile" data-link>${`<span class="sidebar-avatar">${avatar}<span class="sidebar-avatar-initial">${initial}</span></span>`}<span class="sidebar-profile-copy"><strong>${escapeHtml(user.fullName)}</strong><span>${roleLabel}</span></span></a>
         <nav class="sidebar-nav" aria-label="Main navigation"><span class="sidebar-nav-heading">Menu</span>${links.map(link => `<a href="${link.path}" class="sidebar-link ${currentPath === link.path ? 'active' : ''}" data-link><span class="sidebar-link-icon">${navigationIcons[link.icon]}</span><span>${link.label}</span></a>`).join('')}</nav>
-        <div class="sidebar-footer"><a href="${ROUTES.PROFILE}" class="sidebar-link ${currentPath === ROUTES.PROFILE ? 'active' : ''}" data-link><span class="sidebar-link-icon">${navigationIcons.profile}</span><span>Profile</span></a><button type="button" class="sidebar-logout" id="btn-sidebar-logout">Log out</button></div>
+        <div class="sidebar-footer"><a href="${ROUTES.PROFILE}" class="sidebar-link ${currentPath === ROUTES.PROFILE ? 'active' : ''}" data-link><span class="sidebar-link-icon">${navigationIcons.profile}</span><span>Profile</span></a></div>
       </aside>`;
   },
 
@@ -54,10 +53,6 @@ export const NavbarComponent = {
         const targetPath = e.currentTarget.getAttribute('href');
         await Router.navigate(user, targetPath);
       });
-    });
-    document.getElementById('btn-sidebar-logout')?.addEventListener('click', async () => {
-      await AuthService.logout();
-      await Router.navigate(null);
     });
   }
 };

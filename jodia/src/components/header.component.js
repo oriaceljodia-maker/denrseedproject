@@ -21,7 +21,7 @@ export const HeaderComponent = {
     headerEl.innerHTML = `
       <div class="header-brand">
         <div class="header-logo-wrap">
-          <img src="/assets/images/denr-logo-icon.svg" alt="DENR Seed Inventory logo" class="header-logo" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Department_of_Environment_and_Natural_Resources_%28DENR%29.svg/1200px-Department_of_Environment_and_Natural_Resources_%28DENR%29.svg.png';" />
+          <img src="/assets/images/logs.jpg" alt="DENR logo" class="header-logo" />
         </div>
         <div class="header-brand-copy">
           <div class="header-title">DENR Talipan</div>
