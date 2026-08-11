@@ -3,6 +3,84 @@ import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
 
+const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const imageUploadField = ({ prefix, imageUrl = '' }) => `
+  <div class="form-group seed-image-field">
+    <label for="${prefix}-image-file">Seed Image <span class="field-optional">(optional)</span></label>
+    <div class="seed-image-upload">
+      <input type="file" id="${prefix}-image-file" accept="image/jpeg,image/png,image/webp" hidden />
+      <label class="seed-image-dropzone" for="${prefix}-image-file">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3.5 3.5 2-2L20 19"/></svg>
+        <span><strong>Upload seed image</strong><small>Select an image from your computer</small></span>
+      </label>
+      <div class="seed-image-preview ${imageUrl ? '' : 'hidden'}" id="${prefix}-image-preview">
+        <img id="${prefix}-image-preview-img" src="${escapeAttr(imageUrl)}" alt="Selected seed preview" />
+        <div class="seed-image-preview-copy">
+          <strong id="${prefix}-image-name">${imageUrl ? 'Current seed image' : ''}</strong>
+          <div class="seed-image-actions">
+            <button type="button" class="seed-image-action" id="${prefix}-image-change">Change image</button>
+            <button type="button" class="seed-image-action seed-image-remove" id="${prefix}-image-remove">Remove</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="seed-image-formats">JPG, PNG, WEBP <span aria-hidden="true">•</span> Max 5MB</span>
+  </div>
+`;
+
+const readImageFile = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(new Error('Unable to read the selected image.'));
+  reader.readAsDataURL(file);
+});
+
+const bindImageUploadField = ({ prefix, initialImageUrl = '', onChange }) => {
+  const input = document.getElementById(`${prefix}-image-file`);
+  const preview = document.getElementById(`${prefix}-image-preview`);
+  const previewImage = document.getElementById(`${prefix}-image-preview-img`);
+  const name = document.getElementById(`${prefix}-image-name`);
+  let selectedFile = null;
+  let imageUrl = initialImageUrl;
+
+  const updatePreview = (url, label) => {
+    previewImage.src = url || '';
+    name.textContent = label || '';
+    preview.classList.toggle('hidden', !url);
+  };
+
+  const notify = () => onChange({ file: selectedFile, imageUrl });
+
+  input.addEventListener('change', () => {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!SUPPORTED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE) {
+      input.value = '';
+      ToastComponent.show('Choose a JPG, PNG, or WEBP image smaller than 5MB.', 'error');
+      return;
+    }
+
+    selectedFile = file;
+    imageUrl = URL.createObjectURL(file);
+    updatePreview(imageUrl, file.name);
+    notify();
+  });
+
+  document.getElementById(`${prefix}-image-change`).addEventListener('click', () => input.click());
+  document.getElementById(`${prefix}-image-remove`).addEventListener('click', () => {
+    selectedFile = null;
+    imageUrl = '';
+    input.value = '';
+    updatePreview('', '');
+    notify();
+  });
+
+  notify();
+};
+
 export const AdminInventoryPage = {
   allSeeds: [],
 
@@ -134,35 +212,37 @@ export const AdminInventoryPage = {
 
   bindAddButton() {
     document.getElementById('btn-add-seed')?.addEventListener('click', () => {
+      let selectedImage = { file: null, imageUrl: '' };
       ModalComponent.open({
         title: 'Add New Seed Variety',
         bodyHtml: `
-          <div class="form-group">
-            <label for="new-species">Species / Variety Name</label>
-            <input type="text" id="new-species" class="form-input" required placeholder="e.g. Narra (Pterocarpus indicus)" />
-          </div>
-          <div class="form-group">
-            <label for="new-category">Category</label>
-            <input type="text" id="new-category" class="form-input" placeholder="e.g. Indigenous Tree, Fruit Tree" />
-          </div>
-          <div class="form-group">
-            <label for="new-image-url">Seed Image URL <span class="field-optional">(optional)</span></label>
-            <input type="url" id="new-image-url" class="form-input" placeholder="https://example.com/seedling.jpg" />
-          </div>
-          <div class="form-group">
-            <label for="new-quantity">Initial Stock Quantity</label>
-            <input type="number" id="new-quantity" class="form-input" min="0" value="100" required />
-          </div>
-          <div class="form-group">
-            <label for="new-reorder">Reorder Threshold Level</label>
-            <input type="number" id="new-reorder" class="form-input" min="1" value="10" required />
+          <div class="seed-entry-form">
+            <div class="form-group">
+              <label for="new-species">Species / Variety Name</label>
+              <input type="text" id="new-species" class="form-input" required placeholder="e.g. Narra (Pterocarpus indicus)" />
+            </div>
+            <div class="form-group">
+              <label for="new-category">Category</label>
+              <input type="text" id="new-category" class="form-input" placeholder="e.g. Indigenous Tree, Fruit Tree" />
+            </div>
+            ${imageUploadField({ prefix: 'new' })}
+            <div class="seed-stock-fields">
+              <div class="form-group">
+                <label for="new-quantity">Initial Stock Quantity</label>
+                <input type="number" id="new-quantity" class="form-input" min="0" value="100" required />
+              </div>
+              <div class="form-group">
+                <label for="new-reorder">Reorder Threshold Level</label>
+                <input type="number" id="new-reorder" class="form-input" min="1" value="10" required />
+              </div>
+            </div>
           </div>
         `,
         confirmText: 'Save Seed Entry',
         onConfirm: async () => {
           const species_name = document.getElementById('new-species').value.trim();
           const category = document.getElementById('new-category').value.trim();
-          const image_url = document.getElementById('new-image-url').value.trim() || null;
+          const image_url = selectedImage.file ? await readImageFile(selectedImage.file) : null;
           const quantity = parseInt(document.getElementById('new-quantity').value, 10);
           const reorder_level = parseInt(document.getElementById('new-reorder').value, 10);
 
@@ -180,6 +260,7 @@ export const AdminInventoryPage = {
           }
         }
       });
+      bindImageUploadField({ prefix: 'new', onChange: (image) => { selectedImage = image; } });
     });
   },
 
@@ -193,6 +274,7 @@ export const AdminInventoryPage = {
         const imageUrl = target.getAttribute('data-image-url');
         const qty = target.getAttribute('data-qty');
         const reorder = target.getAttribute('data-reorder');
+        let selectedImage = { file: null, imageUrl };
 
         ModalComponent.open({
           title: `Update Stock: ${escapeHtml(name)}`,
@@ -201,10 +283,7 @@ export const AdminInventoryPage = {
               <label for="edit-category">Category</label>
               <input type="text" id="edit-category" class="form-input" value="${escapeAttr(category)}" />
             </div>
-            <div class="form-group">
-              <label for="edit-image-url">Seed Image URL <span class="field-optional">(optional)</span></label>
-              <input type="url" id="edit-image-url" class="form-input" value="${escapeAttr(imageUrl)}" placeholder="https://example.com/seedling.jpg" />
-            </div>
+            ${imageUploadField({ prefix: 'edit', imageUrl })}
             <div class="form-group">
               <label for="edit-quantity">Current Quantity</label>
               <input type="number" id="edit-quantity" class="form-input" min="0" value="${escapeAttr(qty)}" required />
@@ -217,7 +296,9 @@ export const AdminInventoryPage = {
           confirmText: 'Update Inventory',
           onConfirm: async () => {
             const updatedCategory = document.getElementById('edit-category').value.trim();
-            const updatedImageUrl = document.getElementById('edit-image-url').value.trim() || null;
+            const updatedImageUrl = selectedImage.file
+              ? await readImageFile(selectedImage.file)
+              : (selectedImage.imageUrl || null);
             const updatedQty = parseInt(document.getElementById('edit-quantity').value, 10);
             const updatedReorder = parseInt(document.getElementById('edit-reorder').value, 10);
 
@@ -235,6 +316,7 @@ export const AdminInventoryPage = {
             }
           }
         });
+        bindImageUploadField({ prefix: 'edit', initialImageUrl: imageUrl, onChange: (image) => { selectedImage = image; } });
       });
     });
   }

@@ -535,3 +535,27 @@
 
 .inventory-seed-cell { display: flex; align-items: center; gap: .7rem; }
 .inventory-seed-image { width: 42px; height: 42px; object-fit: cover; border-radius: 9px; background: #edf4ed; }
+
+.seed-entry-form { display: grid; gap: .1rem; }
+.seed-entry-form .form-group { margin-bottom: .9rem; }
+.seed-stock-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+.seed-image-field { margin-top: .15rem; }
+.seed-image-upload { display: grid; gap: .65rem; }
+.seed-image-dropzone { display: flex; align-items: center; gap: .75rem; padding: .85rem .9rem; border: 1px dashed rgba(15, 122, 56, .34); border-radius: var(--radius-md); background: rgba(15, 122, 56, .045); color: var(--denr-navy-primary); cursor: pointer; transition: background-color .2s ease, border-color .2s ease; }
+.seed-image-dropzone:hover { background: rgba(15, 122, 56, .09); border-color: var(--denr-green-primary); }
+.seed-image-dropzone svg { flex: 0 0 22px; width: 22px; height: 22px; fill: none; stroke: var(--denr-green-primary); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.seed-image-dropzone span { display: grid; gap: .1rem; }
+.seed-image-dropzone strong { font-size: .86rem; }
+.seed-image-dropzone small, .seed-image-formats { color: var(--text-muted); font-size: .75rem; line-height: 1.4; }
+.seed-image-formats { margin-top: .1rem; }
+.seed-image-preview { display: flex; align-items: center; gap: .7rem; padding: .6rem; border: 1px solid rgba(15, 122, 56, .14); border-radius: var(--radius-md); background: rgba(255, 255, 255, .68); }
+.seed-image-preview.hidden { display: none; }
+.seed-image-preview img { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 8px; object-fit: cover; background: #edf4ed; }
+.seed-image-preview-copy { display: grid; min-width: 0; gap: .35rem; }
+.seed-image-preview-copy strong { overflow: hidden; color: var(--denr-navy-primary); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+.seed-image-actions { display: flex; gap: .7rem; }
+.seed-image-action { padding: 0; border: 0; background: transparent; color: var(--denr-green-primary); font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.seed-image-action:hover { color: var(--denr-green-hover); text-decoration: underline; }
+.seed-image-remove { color: var(--status-danger); }
+.seed-image-remove:hover { color: #b91c1c; }
+@media (max-width: 520px) { .seed-stock-fields { grid-template-columns: 1fr; gap: 0; } }
