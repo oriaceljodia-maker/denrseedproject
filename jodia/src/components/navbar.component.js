@@ -30,6 +30,7 @@ export const NavbarComponent = {
     ];
 
     const personnelLinks = [
+      { path: ROUTES.PERSONNEL_DASHBOARD, label: 'Dashboard', icon: 'dashboard' },
       { path: ROUTES.PERSONNEL_CATALOG, label: 'Available Seeds', icon: 'seeds' },
       { path: ROUTES.PERSONNEL_REQUESTS, label: 'My Requests', icon: 'requests' }
     ];

@@ -13,6 +13,7 @@ export const ROUTES = {
   ADMIN_ACCOUNTS: '/admin/accounts',
   ADMIN_LOGIN_TRAILS: '/admin/login-trails',
   ADMIN_MAINTENANCE: '/admin/maintenance',
+  PERSONNEL_DASHBOARD: '/personnel/dashboard',
   PERSONNEL_CATALOG: '/personnel/catalog',
   PERSONNEL_REQUESTS: '/personnel/my-requests'
 };

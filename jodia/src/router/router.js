@@ -20,6 +20,7 @@ import { AdminMaintenancePage } from '../pages/admin/maintenance.page.js';
 // Personnel Pages
 import { PersonnelCatalogPage } from '../pages/personnel/catalog.page.js';
 import { PersonnelMyRequestsPage } from '../pages/personnel/my-requests.page.js';
+import { PersonnelDashboardPage } from '../pages/personnel/dashboard.page.js';
 import { ProfilePage } from '../pages/profile/profile.page.js';
 
 export const Router = {
@@ -90,6 +91,11 @@ export const Router = {
         break;
 
       // Personnel Views
+      case ROUTES.PERSONNEL_DASHBOARD:
+        content = PersonnelDashboardPage.render();
+        binder = () => PersonnelDashboardPage.init();
+        break;
+
       case ROUTES.PERSONNEL_CATALOG:
         content = PersonnelCatalogPage.render();
         binder = () => PersonnelCatalogPage.init();
