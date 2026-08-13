@@ -336,14 +336,26 @@ export const AdminInventoryPage = {
 
   bindDeleteButtons() {
     document.querySelectorAll('.btn-delete-seed').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const target = e.currentTarget;
         const id = target.getAttribute('data-id');
         const name = target.getAttribute('data-name');
 
+        let requestCount;
+        try {
+          requestCount = await SeedsService.getRequestCount(id);
+        } catch (err) {
+          ToastComponent.show(err.message || 'Unable to check linked requests.', 'error');
+          return;
+        }
+
+        const linkedRequestsWarning = requestCount > 0
+          ? `<p><strong>${requestCount} linked ${requestCount === 1 ? 'request will' : 'requests will'} also be permanently removed.</strong></p>`
+          : '';
+
         ModalComponent.open({
           title: 'Delete Seed?',
-          bodyHtml: '<p>Are you sure you want to delete this seed variety? This action cannot be undone.</p>',
+          bodyHtml: `<p>Are you sure you want to delete <strong>${escapeHtml(name)}</strong>? This action cannot be undone.</p>${linkedRequestsWarning}`,
           confirmText: 'Delete',
           confirmClass: 'btn-danger',
           onConfirm: async () => {

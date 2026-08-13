@@ -22,4 +22,4 @@
 .sidebar-logout { width: 100%; border: 0; background: transparent; font: inherit; cursor: pointer; text-align: left; }
 .sidebar-logout:hover { background: rgba(220, 38, 38, .2); color: #fff; }
 .app-content { min-width: 0; }
-@media (max-width: 760px) { .app-shell { grid-template-columns: 1fr; } .app-sidebar { min-height: auto; padding: .75rem; } .sidebar-brand, .sidebar-profile { display: none; } .sidebar-nav { display: flex; overflow-x: auto; padding-top: 0; } .sidebar-nav-heading { display: none; } .sidebar-link { flex: 0 0 auto; } .sidebar-footer { display: none; } }
+@media (max-width: 760px) { .app-shell { grid-template-columns: 1fr; } .app-sidebar { min-height: auto; padding: .75rem; } .sidebar-brand, .sidebar-profile { display: none; } .sidebar-nav { display: flex; overflow-x: auto; padding-top: 0; } .sidebar-nav-heading { display: none; } .sidebar-link { flex: 0 0 auto; } .sidebar-footer { display: flex; margin-top: .45rem; padding-top: .45rem; } }

@@ -53,6 +53,18 @@ export const SeedsService = {
     if (error) throw error;
   },
 
+  // Used to make the delete confirmation clear about linked requests that
+  // PostgreSQL will remove through the existing ON DELETE CASCADE rule.
+  async getRequestCount(id) {
+    const { count, error } = await supabase
+      .from('requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('seed_id', id);
+
+    if (error) throw error;
+    return count || 0;
+  },
+
   // Real-time seed inventory subscription
   subscribeToSeeds(onUpdate) {
     return supabase
