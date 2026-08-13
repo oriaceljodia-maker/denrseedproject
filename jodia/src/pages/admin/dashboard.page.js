@@ -52,21 +52,29 @@ export const AdminDashboardPage = {
         </section>
 
         <section class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-title">Total Inventory</div>
-            <div class="stat-value" id="stat-total-packs">-</div>
+          <div class="stat-card" style="--stat-icon-color: var(--denr-green-primary);">
+            <div class="stat-card-content">
+              <div><div class="stat-title">Total Inventory</div><div class="stat-value" id="stat-total-packs">-</div></div>
+              <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4-8-4Z"/><path d="m4 8 8 4 8-4M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>
+            </div>
           </div>
-          <div class="stat-card" style="border-left-color: var(--status-warning);">
-            <div class="stat-title">Approved Requests</div>
-            <div class="stat-value" id="stat-approved">-</div>
+          <div class="stat-card" style="border-left-color: var(--status-warning); --stat-icon-color: var(--status-warning);">
+            <div class="stat-card-content">
+              <div><div class="stat-title">Approved Requests</div><div class="stat-value" id="stat-approved">-</div></div>
+              <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 4.5h6v3H9zM8.5 13l2.1 2.1 4.5-4.5"/></svg></span>
+            </div>
           </div>
-          <div class="stat-card" style="border-left-color: var(--status-info);">
-            <div class="stat-title">Total Requests</div>
-            <div class="stat-value" id="stat-total-requests">-</div>
+          <div class="stat-card" style="border-left-color: var(--status-info); --stat-icon-color: var(--status-info);">
+            <div class="stat-card-content">
+              <div><div class="stat-title">Total Requests</div><div class="stat-value" id="stat-total-requests">-</div></div>
+              <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.5h7l3 3V20H7a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z"/><path d="M14 3.5V7h3M9 11h6M9 15h4"/></svg></span>
+            </div>
           </div>
-          <div class="stat-card" style="border-left-color: var(--status-danger);">
-            <div class="stat-title">Rejected Requests</div>
-            <div class="stat-value" id="stat-rejected">-</div>
+          <div class="stat-card" style="border-left-color: var(--status-danger); --stat-icon-color: var(--status-danger);">
+            <div class="stat-card-content">
+              <div><div class="stat-title">Rejected Requests</div><div class="stat-value" id="stat-rejected">-</div></div>
+              <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>
+            </div>
           </div>
         </section>
 
@@ -101,17 +109,6 @@ export const AdminDashboardPage = {
                 </tbody>
               </table>
             </div>
-          </div>
-        </section>
-
-        <section class="dashboard-support-grid">
-          <div class="support-card">
-            <h3>Mission alignment</h3>
-            <p>Every request and inventory decision helps strengthen biodiversity programs and field restoration initiatives.</p>
-          </div>
-          <div class="support-card">
-            <h3>Operations note</h3>
-            <p>High-priority requests are surfaced so planning teams can respond quickly to regional restoration needs.</p>
           </div>
         </section>
       </div>

@@ -3,6 +3,7 @@
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr);
   gap: 1.25rem;
   margin-top: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .demand-insight-card {
@@ -23,7 +24,7 @@
 }
 
 .top-requested-content {
-  min-height: 14rem;
+  min-height: 11.5rem;
   display: grid;
   place-content: center;
   gap: 0.45rem;

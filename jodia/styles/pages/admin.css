@@ -533,6 +533,35 @@
   }
 }
 
+.stat-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--stat-icon-color) 10%, transparent);
+  color: var(--stat-icon-color);
+}
+
+.stat-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .inventory-seed-cell { display: flex; align-items: center; gap: .7rem; }
 .inventory-seed-image { width: 42px; height: 42px; object-fit: cover; border-radius: 9px; background: #edf4ed; }
 

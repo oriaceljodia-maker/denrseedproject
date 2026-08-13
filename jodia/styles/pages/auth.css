@@ -142,3 +142,41 @@
 .password-toggle:hover {
   opacity: 1;
 }
+
+/* Keep the existing two-card composition compact and balanced. */
+.auth-layout {
+  padding: 1.5rem 1rem;
+}
+
+.auth-hero {
+  max-width: 1100px;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, .9fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.auth-hero-copy {
+  padding: 2rem;
+}
+
+.auth-hero .auth-card {
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-hero .auth-body {
+  flex: 1;
+}
+
+@media (max-width: 900px) {
+  .auth-hero {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .auth-hero .auth-card {
+    max-width: 470px;
+    width: 100%;
+  }
+}
