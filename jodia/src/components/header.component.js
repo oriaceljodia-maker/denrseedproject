@@ -1,7 +1,3 @@
-import { AuthService } from '../services/auth.service.js';
-import { Router } from '../router/router.js';
-import { escapeHtml } from '../../utils/formatters.js';
-
 export const HeaderComponent = {
   render(user) {
     const headerEl = document.getElementById('app-header');
@@ -14,7 +10,6 @@ export const HeaderComponent = {
 
     console.debug('Rendering header for user:', user?.email);
 
-    const roleLabel = user.role === 'admin' ? 'Administrator' : 'Field Personnel';
     const portalLabel = user.role === 'admin' ? 'Administration Console' : 'Personnel Portal';
 
     headerEl.classList.remove('hidden');
@@ -28,26 +23,6 @@ export const HeaderComponent = {
           <div class="header-subtitle">${portalLabel} — seed inventory management</div>
         </div>
       </div>
-
-      <div class="header-actions">
-        <div class="header-user-wrap">
-          <span class="header-user">${escapeHtml(user.fullName)}</span>
-          <span class="badge badge-${escapeHtml(user.role)} header-role-badge">${roleLabel}</span>
-        </div>
-        <button id="btn-global-logout" class="btn btn-secondary btn-logout" title="Sign out of the system">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Logout
-        </button>
-      </div>
     `;
-
-    document.getElementById('btn-global-logout')?.addEventListener('click', async () => {
-      await AuthService.logout();
-      await Router.navigate(null);
-    });
   }
 };

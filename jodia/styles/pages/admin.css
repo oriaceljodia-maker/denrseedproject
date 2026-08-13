@@ -564,6 +564,10 @@
 
 .inventory-seed-cell { display: flex; align-items: center; gap: .7rem; }
 .inventory-seed-image { width: 42px; height: 42px; object-fit: cover; border-radius: 9px; background: #edf4ed; }
+.inventory-action-button { margin: 0 .45rem .2rem 0; padding: .45rem .75rem; border-radius: 9px; font-size: .8rem; box-shadow: none; }
+.inventory-action-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-edit-seed { color: #1769d1; border-color: #8ab9f8; background: #fff; }
+.btn-edit-seed:hover { background: #eff6ff; }
 
 .seed-entry-form { display: grid; gap: .1rem; }
 .seed-entry-form .form-group { margin-bottom: .9rem; }

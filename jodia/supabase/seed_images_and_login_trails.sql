@@ -2,7 +2,8 @@
 -- It adds optional catalog imagery and a privacy-conscious successful-login audit trail.
 
 ALTER TABLE public.seeds
-  ADD COLUMN IF NOT EXISTS image_url TEXT;
+  ADD COLUMN IF NOT EXISTS image_url TEXT,
+  ADD COLUMN IF NOT EXISTS description TEXT;
 
 UPDATE public.seeds
 SET image_url = CASE species_name

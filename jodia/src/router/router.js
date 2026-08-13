@@ -105,15 +105,17 @@ export const Router = {
     }
 
     // Prepend sub-navigation for authenticated (non-auth) pages
+    let hasNavbar = false;
     if (!isAuthPage) {
       const navbar = NavbarComponent.render(user);
-      NavbarComponent.bindEvents(user);
       content = `<div class="app-shell">${navbar}<div class="app-content">${content}</div></div>`;
+      hasNavbar = true;
     }
 
     const bannerHtml = MaintenanceBannerComponent.render();
     const footerHtml = FooterComponent.render();
     root.innerHTML = bannerHtml + content + footerHtml;
+    if (hasNavbar) NavbarComponent.bindEvents(user);
     if (binder) binder();
   }
 };

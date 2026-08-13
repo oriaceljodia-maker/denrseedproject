@@ -171,10 +171,12 @@ export const AdminInventoryPage = {
           </td>
           <td>${seed.reorder_level || 10}</td>
           <td>
-            <button class="btn btn-secondary btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-image-url="${escapeAttr(seed.image_url || '')}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
+            <button class="btn btn-secondary inventory-action-button btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-description="${escapeAttr(seed.description || '')}" data-image-url="${escapeAttr(seed.image_url || '')}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
               Edit
             </button>
-            <button class="btn btn-danger btn-delete-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" style="margin-left: .5rem;">
+            <button class="btn btn-danger inventory-action-button btn-delete-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
               Delete
             </button>
           </td>
@@ -275,6 +277,7 @@ export const AdminInventoryPage = {
         const id = target.getAttribute('data-id');
         const name = target.getAttribute('data-name');
         const category = target.getAttribute('data-category');
+        const description = target.getAttribute('data-description');
         const imageUrl = target.getAttribute('data-image-url');
         const qty = target.getAttribute('data-qty');
         const reorder = target.getAttribute('data-reorder');
@@ -296,6 +299,10 @@ export const AdminInventoryPage = {
               <label for="edit-reorder">Reorder Threshold Level</label>
               <input type="number" id="edit-reorder" class="form-input" min="1" value="${escapeAttr(reorder)}" required />
             </div>
+            <div class="form-group">
+              <label for="edit-description">Description <span class="field-optional">(optional)</span></label>
+              <textarea id="edit-description" class="form-input" rows="4" placeholder="Add notes or details about this seed variety">${escapeHtml(description)}</textarea>
+            </div>
           `,
           confirmText: 'Update Inventory',
           onConfirm: async () => {
@@ -305,13 +312,15 @@ export const AdminInventoryPage = {
               : (selectedImage.imageUrl || null);
             const updatedQty = parseInt(document.getElementById('edit-quantity').value, 10);
             const updatedReorder = parseInt(document.getElementById('edit-reorder').value, 10);
+            const updatedDescription = document.getElementById('edit-description').value.trim();
 
             try {
               await SeedsService.updateSeed(id, {
                 category: updatedCategory,
                 image_url: updatedImageUrl,
                 quantity: updatedQty,
-                reorder_level: updatedReorder
+                reorder_level: updatedReorder,
+                description: updatedDescription || null
               });
               ToastComponent.show('Inventory updated successfully.', 'success');
               await this.loadInventory();
