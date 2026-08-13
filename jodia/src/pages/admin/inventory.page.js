@@ -172,7 +172,10 @@ export const AdminInventoryPage = {
           <td>${seed.reorder_level || 10}</td>
           <td>
             <button class="btn btn-secondary btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-image-url="${escapeAttr(seed.image_url || '')}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}" style="color: var(--denr-navy-primary); border-color: var(--border-color);">
-              Update Stock
+              Edit
+            </button>
+            <button class="btn btn-danger btn-delete-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" style="margin-left: .5rem;">
+              Delete
             </button>
           </td>
         </tr>
@@ -180,6 +183,7 @@ export const AdminInventoryPage = {
     }).join('');
 
     this.bindEditButtons();
+    this.bindDeleteButtons();
   },
 
   bindSearchAndFilter() {
@@ -317,6 +321,32 @@ export const AdminInventoryPage = {
           }
         });
         bindImageUploadField({ prefix: 'edit', initialImageUrl: imageUrl, onChange: (image) => { selectedImage = image; } });
+      });
+    });
+  },
+
+  bindDeleteButtons() {
+    document.querySelectorAll('.btn-delete-seed').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget;
+        const id = target.getAttribute('data-id');
+        const name = target.getAttribute('data-name');
+
+        ModalComponent.open({
+          title: 'Delete Seed?',
+          bodyHtml: '<p>Are you sure you want to delete this seed variety? This action cannot be undone.</p>',
+          confirmText: 'Delete',
+          confirmClass: 'btn-danger',
+          onConfirm: async () => {
+            try {
+              await SeedsService.deleteSeed(id);
+              ToastComponent.show('Seed entry deleted.', 'success');
+              await this.loadInventory();
+            } catch (err) {
+              ToastComponent.show(err.message || 'Failed to delete seed entry.', 'error');
+            }
+          }
+        });
       });
     });
   }

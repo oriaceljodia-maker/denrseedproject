@@ -39,3 +39,10 @@ CREATE POLICY "Admins can view login activity" ON public.login_activity
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
+
+-- Allow only authenticated administrator profiles to remove seed inventory records.
+DROP POLICY IF EXISTS "Admins can delete seeds" ON public.seeds;
+CREATE POLICY "Admins can delete seeds" ON public.seeds
+  FOR DELETE TO authenticated USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );

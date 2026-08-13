@@ -42,6 +42,17 @@ export const SeedsService = {
     return data;
   },
 
+  // Permanently remove a seed entry. Related requests are removed by the
+  // database foreign-key cascade configured for requests.seed_id.
+  async deleteSeed(id) {
+    const { error } = await supabase
+      .from('seeds')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
   // Real-time seed inventory subscription
   subscribeToSeeds(onUpdate) {
     return supabase

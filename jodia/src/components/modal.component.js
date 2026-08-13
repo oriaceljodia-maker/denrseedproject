@@ -1,5 +1,5 @@
 export const ModalComponent = {
-  open({ title, bodyHtml, onConfirm, confirmText = 'Confirm' }) {
+  open({ title, bodyHtml, onConfirm, confirmText = 'Confirm', confirmClass = 'btn-primary' }) {
     const modalRoot = document.getElementById('modal-root');
     
     modalRoot.innerHTML = `
@@ -12,7 +12,7 @@ export const ModalComponent = {
           <div class="modal-body">${bodyHtml}</div>
           <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
             <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
-            <button id="modal-confirm" class="btn btn-primary">${confirmText}</button>
+            <button id="modal-confirm" class="btn ${confirmClass}">${confirmText}</button>
           </div>
         </div>
       </div>
