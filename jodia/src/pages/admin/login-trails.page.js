@@ -1,5 +1,6 @@
 import { LoginActivityService } from '../../services/login-activity.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { ModalComponent } from '../../components/modal.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 
 export const AdminLoginTrailsPage = {
@@ -22,6 +23,7 @@ export const AdminLoginTrailsPage = {
             <input type="search" id="login-trails-search" class="form-input" placeholder="Search by name or email..." />
           </div>
           <button type="button" id="btn-refresh-login-trails" class="btn btn-secondary">Refresh</button>
+          <button type="button" id="btn-clear-login-trails" class="btn btn-danger">Clear All</button>
         </div>
 
         <div class="card">
@@ -53,6 +55,24 @@ export const AdminLoginTrailsPage = {
 
     document.getElementById('btn-refresh-login-trails')?.addEventListener('click', async () => {
       await this.loadActivity();
+    });
+
+    document.getElementById('btn-clear-login-trails')?.addEventListener('click', () => {
+      ModalComponent.open({
+        title: 'Clear Login Trails?',
+        bodyHtml: '<p>Clear all recorded successful-login activity? This action cannot be undone.</p>',
+        confirmText: 'Confirm',
+        confirmClass: 'btn-danger',
+        onConfirm: async () => {
+          try {
+            await LoginActivityService.clearLoginActivity();
+            ToastComponent.show('Login trails cleared.', 'success');
+            await this.loadActivity();
+          } catch (error) {
+            ToastComponent.show(error.message || 'Failed to clear login trails.', 'error');
+          }
+        }
+      });
     });
   },
 

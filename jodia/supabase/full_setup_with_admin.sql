@@ -276,6 +276,12 @@ CREATE POLICY "Admins can view login activity" ON public.login_activity
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
+DROP POLICY IF EXISTS "Admins can clear login activity" ON public.login_activity;
+CREATE POLICY "Admins can clear login activity" ON public.login_activity
+  FOR DELETE TO authenticated USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
 -- 6) Seed inventory data
 INSERT INTO public.seeds (species_name, category, image_url, quantity, reorder_level) VALUES
 ('Narra (Pterocarpus indicus)', 'Indigenous Tree', 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=900&q=80', 250, 20),

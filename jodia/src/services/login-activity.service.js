@@ -9,5 +9,14 @@ export const LoginActivityService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async clearLoginActivity() {
+    const { error } = await supabase
+      .from('login_activity')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (error) throw error;
   }
 };

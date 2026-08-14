@@ -46,7 +46,7 @@ export const AdminDashboardPage = {
                 <span>Request trend</span>
                 <strong id="stat-request-trend">-</strong>
               </div>
-              <div class="graph-line"></div>
+              <div id="request-trend-chart" class="request-trend-chart"></div>
             </div>
           </div>
         </section>
@@ -116,6 +116,21 @@ export const AdminDashboardPage = {
   },
 
   async init() {
+    await this.loadMetrics();
+    this.startLiveSync();
+  },
+
+  startLiveSync() {
+    if (this.liveSyncStarted) return;
+    const refreshIfVisible = () => {
+      if (window.location.pathname === '/admin/dashboard') this.loadMetrics();
+    };
+    this.seedChannel = SeedsService.subscribeToSeeds(refreshIfVisible);
+    this.requestChannel = RequestsService.subscribeToRequests(refreshIfVisible);
+    this.liveSyncStarted = true;
+  },
+
+  async loadMetrics() {
     try {
       const [seeds, requests] = await Promise.all([
         SeedsService.getAllSeeds(),
@@ -146,6 +161,8 @@ export const AdminDashboardPage = {
         trendEl.textContent = 'No data';
       }
 
+      this.renderTrendChart(requests);
+
       const tbody = document.getElementById('dashboard-requests-body');
       if (!requests || requests.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No recent requests found.</td></tr>`;
@@ -166,5 +183,19 @@ export const AdminDashboardPage = {
       console.error('Dashboard load error:', err);
       ToastComponent.show('Failed to load dashboard metrics.', 'error');
     }
+  },
+
+  renderTrendChart(requests) {
+    const chart = document.getElementById('request-trend-chart');
+    if (!chart) return;
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - index));
+      return date;
+    });
+    const values = days.map(day => requests.filter(request => new Date(request.created_at).toDateString() === day.toDateString()).length);
+    const max = Math.max(...values, 1);
+    const points = values.map((value, index) => `${(index / 6) * 100},${92 - ((value / max) * 70)}`).join(' ');
+    chart.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Request activity over the last seven days"><polyline points="0,92 100,92" class="trend-baseline"/><polyline points="${points}" class="trend-line"/></svg><div class="trend-labels">${days.map(day => `<span>${day.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>`).join('')}</div>`;
   }
 };

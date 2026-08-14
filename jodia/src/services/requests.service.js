@@ -7,7 +7,7 @@ export const RequestsService = {
       .from('requests')
       .select(`
         *,
-        seeds ( species_name, category ),
+        seeds ( species_name, category, image_url ),
         profiles ( full_name )
       `, { count: 'exact' })
       .order('created_at', { ascending: false });
@@ -56,5 +56,12 @@ export const RequestsService = {
 
     if (error) throw error;
     return data;
+  },
+
+  subscribeToRequests(onUpdate) {
+    return supabase
+      .channel('public:requests')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, onUpdate)
+      .subscribe();
   }
 };

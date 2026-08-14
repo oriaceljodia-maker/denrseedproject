@@ -1,17 +1,18 @@
-import { escapeHtml } from '../../utils/formatters.js';
+import { escapeAttr, escapeHtml } from '../../utils/formatters.js';
+import { SeedsService } from '../services/seeds.service.js';
 
 export const DemandInsightsComponent = {
   render() {
     return `
       <section class="demand-insights-grid" aria-label="Seed demand insights">
         <article class="card demand-insight-card">
-          <h2 class="demand-insight-title"><span aria-hidden="true">★</span> Top Requested Seed</h2>
+          <h2 class="demand-insight-title">Top Requested Seed</h2>
           <div id="top-requested-seed" class="top-requested-content">Loading demand data...</div>
         </article>
         <article class="card demand-insight-card">
-          <h2 class="demand-insight-title"><span aria-hidden="true">▤</span> Top Demanded Seeds</h2>
-          <div id="top-demanded-seeds" class="demand-bars">Loading demand data...</div>
-          <p class="demand-insight-note">Ranked by total quantity requested across all requests.</p>
+          <h2 class="demand-insight-title">Top Demanded Seeds</h2>
+          <div id="top-demanded-seeds" class="demand-donut-wrap">Loading demand data...</div>
+          <p class="demand-insight-note">Share of packs requested across all submitted requests.</p>
         </article>
       </section>`;
   },
@@ -19,45 +20,39 @@ export const DemandInsightsComponent = {
   renderData(requests) {
     const rankings = this.buildRankings(requests);
     const featured = document.getElementById('top-requested-seed');
-    const bars = document.getElementById('top-demanded-seeds');
-    if (!featured || !bars) return;
-
+    const donut = document.getElementById('top-demanded-seeds');
+    if (!featured || !donut) return;
     if (!rankings.length) {
       featured.innerHTML = '<p class="demand-empty">No seed requests yet.</p>';
-      bars.innerHTML = '<p class="demand-empty">Demand rankings will appear after requests are submitted.</p>';
+      donut.innerHTML = '<p class="demand-empty">Demand analytics will appear after requests are submitted.</p>';
       return;
     }
 
     const topRequested = [...rankings].sort((a, b) => b.requestCount - a.requestCount || b.quantity - a.quantity)[0];
-    const topDemanded = rankings[0];
+    featured.innerHTML = `<img class="top-requested-image" src="${escapeAttr(SeedsService.getImageUrl(topRequested))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><strong>${escapeHtml(topRequested.name)}</strong><span>${topRequested.requestCount} request${topRequested.requestCount === 1 ? '' : 's'} · ${topRequested.quantity} packs requested</span>`;
 
-    featured.innerHTML = `
-      <div class="top-requested-mark" aria-hidden="true">🌱</div>
-      <strong>${escapeHtml(topRequested.name)}</strong>
-      <span>${topRequested.requestCount} request${topRequested.requestCount === 1 ? '' : 's'} · ${topRequested.quantity} packs requested</span>`;
-
-    bars.innerHTML = rankings.slice(0, 5).map(seed => {
-      const percentage = Math.max(8, Math.round((seed.quantity / topDemanded.quantity) * 100));
-      return `
-        <div class="demand-bar-row">
-          <div class="demand-bar-label"><span>${escapeHtml(seed.name)}</span><span>${seed.quantity} packs</span></div>
-          <div class="demand-bar-track"><div class="demand-bar-fill" style="width:${percentage}%"></div></div>
-        </div>`;
-    }).join('');
+    const total = rankings.reduce((sum, seed) => sum + seed.quantity, 0);
+    const seeds = rankings.slice(0, 4);
+    const colors = ['#0f7a38', '#287cc0', '#f59e0b', '#8b5cf6'];
+    let current = 0;
+    const segments = seeds.map((seed, index) => {
+      const share = Math.round((seed.quantity / total) * 100);
+      const segment = `${colors[index]} ${current}% ${current + share}%`;
+      current += share;
+      return segment;
+    });
+    donut.innerHTML = `<div class="demand-donut" style="background:conic-gradient(${segments.join(', ')})"><span>${total}<small>packs</small></span></div><div class="demand-legend">${seeds.map((seed, index) => `<div><i style="background:${colors[index]}"></i><span>${escapeHtml(seed.name)}</span><strong>${Math.round((seed.quantity / total) * 100)}%</strong></div>`).join('')}</div>`;
   },
 
   buildRankings(requests) {
     const bySeed = new Map();
     requests.forEach(request => {
       const id = request.seed_id;
-      const name = request.seeds?.species_name || 'Unknown seed';
-      const quantity = Number(request.quantity) || 0;
-      const current = bySeed.get(id) || { name, quantity: 0, requestCount: 0 };
-      current.quantity += quantity;
+      const current = bySeed.get(id) || { name: request.seeds?.species_name || 'Unknown seed', image_url: request.seeds?.image_url, quantity: 0, requestCount: 0 };
+      current.quantity += Number(request.quantity) || 0;
       current.requestCount += 1;
       bySeed.set(id, current);
     });
-
     return [...bySeed.values()].sort((a, b) => b.quantity - a.quantity || b.requestCount - a.requestCount);
   }
 };

@@ -533,6 +533,18 @@
   }
 }
 
+.request-trend-chart { height: 112px; position: relative; }
+.request-trend-chart svg { width: 100%; height: 85px; overflow: visible; }
+.trend-baseline { stroke: rgba(11,39,69,.18); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.trend-line { fill: none; stroke: var(--denr-green-primary); stroke-width: 3; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.trend-labels { display: flex; justify-content: space-between; color: var(--text-muted); font-size: .64rem; }
+.top-requested-image { width: 68px; height: 68px; object-fit: cover; border-radius: 16px; box-shadow: var(--shadow-sm); }
+.demand-donut-wrap { display: flex; align-items: center; gap: 1.25rem; min-height: 152px; }
+.demand-donut { display: grid; place-items: center; flex: 0 0 120px; width: 120px; height: 120px; border-radius: 50%; position: relative; }
+.demand-donut::after { content: ''; width: 78px; height: 78px; border-radius: 50%; background: #fff; position: absolute; }
+.demand-donut span { position: relative; z-index: 1; display: grid; text-align: center; color: var(--denr-navy-primary); font-size: 1.25rem; font-weight: 800; }.demand-donut small { color: var(--text-muted); font-size: .65rem; font-weight: 600; }
+.demand-legend { display: grid; flex: 1; gap: .45rem; min-width: 0; }.demand-legend div { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: .4rem; font-size: .77rem; }.demand-legend i { width: 9px; height: 9px; border-radius: 50%; }.demand-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }.demand-legend strong { color: var(--denr-navy-primary); }
+
 .stat-card-content {
   display: flex;
   align-items: center;

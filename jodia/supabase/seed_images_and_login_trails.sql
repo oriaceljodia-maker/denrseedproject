@@ -41,6 +41,23 @@ CREATE POLICY "Admins can view login activity" ON public.login_activity
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
+DROP POLICY IF EXISTS "Admins can clear login activity" ON public.login_activity;
+CREATE POLICY "Admins can clear login activity" ON public.login_activity
+  FOR DELETE TO authenticated USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Dashboard live updates for seed inventory and requests.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'seeds') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.seeds;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'requests') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.requests;
+  END IF;
+END $$;
+
 -- Allow only authenticated administrator profiles to remove seed inventory records.
 DROP POLICY IF EXISTS "Admins can delete seeds" ON public.seeds;
 CREATE POLICY "Admins can delete seeds" ON public.seeds
