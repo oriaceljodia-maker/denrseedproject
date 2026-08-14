@@ -151,6 +151,7 @@ export const PersonnelCatalogPage = {
           <div>
             <div class="seed-title">${escapeHtml(seed.species_name)}</div>
             <div class="seed-badge">${escapeHtml(seed.category) || 'General'}</div>
+            ${seed.description ? `<p class="seed-description">${escapeHtml(seed.description)}</p>` : ''}
             <div class="seed-stock">Available Quantity: <strong>${seed.quantity} packs</strong><br/>Ideal for restoration, nursery propagation, and field planting programs.</div>
             <div class="stock-indicator">
               <span class="stock-dot ${stockClass}"></span>
