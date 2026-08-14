@@ -1,5 +1,6 @@
 import { UserService } from '../../services/user.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { ModalComponent } from '../../components/modal.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 
 export const AdminAccountsPage = {
@@ -130,7 +131,7 @@ export const AdminAccountsPage = {
               '<span class="badge badge-rejected">Disabled</span>'}
           </td>
           <td>
-            <button class="btn btn-secondary btn-toggle-status" data-id="${escapeHtml(u.id)}" data-active="${u.is_active}" style="color: var(--denr-navy-primary); border-color: var(--border-color); font-size:0.75rem; padding: 0.25rem 0.5rem;">
+            <button class="btn btn-secondary btn-toggle-status" data-id="${escapeHtml(u.id)}" data-name="${escapeHtml(u.full_name)}" data-active="${u.is_active}" style="color: var(--denr-navy-primary); border-color: var(--border-color); font-size:0.75rem; padding: 0.25rem 0.5rem;">
               ${u.is_active ? 'Disable Account' : 'Enable Account'}
             </button>
           </td>
@@ -147,15 +148,24 @@ export const AdminAccountsPage = {
     document.querySelectorAll('.btn-toggle-status').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const userId = e.currentTarget.getAttribute('data-id');
+        const fullName = e.currentTarget.getAttribute('data-name');
         const isActive = e.currentTarget.getAttribute('data-active') === 'true';
 
-        try {
-          await UserService.toggleUserStatus(userId, !isActive);
-          ToastComponent.show(`Account ${!isActive ? 'activated' : 'disabled'}.`, 'success');
-          await this.loadAccounts();
-        } catch (err) {
-          ToastComponent.show(err.message || 'Failed to change user status.', 'error');
-        }
+        ModalComponent.open({
+          title: isActive ? 'Disable Account?' : 'Enable Account?',
+          bodyHtml: `<p>${isActive ? 'Disable' : 'Enable'} <strong>${escapeHtml(fullName)}</strong>?</p><p>${isActive ? 'They will no longer be able to access the system until the account is enabled again.' : 'They will be able to sign in and access the system again.'}</p>`,
+          confirmText: isActive ? 'Disable Account' : 'Enable Account',
+          confirmClass: isActive ? 'btn-danger' : 'btn-primary',
+          onConfirm: async () => {
+            try {
+              await UserService.toggleUserStatus(userId, !isActive);
+              ToastComponent.show(`Account ${!isActive ? 'activated' : 'disabled'}.`, 'success');
+              await this.loadAccounts();
+            } catch (err) {
+              ToastComponent.show(err.message || 'Failed to change user status.', 'error');
+            }
+          }
+        });
       });
     });
   }

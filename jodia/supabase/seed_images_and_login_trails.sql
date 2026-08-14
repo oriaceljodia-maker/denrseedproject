@@ -47,3 +47,14 @@ CREATE POLICY "Admins can delete seeds" ON public.seeds
   FOR DELETE TO authenticated USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
   );
+
+-- Allow administrators to enable or disable personnel accounts from the Users page.
+DROP POLICY IF EXISTS "Admins can update account status" ON public.profiles;
+CREATE POLICY "Admins can update account status" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );

@@ -215,6 +215,16 @@ CREATE POLICY "Users cannot escalate role or reactivate" ON public.profiles
     AND (is_active = (SELECT is_active FROM public.profiles WHERE id = auth.uid()))
   );
 
+DROP POLICY IF EXISTS "Admins can update account status" ON public.profiles;
+CREATE POLICY "Admins can update account status" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
 DROP POLICY IF EXISTS "Anyone authenticated can view seeds" ON public.seeds;
 CREATE POLICY "Anyone authenticated can view seeds" ON public.seeds
   FOR SELECT USING (auth.role() = 'authenticated');

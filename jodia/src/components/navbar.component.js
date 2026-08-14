@@ -20,14 +20,20 @@ export const NavbarComponent = {
 
     const currentPath = window.location.pathname;
 
-    const adminLinks = [
+    const adminLinks = {
+      main: [
       { path: ROUTES.ADMIN_DASHBOARD, label: 'Dashboard', icon: 'dashboard' },
       { path: ROUTES.ADMIN_INVENTORY, label: 'Seeds', icon: 'seeds' },
-      { path: ROUTES.ADMIN_REQUESTS, label: 'Approve Requests', icon: 'requests' },
+      { path: ROUTES.ADMIN_REQUESTS, label: 'Approve Requests', icon: 'requests' }
+      ],
+      reports: [
+        { path: ROUTES.ADMIN_LOGIN_TRAILS, label: 'Login Trails', icon: 'trails' }
+      ],
+      account: [
       { path: ROUTES.ADMIN_ACCOUNTS, label: 'Users', icon: 'users' },
-      { path: ROUTES.ADMIN_LOGIN_TRAILS, label: 'Login Trails', icon: 'trails' },
       { path: ROUTES.ADMIN_MAINTENANCE, label: 'Maintenance', icon: 'maintenance' }
-    ];
+      ]
+    };
 
     const personnelLinks = [
       { path: ROUTES.PERSONNEL_DASHBOARD, label: 'Dashboard', icon: 'dashboard' },
@@ -35,7 +41,10 @@ export const NavbarComponent = {
       { path: ROUTES.PERSONNEL_REQUESTS, label: 'My Requests', icon: 'requests' }
     ];
 
-    const links = user.role === 'admin' ? adminLinks : personnelLinks;
+    const renderLink = (link) => `<a href="${link.path}" class="sidebar-link ${currentPath === link.path ? 'active' : ''}" data-link><span class="sidebar-link-icon">${navigationIcons[link.icon]}</span><span>${link.label}</span></a>`;
+    const sidebarNavigation = user.role === 'admin'
+      ? `<span class="sidebar-nav-heading">Main</span>${adminLinks.main.map(renderLink).join('')}<div class="sidebar-section-divider"></div><span class="sidebar-nav-heading">Reports &amp; Logs</span>${adminLinks.reports.map(renderLink).join('')}<div class="sidebar-section-divider"></div><span class="sidebar-nav-heading">Account</span>${adminLinks.account.map(renderLink).join('')}`
+      : `<span class="sidebar-nav-heading">Main</span>${personnelLinks.map(renderLink).join('')}<div class="sidebar-section-divider"></div><span class="sidebar-nav-heading">Account</span>`;
 
     const roleLabel = user.role === 'admin' ? 'Administrator' : 'Personnel';
     const initial = escapeHtml((user.fullName || 'U').trim().charAt(0).toUpperCase());
@@ -44,7 +53,7 @@ export const NavbarComponent = {
       <aside class="app-sidebar">
         <div class="sidebar-brand"><img src="/assets/images/logs.jpg" alt="DENR logo" /><div><strong>DENR Talipan</strong><span>Seed Inventory System</span></div></div>
         <a href="${ROUTES.PROFILE}" class="sidebar-profile" data-link>${`<span class="sidebar-avatar">${avatar}<span class="sidebar-avatar-initial">${initial}</span></span>`}<span class="sidebar-profile-copy"><strong>${escapeHtml(user.fullName)}</strong><span>${roleLabel}</span></span></a>
-        <nav class="sidebar-nav" aria-label="Main navigation"><span class="sidebar-nav-heading">Menu</span>${links.map(link => `<a href="${link.path}" class="sidebar-link ${currentPath === link.path ? 'active' : ''}" data-link><span class="sidebar-link-icon">${navigationIcons[link.icon]}</span><span>${link.label}</span></a>`).join('')}</nav>
+        <nav class="sidebar-nav" aria-label="Main navigation">${sidebarNavigation}</nav>
         <div class="sidebar-footer"><a href="${ROUTES.PROFILE}" class="sidebar-link ${currentPath === ROUTES.PROFILE ? 'active' : ''}" data-link><span class="sidebar-link-icon">${navigationIcons.profile}</span><span>Profile</span></a><button type="button" class="sidebar-link sidebar-logout" id="btn-sidebar-logout"><span class="sidebar-link-icon">${navigationIcons.logout}</span><span>Logout</span></button></div>
       </aside>`;
   },
