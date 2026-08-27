@@ -2,6 +2,10 @@ import { SeedsService } from '../../services/seeds.service.js';
 import { RequestsService } from '../../services/requests.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { DemandInsightsComponent } from '../../components/demand-insights.component.js';
+import { AuditTrailService } from '../../services/audit-trail.service.js';
+import { Router } from '../../router/router.js';
+import { AuthService } from '../../services/auth.service.js';
+import { ROUTES } from '../../config/constants.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 
 export const AdminDashboardPage = {
@@ -81,13 +85,14 @@ export const AdminDashboardPage = {
         ${DemandInsightsComponent.render()}
 
         <section class="dashboard-main-grid">
-          <div class="card chart-card">
-            <div class="section-title">Request activity</div>
-            <div class="chart-placeholder">
-              <div>
-                <img class="dashboard-visual" src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=900&q=80" alt="Forest landscape" />
-                <div class="chart-caption">Priority requests and seed movement are visualized to support immediate field coordination and nursery replenishment.</div>
-              </div>
+          <div class="card audit-trail-card">
+            <div class="audit-trail-header">
+              <div class="section-title audit-trail-title"><span aria-hidden="true">▣</span>Recent Audit Trail</div>
+              <button type="button" id="btn-view-all-audit" class="audit-trail-link">View All</button>
+            </div>
+            <p class="audit-trail-subtitle">Last 10 actions</p>
+            <div id="dashboard-audit-trail" class="dashboard-audit-trail" aria-live="polite">
+              <p class="audit-trail-empty">Loading audit trail...</p>
             </div>
           </div>
 
@@ -117,7 +122,15 @@ export const AdminDashboardPage = {
 
   async init() {
     await this.loadMetrics();
+    this.bindAuditTrailLink();
     this.startLiveSync();
+  },
+
+  bindAuditTrailLink() {
+    document.getElementById('btn-view-all-audit')?.addEventListener('click', async () => {
+      const user = await AuthService.getCurrentUser();
+      await Router.navigate(user, ROUTES.ADMIN_LOGIN_TRAILS);
+    });
   },
 
   startLiveSync() {
@@ -132,9 +145,10 @@ export const AdminDashboardPage = {
 
   async loadMetrics() {
     try {
-      const [seeds, requests] = await Promise.all([
+      const [seeds, requests, auditResult] = await Promise.all([
         SeedsService.getAllSeeds(),
-        RequestsService.getRequests()
+        RequestsService.getRequests(),
+        AuditTrailService.getActivity(10)
       ]);
 
       const pendingCount = requests.filter(r => r.status === 'PENDING').length;
@@ -162,6 +176,7 @@ export const AdminDashboardPage = {
       }
 
       this.renderTrendChart(requests);
+      this.renderAuditTrail(auditResult.activity, auditResult.auditTrailAvailable);
 
       const tbody = document.getElementById('dashboard-requests-body');
       if (!requests || requests.length === 0) {
@@ -183,6 +198,26 @@ export const AdminDashboardPage = {
       console.error('Dashboard load error:', err);
       ToastComponent.show('Failed to load dashboard metrics.', 'error');
     }
+  },
+
+  renderAuditTrail(activity, auditTrailAvailable) {
+    const container = document.getElementById('dashboard-audit-trail');
+    if (!container) return;
+
+    if (!activity?.length) {
+      container.innerHTML = `<p class="audit-trail-empty">${auditTrailAvailable ? 'No audit activity recorded yet.' : 'Run the audit-trail Supabase migration to record inventory and request actions.'}</p>`;
+      return;
+    }
+
+    container.innerHTML = activity.map(entry => {
+      const date = new Date(entry.createdAt);
+      const timestamp = Number.isNaN(date.getTime()) ? 'Unknown time' : date.toLocaleString();
+      const indicatorClass = entry.kind === 'login' ? 'audit-indicator-login' : 'audit-indicator-change';
+      return `<article class="audit-trail-item">
+        <span class="audit-trail-indicator ${indicatorClass}" aria-hidden="true"></span>
+        <div><strong>${escapeHtml(entry.action)}</strong><p>${escapeHtml(entry.actorName)}${entry.actorRole ? ` · ${escapeHtml(entry.actorRole)}` : ''} · ${escapeHtml(timestamp)}</p>${entry.details ? `<small>${escapeHtml(entry.details)}</small>` : ''}</div>
+      </article>`;
+    }).join('');
   },
 
   renderTrendChart(requests) {

@@ -533,6 +533,24 @@
   }
 }
 
+.audit-trail-card { padding: 0; overflow: hidden; }
+.audit-trail-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem .55rem; border-bottom: 1px solid rgba(11, 39, 69, .09); }
+.audit-trail-title { margin: 0; font-size: 1rem; display: flex; align-items: center; gap: .45rem; }
+.audit-trail-title span { color: var(--denr-green-primary); }
+.audit-trail-link { padding: 0; border: 0; background: transparent; color: var(--denr-green-primary); font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; }
+.audit-trail-link:hover { color: var(--denr-green-hover); text-decoration: underline; }
+.audit-trail-subtitle { margin: .65rem 1.15rem .2rem; color: var(--text-muted); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.dashboard-audit-trail { display: grid; padding: .35rem 1.15rem .9rem; }
+.audit-trail-item { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: .65rem; padding: .65rem 0; border-bottom: 1px solid rgba(11, 39, 69, .07); }
+.audit-trail-item:last-child { border-bottom: 0; }
+.audit-trail-item strong { color: var(--denr-navy-primary); font-size: .9rem; }
+.audit-trail-item p, .audit-trail-item small { margin: .18rem 0 0; color: var(--text-muted); font-size: .77rem; line-height: 1.4; }
+.audit-trail-item small { display: block; }
+.audit-trail-indicator { width: 10px; height: 10px; border-radius: 50%; margin-top: .34rem; background: var(--denr-green-primary); box-shadow: 0 0 0 3px rgba(15,122,56,.12); }
+.audit-indicator-login { background: var(--status-info); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+.audit-indicator-change { background: var(--denr-green-primary); }
+.audit-trail-empty { margin: .7rem 0; color: var(--text-muted); font-size: .9rem; }
+
 .request-trend-chart { height: 112px; position: relative; }
 .request-trend-chart svg { width: 100%; height: 85px; overflow: visible; }
 .trend-baseline { stroke: rgba(11,39,69,.18); stroke-width: 1; vector-effect: non-scaling-stroke; }

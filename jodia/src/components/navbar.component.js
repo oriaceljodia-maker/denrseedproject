@@ -28,7 +28,7 @@ export const NavbarComponent = {
       ],
       reports: [
         { path: ROUTES.ADMIN_REPORTS, label: 'Reports', icon: 'dashboard' },
-        { path: ROUTES.ADMIN_LOGIN_TRAILS, label: 'Login Trails', icon: 'trails' }
+        { path: ROUTES.ADMIN_LOGIN_TRAILS, label: 'Audit Trails', icon: 'trails' }
       ],
       account: [
       { path: ROUTES.ADMIN_ACCOUNTS, label: 'Users', icon: 'users' },
