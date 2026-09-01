@@ -355,6 +355,23 @@
   color: #b91c1c;
 }
 
+.stock-status-badge.in-stock { background: rgba(22, 163, 74, .12); color: #166534; }
+.stock-status-badge.low-stock { background: rgba(245, 158, 11, .15); color: #a16207; }
+.stock-status-badge.out-of-stock { background: rgba(239, 68, 68, .12); color: #b91c1c; }
+
+.low-stock-alerts-card { margin: 0 0 1rem; padding: 0; overflow: hidden; }
+.low-stock-alerts-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem .65rem; border-bottom: 1px solid rgba(11,39,69,.09); }
+.low-stock-alerts-header .section-title { margin: 0; }
+.low-stock-view-all { padding: .4rem .75rem; font-size: .78rem; }
+.low-stock-alerts-list { padding: 0 .95rem; }
+.low-stock-alert { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: .7rem; padding: .85rem .2rem; border-bottom: 1px solid rgba(11,39,69,.08); }
+.low-stock-alert:last-child { border-bottom: 0; }
+.low-stock-alert-icon { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 9px; color: var(--status-warning); background: rgba(245,158,11,.13); font-size: 1.35rem; line-height: 1; }
+.low-stock-alert.out-of-stock .low-stock-alert-icon { color: var(--status-danger); background: rgba(239,68,68,.1); }
+.low-stock-alert strong, .low-stock-alert small { display: block; }
+.low-stock-alert strong { color: var(--denr-navy-primary); font-size: .88rem; }
+.low-stock-alert small { margin-top: .15rem; color: var(--text-muted); font-size: .78rem; }
+
 /* Maintenance page layout */
 .dashboard-layout {
   display: grid;
@@ -531,6 +548,8 @@
   .admin-container {
     padding: 1rem;
   }
+  .low-stock-alert { grid-template-columns: 28px minmax(0, 1fr); }
+  .low-stock-alert .stock-status-badge { justify-self: start; grid-column: 2; }
 }
 
 .audit-trail-card { padding: 0; overflow: hidden; }

@@ -159,17 +159,16 @@ export const AdminInventoryPage = {
     }
 
     tbody.innerHTML = seeds.map(seed => {
-      const isLowStock = seed.quantity <= seed.reorder_level;
-      const isOutOfStock = seed.quantity <= 0;
+      const stockStatus = SeedsService.getStockStatus(seed);
       return `
         <tr>
           <td class="inventory-seed-cell"><img class="inventory-seed-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><strong>${escapeHtml(seed.species_name)}</strong></td>
           <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
           <td>
-            ${seed.quantity} ${escapeHtml(seed.unit || 'packs')}
-            ${isOutOfStock ? '<span class="badge badge-rejected" style="margin-left: 0.5rem;">Out of Stock</span>' : (isLowStock ? '<span class="badge badge-pending" style="margin-left: 0.5rem;">Low Stock</span>' : '')}
+            ${escapeHtml(SeedsService.formatQuantity(seed))}
+            <span class="badge stock-status-badge ${stockStatus.key}" style="margin-left: 0.5rem;">${stockStatus.label}</span>
           </td>
-          <td>${seed.reorder_level || 10}</td>
+          <td>${seed.reorder_level || 0} ${escapeHtml(seed.unit || 'packs')}</td>
           <td>
             <button class="btn btn-secondary inventory-action-button btn-edit-seed" data-id="${escapeAttr(seed.id)}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
@@ -232,7 +231,7 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="new-quantity">Stock Quantity</label><input type="number" id="new-quantity" class="form-input" min="0" placeholder="e.g. 120" required /></div>
               <div class="form-group"><label for="new-unit">Unit</label><select id="new-unit" class="form-input"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option><option value="packs" selected>packs</option></select></div>
               <div class="form-group"><label for="new-processing-status">Lab / Processing Status</label><select id="new-processing-status" class="form-input"><option>Newly collected</option><option>Moisture content</option><option>For Germination Test</option><option>Germinating</option><option>Ready for Distribution</option></select></div>
-              <div class="form-group"><label for="new-reorder">Reorder Level</label><input type="number" id="new-reorder" class="form-input" min="1" value="10" required /></div>
+              <div class="form-group"><label for="new-reorder">Low Stock Alert At</label><input type="number" id="new-reorder" class="form-input" min="0" value="10" required /></div>
             </div>
             <div class="form-group"><label for="new-notes">Notes <span class="field-optional">(optional)</span></label><textarea id="new-notes" class="form-input" rows="3" placeholder="Optional notes about this accession"></textarea></div>
           </div>
@@ -290,8 +289,8 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="edit-source-location">Source / Location</label><input id="edit-source-location" class="form-input" value="${escapeAttr(seed.source_location || '')}" /></div>
               <div class="form-group"><label for="edit-quantity">Stock Quantity</label><input type="number" id="edit-quantity" class="form-input" min="0" value="${escapeAttr(seed.quantity)}" required /></div>
               <div class="form-group"><label for="edit-unit">Unit</label><select id="edit-unit" class="form-input">${['g', 'kg', 'pcs', 'packs'].map(unit => `<option ${seed.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}</select></div>
-              <div class="form-group"><label for="edit-processing-status">Lab / Processing Status</label><input id="edit-processing-status" class="form-input" value="${escapeAttr(seed.processing_status || '')}" /></div>
-              <div class="form-group"><label for="edit-reorder">Reorder Level</label><input type="number" id="edit-reorder" class="form-input" min="1" value="${escapeAttr(seed.reorder_level || 10)}" required /></div>
+              <div class="form-group"><label for="edit-processing-status">Lab / Processing Status</label><select id="edit-processing-status" class="form-input">${['Newly collected', 'Moisture content', 'For Germination Test', 'Germinating', 'Ready for Distribution'].map(status => `<option ${seed.processing_status === status ? 'selected' : ''}>${status}</option>`).join('')}</select></div>
+              <div class="form-group"><label for="edit-reorder">Low Stock Alert At</label><input type="number" id="edit-reorder" class="form-input" min="0" value="${escapeAttr(seed.reorder_level || 0)}" required /></div>
             </div>
             <div class="form-group">
               <label for="edit-notes">Notes <span class="field-optional">(optional)</span></label>

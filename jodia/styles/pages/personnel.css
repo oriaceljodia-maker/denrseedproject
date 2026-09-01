@@ -79,6 +79,8 @@
   color: var(--denr-green-primary);
 }
 
+.stock-indicator { color: var(--denr-navy-primary); }
+
 .seed-badge {
   display: inline-block;
   padding: 0.35rem 0.7rem;

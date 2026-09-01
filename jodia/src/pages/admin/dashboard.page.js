@@ -84,6 +84,11 @@ export const AdminDashboardPage = {
 
         ${DemandInsightsComponent.render()}
 
+        <section class="card low-stock-alerts-card" aria-label="Low stock alerts">
+          <div class="low-stock-alerts-header"><h2 class="section-title">Low Stock Alerts</h2><button type="button" id="btn-view-low-stock" class="btn btn-secondary low-stock-view-all">View All</button></div>
+          <div id="dashboard-low-stock-alerts" class="low-stock-alerts-list"><p class="audit-trail-empty">Loading low stock alerts...</p></div>
+        </section>
+
         <section class="dashboard-main-grid">
           <div class="card audit-trail-card">
             <div class="audit-trail-header">
@@ -123,6 +128,7 @@ export const AdminDashboardPage = {
   async init() {
     await this.loadMetrics();
     this.bindAuditTrailLink();
+    this.bindLowStockLink();
     this.startLiveSync();
   },
 
@@ -130,6 +136,13 @@ export const AdminDashboardPage = {
     document.getElementById('btn-view-all-audit')?.addEventListener('click', async () => {
       const user = await AuthService.getCurrentUser();
       await Router.navigate(user, ROUTES.ADMIN_LOGIN_TRAILS);
+    });
+  },
+
+  bindLowStockLink() {
+    document.getElementById('btn-view-low-stock')?.addEventListener('click', async () => {
+      const user = await AuthService.getCurrentUser();
+      await Router.navigate(user, ROUTES.ADMIN_INVENTORY);
     });
   },
 
@@ -154,7 +167,8 @@ export const AdminDashboardPage = {
       const pendingCount = requests.filter(r => r.status === 'PENDING').length;
       const approvedCount = requests.filter(r => r.status === 'APPROVED').length;
       const rejectedCount = requests.filter(r => r.status === 'REJECTED').length;
-      const lowStockCount = seeds.filter(s => s.quantity <= s.reorder_level).length;
+      const lowStockSeeds = seeds.filter(seed => SeedsService.getStockStatus(seed).key !== 'in-stock');
+      const lowStockCount = lowStockSeeds.length;
       const totalPacks = seeds.reduce((sum, s) => sum + (s.quantity || 0), 0);
 
       document.getElementById('stat-total-seeds').textContent = seeds.length;
@@ -165,6 +179,7 @@ export const AdminDashboardPage = {
       document.getElementById('stat-total-requests').textContent = requests.length;
       document.getElementById('stat-rejected').textContent = rejectedCount;
       DemandInsightsComponent.renderData(requests);
+      this.renderLowStockAlerts(lowStockSeeds);
 
       // Calculate request trend percentage
       const trendEl = document.getElementById('stat-request-trend');
@@ -198,6 +213,23 @@ export const AdminDashboardPage = {
       console.error('Dashboard load error:', err);
       ToastComponent.show('Failed to load dashboard metrics.', 'error');
     }
+  },
+
+  renderLowStockAlerts(seeds) {
+    const container = document.getElementById('dashboard-low-stock-alerts');
+    if (!container) return;
+    if (!seeds.length) {
+      container.innerHTML = '<p class="audit-trail-empty">All seed inventory is above its low-stock alert level.</p>';
+      return;
+    }
+    container.innerHTML = seeds.slice(0, 5).map(seed => {
+      const status = SeedsService.getStockStatus(seed);
+      return `<article class="low-stock-alert ${status.key}">
+        <span class="low-stock-alert-icon" aria-hidden="true">◌</span>
+        <div><strong>${escapeHtml(seed.species_name)}</strong><small>Stock: ${escapeHtml(SeedsService.formatQuantity(seed))} remaining</small></div>
+        <span class="stock-status-badge ${status.key}">${status.label}</span>
+      </article>`;
+    }).join('');
   },
 
   renderAuditTrail(activity, auditTrailAvailable) {

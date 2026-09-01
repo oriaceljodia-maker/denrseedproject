@@ -381,6 +381,16 @@ body::after {
   }
 }
 
+@media (max-width: 760px) {
+  .app-header { display: none; }
+  .app-root { padding-bottom: .75rem; }
+  .app-footer { padding: 1rem; }
+  .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 620px; }
+  .form-row { flex-direction: column; }
+  .page-header { gap: 1rem; }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

@@ -82,7 +82,7 @@ export const PersonnelCatalogPage = {
         <strong>${totalSeeds}</strong>
       </div>
       <div class="overview-card">
-        <span>Available packs</span>
+        <span>Total recorded quantity</span>
         <strong>${totalAvailable}</strong>
       </div>
       <div class="overview-card">
@@ -140,10 +140,8 @@ export const PersonnelCatalogPage = {
     }
 
     container.innerHTML = seeds.map(seed => {
-      const isOutOfStock = seed.quantity <= 0;
-      const isLowStock = seed.quantity > 0 && seed.quantity <= seed.reorder_level;
-      const stockClass = isOutOfStock ? 'out-of-stock' : (isLowStock ? 'low-stock' : 'in-stock');
-      const stockLabel = isOutOfStock ? 'Out of Stock' : (isLowStock ? 'Low Stock' : 'In Stock');
+      const stockStatus = SeedsService.getStockStatus(seed);
+      const isOutOfStock = stockStatus.key === 'out-of-stock';
 
       return `
         <div class="seed-card ${isOutOfStock ? 'out-of-stock' : ''}">
@@ -152,10 +150,10 @@ export const PersonnelCatalogPage = {
             <div class="seed-title">${escapeHtml(seed.species_name)}</div>
             <div class="seed-badge">${escapeHtml(seed.category) || 'General'}</div>
             ${seed.description ? `<p class="seed-description">${escapeHtml(seed.description)}</p>` : ''}
-            <div class="seed-stock">Available Quantity: <strong>${seed.quantity} packs</strong><br/>Ideal for restoration, nursery propagation, and field planting programs.</div>
+            <div class="seed-stock">Available Quantity: <strong>${escapeHtml(SeedsService.formatQuantity(seed))}</strong></div>
             <div class="stock-indicator">
-              <span class="stock-dot ${stockClass}"></span>
-              ${stockLabel}
+              <span class="stock-dot ${stockStatus.key}"></span>
+              ${stockStatus.label}
             </div>
           </div>
           <button class="btn btn-primary btn-request" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" ${isOutOfStock ? 'disabled' : ''}>
@@ -207,12 +205,13 @@ export const PersonnelCatalogPage = {
       btn.addEventListener('click', (e) => {
         const seedId = e.currentTarget.getAttribute('data-id');
         const seedName = e.currentTarget.getAttribute('data-name');
+        const seed = this.allSeeds.find(item => item.id === seedId);
 
         ModalComponent.open({
           title: `Request ${seedName}`,
           bodyHtml: `
             <div class="form-group">
-              <label for="req-quantity">Quantity (Packs)</label>
+              <label for="req-quantity">Quantity (${escapeHtml(seed?.unit || 'packs')})</label>
               <input type="number" id="req-quantity" class="form-input" min="1" value="1" required />
             </div>
             <div class="form-group">
