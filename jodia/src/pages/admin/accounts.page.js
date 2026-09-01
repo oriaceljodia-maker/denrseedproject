@@ -2,8 +2,10 @@ import { UserService } from '../../services/user.service.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
+import { AccessRequestService } from '../../services/access-request.service.js';
 
 export const AdminAccountsPage = {
+  selectedAccessRequestId: null,
   render() {
     return `
       <div class="admin-container">
@@ -45,6 +47,14 @@ export const AdminAccountsPage = {
       </div>
 
       <div class="card">
+        <div class="section-block">
+          <h2 class="section-title">Pending access requests</h2>
+          <p>Requests submitted from the public Get Access form. Use the details to create an account, then mark the request approved.</p>
+          <div class="table-container"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="access-requests-table-body"><tr><td colspan="4" style="text-align:center;">Loading access requests...</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -68,7 +78,48 @@ export const AdminAccountsPage = {
 
   async init() {
     await this.loadAccounts();
+    await this.loadAccessRequests();
     this.bindCreateUser();
+  },
+
+  async loadAccessRequests() {
+    const tbody = document.getElementById('access-requests-table-body');
+    try {
+      const requests = await AccessRequestService.getPending();
+      if (!requests.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No pending access requests.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = requests.map(request => `<tr>
+        <td>${escapeHtml(request.full_name || 'Not provided')}</td>
+        <td>${escapeHtml(request.email)}</td>
+        <td>${new Date(request.created_at).toLocaleDateString()}</td>
+        <td><button class="btn btn-secondary btn-use-access-request" data-id="${escapeHtml(request.id)}" data-email="${escapeHtml(request.email)}" data-name="${escapeHtml(request.full_name || '')}" style="font-size:.75rem;padding:.3rem .55rem;">Create account</button> <button class="btn btn-danger btn-decline-access-request" data-id="${escapeHtml(request.id)}" style="font-size:.75rem;padding:.3rem .55rem;">Decline</button></td>
+      </tr>`).join('');
+      this.bindAccessRequestButtons();
+    } catch (error) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Unable to load access requests.</td></tr>';
+    }
+  },
+
+  bindAccessRequestButtons() {
+    document.querySelectorAll('.btn-use-access-request').forEach(button => button.addEventListener('click', event => {
+      const target = event.currentTarget;
+      document.getElementById('new-user-email').value = target.dataset.email;
+      document.getElementById('new-user-fullname').value = target.dataset.name;
+      document.getElementById('btn-create-user').focus();
+      this.selectedAccessRequestId = target.dataset.id;
+      ToastComponent.show('Request details added to the account form. Create the account, then approve the request.', 'info');
+    }));
+    document.querySelectorAll('.btn-decline-access-request').forEach(button => button.addEventListener('click', async event => {
+      try {
+        await AccessRequestService.updateStatus(event.currentTarget.dataset.id, 'DECLINED');
+        ToastComponent.show('Access request declined.', 'info');
+        await this.loadAccessRequests();
+      } catch (error) {
+        ToastComponent.show(error.message || 'Unable to update request.', 'error');
+      }
+    }));
   },
 
   async createUser() {
@@ -86,6 +137,10 @@ export const AdminAccountsPage = {
 
     try {
       await UserService.createPersonnelAccount(email, fullName, role, password);
+      if (this.selectedAccessRequestId) {
+        await AccessRequestService.updateStatus(this.selectedAccessRequestId, 'APPROVED');
+        this.selectedAccessRequestId = null;
+      }
       messageEl.style.display = 'block';
       messageEl.textContent = 'Account created successfully. Temporary password has been issued.';
       messageEl.style.color = 'var(--denr-green-primary)';
@@ -93,6 +148,7 @@ export const AdminAccountsPage = {
       document.getElementById('new-user-fullname').value = '';
       document.getElementById('new-user-password').value = '';
       await this.loadAccounts();
+      await this.loadAccessRequests();
     } catch (err) {
       messageEl.style.display = 'block';
       messageEl.textContent = err.message || 'Failed to create the account.';

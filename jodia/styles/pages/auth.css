@@ -145,18 +145,59 @@
 
 /* Keep the existing two-card composition compact and balanced. */
 .auth-layout {
-  padding: 1.5rem 1rem;
+  min-height: calc(100vh - 110px);
+  padding: 2rem;
+  display: grid;
+  place-items: center;
+  /* Replace this white background with url('/assets/images/your-image.jpg') center/cover when ready. */
+  background: #fff;
 }
 
 .auth-hero {
-  max-width: 1100px;
-  grid-template-columns: minmax(0, 1fr) minmax(380px, .9fr);
-  gap: 1rem;
+  width: min(1180px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, .75fr);
+  gap: 2rem;
   align-items: stretch;
 }
 
 .auth-hero-copy {
-  padding: 2rem;
+  padding: 2.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-hero-copy .eyebrow { align-self: flex-start; }
+.auth-hero-copy h1 {
+  max-width: 720px;
+  margin: 1rem 0 .6rem;
+  color: var(--denr-navy-primary);
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+}
+.auth-hero-copy h1 em { color: var(--denr-green-primary); font-style: normal; }
+.portal-track { color: var(--denr-navy-primary); font-weight: 800; word-spacing: .4rem; }
+.portal-track b { color: var(--denr-green-primary); }
+.auth-hero-copy > p { max-width: 650px; color: var(--text-muted); font-size: 1.05rem; line-height: 1.65; }
+.hero-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin-top: 1.5rem; }
+.hero-features span { min-height: 104px; padding: 1rem; border: 1px solid rgba(11,39,69,.12); border-radius: 15px; background: rgba(15,122,56,.035); color: var(--text-muted); font-size: .84rem; line-height: 1.45; }
+.hero-features strong { display: block; margin-bottom: .35rem; color: var(--denr-navy-primary); font-size: .93rem; }
+.auth-hero .auth-card { border-radius: 26px; }
+.auth-mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; padding: 1.25rem 2rem 0; }
+.auth-mode-tab { border: 1px solid rgba(11,39,69,.14); border-radius: 10px; padding: .7rem; color: var(--denr-navy-primary); background: #fff; font-weight: 750; cursor: pointer; }
+.auth-mode-tab.active { color: #fff; background: var(--denr-green-primary); border-color: var(--denr-green-primary); box-shadow: 0 8px 18px rgba(15,122,56,.2); }
+.auth-access-copy { color: var(--text-muted); font-size: .84rem; line-height: 1.5; margin: -.15rem 0 .7rem; }
+.auth-text-button { appearance: none; padding: 0; border: 0; background: transparent; color: var(--denr-green-primary); font: inherit; font-weight: 800; cursor: pointer; }
+.auth-text-button:hover { text-decoration: underline; }
+
+@media (max-width: 620px) {
+  .auth-layout { padding: 1rem; }
+  .auth-hero-copy { padding: 1.25rem 0; }
+  .hero-features { grid-template-columns: 1fr; }
+  .auth-mode-tabs { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .auth-body { padding: 1.25rem; }
 }
 
 .auth-hero .auth-card {

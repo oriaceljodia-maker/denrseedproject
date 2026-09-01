@@ -601,6 +601,7 @@
 
 .seed-entry-form { display: grid; gap: .1rem; }
 .seed-entry-form .form-group { margin-bottom: .9rem; }
+.seed-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 .85rem; }
 .seed-stock-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
 .seed-image-field { margin-top: .15rem; }
 .seed-image-upload { display: grid; gap: .65rem; }
@@ -621,4 +622,4 @@
 .seed-image-action:hover { color: var(--denr-green-hover); text-decoration: underline; }
 .seed-image-remove { color: var(--status-danger); }
 .seed-image-remove:hover { color: #b91c1c; }
-@media (max-width: 520px) { .seed-stock-fields { grid-template-columns: 1fr; gap: 0; } }
+@media (max-width: 520px) { .seed-stock-fields, .seed-form-grid { grid-template-columns: 1fr; gap: 0; } }

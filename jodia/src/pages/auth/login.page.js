@@ -1,6 +1,7 @@
 import { AuthService } from '../../services/auth.service.js';
 import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { AccessRequestService } from '../../services/access-request.service.js';
 
 export const LoginPage = {
   render() {
@@ -8,30 +9,29 @@ export const LoginPage = {
       <div class="auth-layout">
         <section class="auth-hero">
           <div class="auth-hero-copy">
-            <span class="eyebrow">DENR field operations</span>
-            <h1>Stewardship for resilient forests and thriving nurseries</h1>
-            <p>Access inventory, submit seed requests, and coordinate approval workflows with a streamlined platform built for Philippine environmental management teams.</p>
+            <span class="eyebrow">Department of Environment and Natural Resources</span>
+            <h1>Seed Inventory &amp; <em>Distribution Portal</em></h1>
+            <div class="portal-track">Track <b>•</b> Manage <b>•</b> Distribute <b>•</b> Reforest</div>
+            <p>A digital platform for managing seed inventory, tracking distributions, and promoting reforestation and sustainable communities.</p>
             <div class="hero-features">
-              <span>Inventory visibility</span>
-              <span>Fast approvals</span>
-              <span>Mission-ready access</span>
-            </div>
-            <div class="hero-highlight-card">
-              <img src="https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=800&q=80" alt="DENR field team" />
-              <div>
-                <strong>Purpose-built for conservation</strong>
-                <p>Every request supports reforestation, biodiversity, and long-term ecosystem recovery.</p>
-              </div>
+              <span><strong>Inventory Management</strong>Track and manage seed stocks in real time.</span>
+              <span><strong>Reports &amp; Analytics</strong>Generate insights for better decisions.</span>
+              <span><strong>Seed Distribution</strong>Monitor and record seed distributions.</span>
+              <span><strong>Sustainable Future</strong>Support reforestation and greener communities.</span>
             </div>
           </div>
 
           <div class="auth-card">
             <div class="auth-header">
               <img src="/assets/images/logs.jpg" alt="DENR logo" class="auth-logo" />
-              <h1 class="auth-title">Welcome Back</h1>
-              <div class="auth-subtitle">Sign in to continue</div>
+              <h1 class="auth-title">Access Your Account</h1>
+              <div class="auth-subtitle">Sign in or request access</div>
             </div>
 
+            <div class="auth-mode-tabs" role="tablist">
+              <button type="button" id="show-sign-in" class="auth-mode-tab active" role="tab" aria-selected="true">Sign In</button>
+              <button type="button" id="show-access-request" class="auth-mode-tab" role="tab" aria-selected="false">Get Access</button>
+            </div>
             <form id="login-form" class="auth-body">
               <div id="auth-error" class="auth-alert"></div>
 
@@ -53,11 +53,18 @@ export const LoginPage = {
                 </div>
               </div>
 
-              <button type="submit" id="btn-submit" class="btn btn-primary auth-btn">
-                Sign In to System
-              </button>
+              <button type="submit" id="btn-submit" class="btn btn-primary auth-btn">Sign In</button>
 
               <p class="auth-footnote">Need help? Contact the administrator if your account is inactive or unregistered.</p>
+            </form>
+
+            <form id="access-request-form" class="auth-body" hidden>
+              <div id="access-request-error" class="auth-alert"></div>
+              <div class="form-group"><label for="access-name">Full Name <span class="field-optional">(optional)</span></label><input type="text" id="access-name" class="form-input" placeholder="Your full name" /></div>
+              <div class="form-group"><label for="access-email">Your Email</label><input type="email" id="access-email" class="form-input" placeholder="you@denr.gov.ph" required /></div>
+              <p class="auth-access-copy">Submit your request and an administrator will review it before creating your account.</p>
+              <button type="submit" id="btn-access-request" class="btn btn-primary auth-btn">Send Request to Admin</button>
+              <p class="auth-footnote">Already have an account? <button type="button" class="auth-text-button" id="switch-to-sign-in">Sign In</button></p>
             </form>
           </div>
         </section>
@@ -71,6 +78,22 @@ export const LoginPage = {
     const submitBtn = document.getElementById('btn-submit');
     const passwordInput = document.getElementById('password');
     const toggleBtn = document.getElementById('toggle-password');
+    const signInTab = document.getElementById('show-sign-in');
+    const accessTab = document.getElementById('show-access-request');
+    const accessForm = document.getElementById('access-request-form');
+
+    const showMode = (mode) => {
+      const signIn = mode === 'sign-in';
+      form.hidden = !signIn;
+      accessForm.hidden = signIn;
+      signInTab.classList.toggle('active', signIn);
+      accessTab.classList.toggle('active', !signIn);
+      signInTab.setAttribute('aria-selected', String(signIn));
+      accessTab.setAttribute('aria-selected', String(!signIn));
+    };
+    signInTab?.addEventListener('click', () => showMode('sign-in'));
+    accessTab?.addEventListener('click', () => showMode('access'));
+    document.getElementById('switch-to-sign-in')?.addEventListener('click', () => showMode('sign-in'));
 
     // Password visibility toggle
     toggleBtn?.addEventListener('click', () => {
@@ -135,6 +158,29 @@ export const LoginPage = {
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In to System';
+      }
+    });
+
+    accessForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const errorBox = document.getElementById('access-request-error');
+      const button = document.getElementById('btn-access-request');
+      errorBox.style.display = 'none';
+      button.disabled = true;
+      button.textContent = 'Sending request...';
+      try {
+        await AccessRequestService.submit({
+          full_name: document.getElementById('access-name').value,
+          email: document.getElementById('access-email').value
+        });
+        accessForm.reset();
+        ToastComponent.show('Access request sent. An administrator will review it.', 'success');
+      } catch (error) {
+        errorBox.textContent = error.message || 'Unable to send your access request.';
+        errorBox.style.display = 'block';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Send Request to Admin';
       }
     });
   }

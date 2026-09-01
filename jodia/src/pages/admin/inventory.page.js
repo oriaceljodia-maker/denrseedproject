@@ -3,7 +3,7 @@ import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
 
-const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 const imageUploadField = ({ prefix, imageUrl = '' }) => `
@@ -26,7 +26,7 @@ const imageUploadField = ({ prefix, imageUrl = '' }) => `
         </div>
       </div>
     </div>
-    <span class="seed-image-formats">JPG, PNG, WEBP <span aria-hidden="true">•</span> Max 5MB</span>
+    <span class="seed-image-formats">PNG or JPG <span aria-hidden="true">•</span> Max 5MB</span>
   </div>
 `;
 
@@ -59,7 +59,7 @@ const bindImageUploadField = ({ prefix, initialImageUrl = '', onChange }) => {
 
     if (!SUPPORTED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE) {
       input.value = '';
-      ToastComponent.show('Choose a JPG, PNG, or WEBP image smaller than 5MB.', 'error');
+      ToastComponent.show('Choose a JPG or PNG image smaller than 5MB.', 'error');
       return;
     }
 
@@ -94,7 +94,7 @@ export const AdminInventoryPage = {
             <p>Track stock health, maintain nursery readiness, and ensure restoration programs have the right materials at the right time.</p>
             <div class="catalog-indicator">• Supports reforestation and biodiversity programs</div>
           </div>
-          <button id="btn-add-seed" class="btn btn-primary">+ Add New Seed Variety</button>
+          <button id="btn-add-seed" class="btn btn-primary">+ Add Seed</button>
         </div>
 
         <div class="filter-bar" style="margin-bottom: 1rem;">
@@ -120,7 +120,7 @@ export const AdminInventoryPage = {
                 <tr>
                   <th>Seed</th>
                   <th>Category</th>
-                  <th>Current Stock (Packs)</th>
+                  <th>Current Stock</th>
                   <th>Reorder Level</th>
                   <th>Actions</th>
                 </tr>
@@ -166,12 +166,12 @@ export const AdminInventoryPage = {
           <td class="inventory-seed-cell"><img class="inventory-seed-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><strong>${escapeHtml(seed.species_name)}</strong></td>
           <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
           <td>
-            ${seed.quantity} 
+            ${seed.quantity} ${escapeHtml(seed.unit || 'packs')}
             ${isOutOfStock ? '<span class="badge badge-rejected" style="margin-left: 0.5rem;">Out of Stock</span>' : (isLowStock ? '<span class="badge badge-pending" style="margin-left: 0.5rem;">Low Stock</span>' : '')}
           </td>
           <td>${seed.reorder_level || 10}</td>
           <td>
-            <button class="btn btn-secondary inventory-action-button btn-edit-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}" data-category="${escapeAttr(seed.category)}" data-description="${escapeAttr(seed.description || '')}" data-image-url="${escapeAttr(seed.image_url || '')}" data-qty="${escapeAttr(seed.quantity)}" data-reorder="${escapeAttr(seed.reorder_level || 10)}">
+            <button class="btn btn-secondary inventory-action-button btn-edit-seed" data-id="${escapeAttr(seed.id)}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
               Edit
             </button>
@@ -220,37 +220,35 @@ export const AdminInventoryPage = {
     document.getElementById('btn-add-seed')?.addEventListener('click', () => {
       let selectedImage = { file: null, imageUrl: '' };
       ModalComponent.open({
-        title: 'Add New Seed Variety',
+        title: 'Add Seed',
         bodyHtml: `
           <div class="seed-entry-form">
-            <div class="form-group">
-              <label for="new-species">Species / Variety Name</label>
-              <input type="text" id="new-species" class="form-input" required placeholder="e.g. Narra (Pterocarpus indicus)" />
-            </div>
-            <div class="form-group">
-              <label for="new-category">Category</label>
-              <input type="text" id="new-category" class="form-input" placeholder="e.g. Indigenous Tree, Fruit Tree" />
-            </div>
             ${imageUploadField({ prefix: 'new' })}
-            <div class="seed-stock-fields">
-              <div class="form-group">
-                <label for="new-quantity">Initial Stock Quantity</label>
-                <input type="number" id="new-quantity" class="form-input" min="0" value="100" required />
-              </div>
-              <div class="form-group">
-                <label for="new-reorder">Reorder Threshold Level</label>
-                <input type="number" id="new-reorder" class="form-input" min="1" value="10" required />
-              </div>
+            <div class="seed-form-grid">
+              <div class="form-group"><label for="new-species">Common Name</label><input type="text" id="new-species" class="form-input" required placeholder="e.g. Narra" /></div>
+              <div class="form-group"><label for="new-scientific-name">Scientific Name</label><input type="text" id="new-scientific-name" class="form-input" placeholder="e.g. Pterocarpus indicus" /></div>
+              <div class="form-group"><label for="new-category">Category</label><select id="new-category" class="form-input"><option value="Timber">Timber</option><option value="Fruit-bearing">Fruit-bearing</option><option value="Native">Native</option><option value="Ornamental">Ornamental</option><option value="Other">Other</option></select></div>
+              <div class="form-group"><label for="new-source-location">Source / Location</label><input type="text" id="new-source-location" class="form-input" placeholder="e.g. Pagbilao Nursery" /></div>
+              <div class="form-group"><label for="new-quantity">Stock Quantity</label><input type="number" id="new-quantity" class="form-input" min="0" placeholder="e.g. 120" required /></div>
+              <div class="form-group"><label for="new-unit">Unit</label><select id="new-unit" class="form-input"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option><option value="packs" selected>packs</option></select></div>
+              <div class="form-group"><label for="new-processing-status">Lab / Processing Status</label><select id="new-processing-status" class="form-input"><option>Newly collected</option><option>Moisture content</option><option>For Germination Test</option><option>Germinating</option><option>Ready for Distribution</option></select></div>
+              <div class="form-group"><label for="new-reorder">Reorder Level</label><input type="number" id="new-reorder" class="form-input" min="1" value="10" required /></div>
             </div>
+            <div class="form-group"><label for="new-notes">Notes <span class="field-optional">(optional)</span></label><textarea id="new-notes" class="form-input" rows="3" placeholder="Optional notes about this accession"></textarea></div>
           </div>
         `,
-        confirmText: 'Save Seed Entry',
+        confirmText: 'Save Seed',
         onConfirm: async () => {
           const species_name = document.getElementById('new-species').value.trim();
           const category = document.getElementById('new-category').value.trim();
           const image_url = selectedImage.file ? await readImageFile(selectedImage.file) : null;
           const quantity = parseInt(document.getElementById('new-quantity').value, 10);
           const reorder_level = parseInt(document.getElementById('new-reorder').value, 10);
+          const scientific_name = document.getElementById('new-scientific-name').value.trim() || null;
+          const source_location = document.getElementById('new-source-location').value.trim() || null;
+          const unit = document.getElementById('new-unit').value;
+          const processing_status = document.getElementById('new-processing-status').value;
+          const notes = document.getElementById('new-notes').value.trim() || null;
 
           if (!species_name) {
             ToastComponent.show('Species name is required.', 'error');
@@ -258,7 +256,7 @@ export const AdminInventoryPage = {
           }
 
           try {
-            await SeedsService.addSeed({ species_name, category, image_url, quantity, reorder_level });
+            await SeedsService.addSeed({ species_name, scientific_name, category, source_location, image_url, quantity, unit, processing_status, notes, reorder_level });
             ToastComponent.show('New seed entry created.', 'success');
             await this.loadInventory();
           } catch (err) {
@@ -275,33 +273,29 @@ export const AdminInventoryPage = {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget;
         const id = target.getAttribute('data-id');
-        const name = target.getAttribute('data-name');
-        const category = target.getAttribute('data-category');
-        const description = target.getAttribute('data-description');
-        const imageUrl = target.getAttribute('data-image-url');
-        const qty = target.getAttribute('data-qty');
-        const reorder = target.getAttribute('data-reorder');
+        const seed = this.allSeeds.find(item => item.id === id);
+        if (!seed) return;
+        const name = seed.species_name;
+        const imageUrl = seed.image_url || '';
         let selectedImage = { file: null, imageUrl };
 
         ModalComponent.open({
           title: `Update Stock: ${escapeHtml(name)}`,
           bodyHtml: `
-            <div class="form-group">
-              <label for="edit-category">Category</label>
-              <input type="text" id="edit-category" class="form-input" value="${escapeAttr(category)}" />
-            </div>
             ${imageUploadField({ prefix: 'edit', imageUrl })}
-            <div class="form-group">
-              <label for="edit-quantity">Current Quantity</label>
-              <input type="number" id="edit-quantity" class="form-input" min="0" value="${escapeAttr(qty)}" required />
+            <div class="seed-form-grid">
+              <div class="form-group"><label for="edit-species">Common Name</label><input id="edit-species" class="form-input" value="${escapeAttr(seed.species_name)}" required /></div>
+              <div class="form-group"><label for="edit-scientific-name">Scientific Name</label><input id="edit-scientific-name" class="form-input" value="${escapeAttr(seed.scientific_name || '')}" /></div>
+              <div class="form-group"><label for="edit-category">Category</label><input id="edit-category" class="form-input" value="${escapeAttr(seed.category || '')}" /></div>
+              <div class="form-group"><label for="edit-source-location">Source / Location</label><input id="edit-source-location" class="form-input" value="${escapeAttr(seed.source_location || '')}" /></div>
+              <div class="form-group"><label for="edit-quantity">Stock Quantity</label><input type="number" id="edit-quantity" class="form-input" min="0" value="${escapeAttr(seed.quantity)}" required /></div>
+              <div class="form-group"><label for="edit-unit">Unit</label><select id="edit-unit" class="form-input">${['g', 'kg', 'pcs', 'packs'].map(unit => `<option ${seed.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}</select></div>
+              <div class="form-group"><label for="edit-processing-status">Lab / Processing Status</label><input id="edit-processing-status" class="form-input" value="${escapeAttr(seed.processing_status || '')}" /></div>
+              <div class="form-group"><label for="edit-reorder">Reorder Level</label><input type="number" id="edit-reorder" class="form-input" min="1" value="${escapeAttr(seed.reorder_level || 10)}" required /></div>
             </div>
             <div class="form-group">
-              <label for="edit-reorder">Reorder Threshold Level</label>
-              <input type="number" id="edit-reorder" class="form-input" min="1" value="${escapeAttr(reorder)}" required />
-            </div>
-            <div class="form-group">
-              <label for="edit-description">Description <span class="field-optional">(optional)</span></label>
-              <textarea id="edit-description" class="form-input" rows="4" placeholder="Add notes or details about this seed variety">${escapeHtml(description)}</textarea>
+              <label for="edit-notes">Notes <span class="field-optional">(optional)</span></label>
+              <textarea id="edit-notes" class="form-input" rows="4" placeholder="Add notes or details about this seed variety">${escapeHtml(seed.notes || seed.description || '')}</textarea>
             </div>
           `,
           confirmText: 'Update Inventory',
@@ -312,15 +306,20 @@ export const AdminInventoryPage = {
               : (selectedImage.imageUrl || null);
             const updatedQty = parseInt(document.getElementById('edit-quantity').value, 10);
             const updatedReorder = parseInt(document.getElementById('edit-reorder').value, 10);
-            const updatedDescription = document.getElementById('edit-description').value.trim();
+            const updatedNotes = document.getElementById('edit-notes').value.trim();
 
             try {
               await SeedsService.updateSeed(id, {
+                species_name: document.getElementById('edit-species').value.trim(),
+                scientific_name: document.getElementById('edit-scientific-name').value.trim() || null,
                 category: updatedCategory,
+                source_location: document.getElementById('edit-source-location').value.trim() || null,
                 image_url: updatedImageUrl,
                 quantity: updatedQty,
+                unit: document.getElementById('edit-unit').value,
+                processing_status: document.getElementById('edit-processing-status').value.trim() || null,
                 reorder_level: updatedReorder,
-                description: updatedDescription || null
+                notes: updatedNotes || null
               });
               ToastComponent.show('Inventory updated successfully.', 'success');
               await this.loadInventory();
