@@ -232,6 +232,9 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="new-unit">Unit</label><select id="new-unit" class="form-input"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option><option value="packs" selected>packs</option></select></div>
               <div class="form-group"><label for="new-processing-status">Lab / Processing Status</label><select id="new-processing-status" class="form-input"><option>Newly collected</option><option>Moisture content</option><option>For Germination Test</option><option>Germinating</option><option>Ready for Distribution</option></select></div>
               <div class="form-group"><label for="new-reorder">Low Stock Alert At</label><input type="number" id="new-reorder" class="form-input" min="0" value="10" required /></div>
+              <div class="form-group"><label for="new-seedlot">Seedlot No. <span class="field-optional">(optional)</span></label><input id="new-seedlot" class="form-input" placeholder="e.g. H00042" /></div>
+              <div class="form-group"><label for="new-ipt">IPT No. <span class="field-optional">(optional)</span></label><input id="new-ipt" class="form-input" placeholder="e.g. PT-05-356" /></div>
+              <div class="form-group"><label for="new-date-collected">Date Collected <span class="field-optional">(optional)</span></label><input type="date" id="new-date-collected" class="form-input" /></div>
             </div>
             <div class="form-group"><label for="new-notes">Notes <span class="field-optional">(optional)</span></label><textarea id="new-notes" class="form-input" rows="3" placeholder="Optional notes about this accession"></textarea></div>
           </div>
@@ -248,6 +251,9 @@ export const AdminInventoryPage = {
           const unit = document.getElementById('new-unit').value;
           const processing_status = document.getElementById('new-processing-status').value;
           const notes = document.getElementById('new-notes').value.trim() || null;
+          const seedlot_no = document.getElementById('new-seedlot').value.trim() || null;
+          const ipt_no = document.getElementById('new-ipt').value.trim() || null;
+          const date_collected = document.getElementById('new-date-collected').value || null;
 
           if (!species_name) {
             ToastComponent.show('Species name is required.', 'error');
@@ -255,7 +261,7 @@ export const AdminInventoryPage = {
           }
 
           try {
-            await SeedsService.addSeed({ species_name, scientific_name, category, source_location, image_url, quantity, unit, processing_status, notes, reorder_level });
+            await SeedsService.addSeed({ species_name, scientific_name, category, source_location, image_url, quantity, unit, processing_status, notes, reorder_level, seedlot_no, ipt_no, date_collected });
             ToastComponent.show('New seed entry created.', 'success');
             await this.loadInventory();
           } catch (err) {

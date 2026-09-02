@@ -1,12 +1,19 @@
 import { supabase } from './src/config/supabase.js';
 import { AuthService } from './src/services/auth.service.js';
 import { Router } from './src/router/router.js';
+import { MaintenanceService } from './src/services/maintenance.service.js';
 
 class App {
   static async init() {
     // Initial user authentication fetch
     const user = await AuthService.getCurrentUser();
     await Router.navigate(user);
+    if (user) MaintenanceService.subscribe();
+
+    window.addEventListener('denr-maintenance-changed', async () => {
+      const currentUser = await AuthService.getCurrentUser();
+      if (currentUser) await Router.navigate(currentUser, window.location.pathname);
+    });
 
     // Watch for URL navigation changes (browser back/forward)
     window.addEventListener('popstate', async () => {
@@ -23,6 +30,7 @@ class App {
     supabase.auth.onAuthStateChange(async (event) => {
       if (['SIGNED_OUT', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
         const currentUser = await AuthService.getCurrentUser();
+        if (currentUser) MaintenanceService.subscribe();
         await Router.navigate(currentUser);
       }
     });

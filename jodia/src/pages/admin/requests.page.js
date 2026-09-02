@@ -2,6 +2,7 @@ import { RequestsService } from '../../services/requests.service.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
+import { MaintenanceService } from '../../services/maintenance.service.js';
 
 export const AdminRequestsPage = {
   allRequests: [],
@@ -27,6 +28,7 @@ export const AdminRequestsPage = {
             <option value="">All Statuses</option>
             <option value="PENDING">Pending</option>
             <option value="APPROVED">Approved</option>
+            <option value="READY_FOR_RELEASE">Ready for Release</option>
             <option value="REJECTED">Rejected</option>
             <option value="DISBURSED">Disbursed</option>
           </select>
@@ -80,19 +82,21 @@ export const AdminRequestsPage = {
 
     tbody.innerHTML = requests.map(req => {
       const isPending = req.status === 'PENDING';
+      const isApproved = req.status === 'APPROVED';
+      const isReady = req.status === 'READY_FOR_RELEASE';
       return `
         <tr>
           <td><strong>${escapeHtml(req.profiles?.full_name) || 'Personnel'}</strong></td>
           <td>${escapeHtml(req.seeds?.species_name) || 'N/A'}</td>
-          <td><strong>${req.quantity}</strong> packs</td>
-          <td style="max-width: 250px; font-size: 0.8125rem;">${escapeHtml(req.purpose) || 'N/A'}</td>
+          <td><strong>${req.quantity}</strong> ${escapeHtml(req.seeds?.unit || 'packs')}</td>
+          <td style="max-width: 250px; font-size: 0.8125rem;"><strong>${escapeHtml(req.purpose_category || 'Request')}</strong><br/>${escapeHtml(req.planting_site || 'Location not provided')}<br/>${escapeHtml(req.purpose) || 'N/A'}</td>
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status)}</span></td>
           <td>
             ${isPending ? `
               <button class="btn btn-primary btn-approve" data-id="${escapeAttr(req.id)}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Approve</button>
               <button class="btn btn-danger btn-reject" data-id="${escapeAttr(req.id)}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Reject</button>
-            ` : `<small style="color:var(--text-muted);">Processed</small>`}
+            ` : isApproved ? `<button class="btn btn-secondary btn-ready-request" data-id="${escapeAttr(req.id)}" style="padding:0.25rem .625rem;font-size:.75rem;">Mark Ready</button>` : isReady ? `<button class="btn btn-primary btn-release-request" data-id="${escapeAttr(req.id)}" style="padding:0.25rem .625rem;font-size:.75rem;">Mark Released</button>` : `<small style="color:var(--text-muted);">Processed</small>`}
           </td>
         </tr>
       `;
@@ -135,6 +139,7 @@ export const AdminRequestsPage = {
           confirmText: 'Approve Request',
           onConfirm: async () => {
             try {
+              if (await MaintenanceService.isEnabled()) throw new Error('Request decisions are disabled while maintenance mode is active.');
               await RequestsService.updateRequestStatus(reqId, 'APPROVED');
               ToastComponent.show('Request approved.', 'success');
               await this.loadRequests();
@@ -161,6 +166,7 @@ export const AdminRequestsPage = {
           onConfirm: async () => {
             const notes = document.getElementById('reject-reason').value.trim();
             try {
+              if (await MaintenanceService.isEnabled()) throw new Error('Request decisions are disabled while maintenance mode is active.');
               await RequestsService.updateRequestStatus(reqId, 'REJECTED', notes);
               ToastComponent.show('Request rejected.', 'info');
               await this.loadRequests();
@@ -169,6 +175,20 @@ export const AdminRequestsPage = {
             }
           }
         });
+      });
+    });
+
+    document.querySelectorAll('.btn-ready-request, .btn-release-request').forEach(btn => {
+      btn.addEventListener('click', async event => {
+        const status = event.currentTarget.classList.contains('btn-ready-request') ? 'READY_FOR_RELEASE' : 'DISBURSED';
+        try {
+          if (await MaintenanceService.isEnabled()) throw new Error('Request decisions are disabled while maintenance mode is active.');
+          await RequestsService.updateRequestStatus(event.currentTarget.getAttribute('data-id'), status);
+          ToastComponent.show(status === 'READY_FOR_RELEASE' ? 'Request marked ready for release.' : 'Request marked released.', 'success');
+          await this.loadRequests();
+        } catch (error) {
+          ToastComponent.show(error.message || 'Unable to update request.', 'error');
+        }
       });
     });
   }

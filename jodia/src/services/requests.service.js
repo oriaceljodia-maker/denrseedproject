@@ -7,7 +7,7 @@ export const RequestsService = {
       .from('requests')
       .select(`
         *,
-        seeds ( species_name, category, image_url ),
+        seeds ( species_name, scientific_name, category, image_url, unit ),
         profiles ( full_name )
       `, { count: 'exact' })
       .order('created_at', { ascending: false });
@@ -22,7 +22,7 @@ export const RequestsService = {
   },
 
   // Submit a seed request
-  async createRequest(seedId, quantityRequested, purpose) {
+  async createRequest(seedId, quantityRequested, requestDetails) {
     const { data: { user } } = await supabase.auth.getUser();
 
     const { data, error } = await supabase
@@ -31,7 +31,12 @@ export const RequestsService = {
         user_id: user.id,
         seed_id: seedId,
         quantity: quantityRequested,
-        purpose: purpose,
+        purpose: requestDetails.purpose,
+        planting_site: requestDetails.planting_site,
+        needed_date: requestDetails.needed_date || null,
+        purpose_category: requestDetails.purpose_category,
+        beneficiaries_count: requestDetails.beneficiaries_count || null,
+        contact_number: requestDetails.contact_number,
         status: 'PENDING'
       }])
       .select()
@@ -56,6 +61,13 @@ export const RequestsService = {
 
     if (error) throw error;
     return data;
+  },
+
+  getTimeline(status) {
+    const steps = ['Submitted', 'Under Review', 'Approved', 'Ready for Release', 'Released'];
+    if (status === 'REJECTED') return [...steps.slice(0, 2), 'Rejected'];
+    const completed = status === 'PENDING' ? 1 : status === 'APPROVED' ? 2 : status === 'READY_FOR_RELEASE' ? 3 : status === 'DISBURSED' ? 4 : 0;
+    return steps.map((label, index) => ({ label, complete: index <= completed }));
   },
 
   subscribeToRequests(onUpdate) {

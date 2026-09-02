@@ -79,7 +79,18 @@
   color: var(--denr-green-primary);
 }
 
+.seed-scientific-name { margin-top: .2rem; color: var(--text-muted); font-family: Georgia, serif; font-size: .82rem; font-style: italic; }
+
 .stock-indicator { color: var(--denr-navy-primary); }
+
+.personnel-notifications { margin-bottom: 1.25rem; }
+.personnel-notice { padding: .65rem 0; border-bottom: 1px solid rgba(11,39,69,.09); color: var(--text-muted); font-size: .9rem; }
+.personnel-notice:last-child { border-bottom: 0; }
+.request-timeline { display: flex; flex-wrap: wrap; gap: .25rem; margin-bottom: .4rem; }
+.request-timeline span { font-size: .68rem; color: var(--text-muted); }
+.request-timeline span:not(:last-child)::after { content: '›'; margin-left: .25rem; }
+.request-timeline .complete { color: var(--denr-green-primary); font-weight: 700; }
+.request-admin-note { color: var(--text-muted); line-height: 1.4; }
 
 .seed-badge {
   display: inline-block;

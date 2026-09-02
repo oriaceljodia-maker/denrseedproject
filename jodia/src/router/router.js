@@ -4,6 +4,7 @@ import { HeaderComponent } from '../components/header.component.js';
 import { NavbarComponent } from '../components/navbar.component.js';
 import { FooterComponent } from '../components/footer.component.js';
 import { MaintenanceBannerComponent } from '../components/maintenance-banner.component.js';
+import { MaintenanceService } from '../services/maintenance.service.js';
 
 // Page Controller Imports
 import { LoginPage } from '../pages/auth/login.page.js';
@@ -124,7 +125,15 @@ export const Router = {
       hasNavbar = true;
     }
 
-    const bannerHtml = MaintenanceBannerComponent.render();
+    let maintenanceConfig = MaintenanceService.config;
+    if (user) {
+      try {
+        maintenanceConfig = await MaintenanceService.load();
+      } catch (error) {
+        console.warn('Maintenance settings are unavailable. Run the maintenance SQL migration.', error);
+      }
+    }
+    const bannerHtml = MaintenanceBannerComponent.render(maintenanceConfig);
     const footerHtml = FooterComponent.render();
     root.innerHTML = bannerHtml + content + footerHtml;
     if (hasNavbar) NavbarComponent.bindEvents(user);

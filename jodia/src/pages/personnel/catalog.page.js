@@ -6,6 +6,7 @@ import { ROUTES } from '../../config/constants.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
+import { MaintenanceService } from '../../services/maintenance.service.js';
 
 export const PersonnelCatalogPage = {
   allSeeds: [],
@@ -62,6 +63,7 @@ export const PersonnelCatalogPage = {
       this.renderCatalog(this.allSeeds);
       this.bindSearchAndFilter();
       this.bindGlobalActions();
+      this.openRepeatRequest();
     } catch (err) {
       ToastComponent.show('Failed to fetch catalog.', 'error');
     }
@@ -148,6 +150,7 @@ export const PersonnelCatalogPage = {
           <img class="seed-card-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="${escapeAttr(seed.species_name)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=900&q=80';" />
           <div>
             <div class="seed-title">${escapeHtml(seed.species_name)}</div>
+            ${seed.scientific_name ? `<div class="seed-scientific-name">${escapeHtml(seed.scientific_name)}</div>` : ''}
             <div class="seed-badge">${escapeHtml(seed.category) || 'General'}</div>
             ${seed.description ? `<p class="seed-description">${escapeHtml(seed.description)}</p>` : ''}
             <div class="seed-stock">Available Quantity: <strong>${escapeHtml(SeedsService.formatQuantity(seed))}</strong></div>
@@ -214,6 +217,15 @@ export const PersonnelCatalogPage = {
               <label for="req-quantity">Quantity (${escapeHtml(seed?.unit || 'packs')})</label>
               <input type="number" id="req-quantity" class="form-input" min="1" value="1" required />
             </div>
+            <div class="form-row">
+              <div class="form-group" style="flex:1;"><label for="req-site">Planting Site / Location</label><input id="req-site" class="form-input" placeholder="Barangay, municipality, or project site" required /></div>
+              <div class="form-group" style="flex:1;"><label for="req-needed-date">Needed Date</label><input type="date" id="req-needed-date" class="form-input" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex:1;"><label for="req-category">Purpose Category</label><select id="req-category" class="form-input"><option>Reforestation</option><option>Nursery Propagation</option><option>School / Community Activity</option><option>Research</option><option>Other</option></select></div>
+              <div class="form-group" style="flex:1;"><label for="req-beneficiaries">Seedlings / Beneficiaries</label><input type="number" id="req-beneficiaries" min="0" class="form-input" placeholder="Optional" /></div>
+            </div>
+            <div class="form-group"><label for="req-contact">Contact Number</label><input type="tel" id="req-contact" class="form-input" placeholder="For follow-up" required /></div>
             <div class="form-group">
               <label for="req-purpose">Purpose of Request</label>
               <textarea id="req-purpose" class="form-input" rows="3" placeholder="Specify planting site / project..." required></textarea>
@@ -230,7 +242,15 @@ export const PersonnelCatalogPage = {
             }
 
             try {
-              await RequestsService.createRequest(seedId, parseInt(qty, 10), purpose);
+              if (await MaintenanceService.isEnabled()) throw new Error('Requests are temporarily unavailable while maintenance mode is active.');
+              await RequestsService.createRequest(seedId, parseInt(qty, 10), {
+                purpose,
+                planting_site: document.getElementById('req-site').value.trim(),
+                needed_date: document.getElementById('req-needed-date').value,
+                purpose_category: document.getElementById('req-category').value,
+                beneficiaries_count: parseInt(document.getElementById('req-beneficiaries').value, 10) || null,
+                contact_number: document.getElementById('req-contact').value.trim()
+              });
               ToastComponent.show('Request submitted for approval.', 'success');
             } catch (err) {
               ToastComponent.show(err.message || 'Failed to submit request.', 'error');
@@ -239,5 +259,26 @@ export const PersonnelCatalogPage = {
         });
       });
     });
+  }
+  ,
+  openRepeatRequest() {
+    const saved = sessionStorage.getItem('denrRepeatRequest');
+    if (!saved) return;
+    sessionStorage.removeItem('denrRepeatRequest');
+    try {
+      const request = JSON.parse(saved);
+      const button = document.querySelector(`.btn-request[data-id="${CSS.escape(request.seedId)}"]`);
+      if (!button) return;
+      button.click();
+      document.getElementById('req-quantity').value = request.quantity;
+      document.getElementById('req-site').value = request.planting_site;
+      document.getElementById('req-needed-date').value = request.needed_date;
+      document.getElementById('req-category').value = request.purpose_category;
+      document.getElementById('req-beneficiaries').value = request.beneficiaries_count;
+      document.getElementById('req-contact').value = request.contact_number;
+      document.getElementById('req-purpose').value = request.purpose;
+    } catch (error) {
+      console.warn('Unable to prefill repeated request.', error);
+    }
   }
 };

@@ -2,6 +2,7 @@ import { AuthService } from '../../services/auth.service.js';
 import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { AccessRequestService } from '../../services/access-request.service.js';
+import { MaintenanceService } from '../../services/maintenance.service.js';
 
 export const LoginPage = {
   render() {
@@ -136,6 +137,7 @@ export const LoginPage = {
           console.warn('Unable to record successful login activity.', auditError);
         });
         ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');
+        MaintenanceService.subscribe();
         // Explicitly navigate (the global onAuthStateChange listener may race
         // and re-route to login before the session is fully settled).
         await Router.navigate(user);
