@@ -18,6 +18,30 @@
   font-size: 1rem;
 }
 
+.analytics-section { margin: 1.25rem 0 1.5rem; font-family: 'Public Sans', sans-serif; }
+.analytics-section-heading { margin-bottom: .85rem; }
+.analytics-section-heading .eyebrow { margin-bottom: .55rem; }
+.analytics-section-heading h2, .analytics-card h3 { font-family: 'Fraunces', Georgia, serif; color: var(--denr-navy-primary); }
+.analytics-section-heading h2 { margin: 0; font-size: 1.45rem; }
+.analytics-section-heading p { margin: .35rem 0 0; color: var(--text-muted); font-size: .9rem; }
+.analytics-controls { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
+.analytics-range { padding: .42rem .72rem; border: 1px solid rgba(11,39,69,.14); border-radius: 999px; background: #fff; color: var(--text-muted); font: 700 .75rem 'Public Sans', sans-serif; cursor: pointer; }
+.analytics-range.active { background: var(--denr-green-primary); border-color: var(--denr-green-primary); color: #fff; }
+.analytics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.analytics-card { padding: 1.15rem; }
+.analytics-card h3 { margin: 0 0 1rem; font-size: 1.08rem; }
+.month-bars { display: flex; align-items: end; justify-content: space-between; gap: .6rem; min-height: 175px; }
+.month-bar-item { display: grid; flex: 1; min-width: 0; justify-items: center; gap: .35rem; color: var(--text-muted); font: 500 .72rem 'IBM Plex Mono', monospace; }
+.month-bar-track { display: flex; align-items: end; width: 100%; height: 110px; background: rgba(15,122,56,.08); border-radius: 7px 7px 3px 3px; overflow: hidden; }
+.month-bar-track i { display: block; width: 100%; background: linear-gradient(180deg, var(--denr-green-primary), #5caf70); border-radius: inherit; }
+.month-bar-value { color: var(--denr-navy-primary); font-weight: 600; }
+.purpose-bars { display: grid; gap: .85rem; }
+.purpose-label { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .35rem; color: var(--text-muted); font-size: .8rem; }
+.purpose-label strong { color: var(--denr-navy-primary); font-family: 'IBM Plex Mono', monospace; }
+.purpose-track { height: .6rem; border-radius: 999px; background: rgba(11,39,69,.08); overflow: hidden; }
+.purpose-track i { display: block; height: 100%; border-radius: inherit; background: #287cc0; }
+.analytics-empty { color: var(--text-muted); font-size: .86rem; min-height: 150px; display: grid; place-items: center; text-align: center; }
+
 .demand-insight-title span {
   color: var(--status-warning);
   margin-right: 0.45rem;
@@ -85,4 +109,5 @@
 
 @media (max-width: 860px) {
   .demand-insights-grid { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
 }

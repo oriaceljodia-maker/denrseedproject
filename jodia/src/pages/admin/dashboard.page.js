@@ -84,6 +84,12 @@ export const AdminDashboardPage = {
 
         ${DemandInsightsComponent.render()}
 
+        <section class="analytics-section" aria-label="Planning analytics">
+          <div class="analytics-section-heading"><span class="eyebrow">Planning analytics</span><h2>Demand patterns and field purpose</h2><p>Use monthly request volume and purpose categories to plan collection and distribution activities.</p></div>
+          <div class="analytics-controls" role="group" aria-label="Analytics period"><button type="button" class="analytics-range active" data-range="6">Last 6 Months</button><button type="button" class="analytics-range" data-range="12">Last 12 Months</button><button type="button" class="analytics-range" data-range="0">All Time</button></div>
+          <div class="analytics-grid"><article class="card analytics-card"><h3>Monthly Request Volume</h3><div id="monthly-request-chart" class="monthly-request-chart">Loading monthly data...</div></article><article class="card analytics-card"><h3>Requests by Purpose</h3><div id="purpose-category-chart" class="purpose-category-chart">Loading purpose data...</div></article></div>
+        </section>
+
         <section class="card low-stock-alerts-card" aria-label="Low stock alerts">
           <div class="low-stock-alerts-header"><h2 class="section-title">Low Stock Alerts</h2><button type="button" id="btn-view-low-stock" class="btn btn-secondary low-stock-view-all">View All</button></div>
           <div id="dashboard-low-stock-alerts" class="low-stock-alerts-list"><p class="audit-trail-empty">Loading low stock alerts...</p></div>
@@ -130,6 +136,7 @@ export const AdminDashboardPage = {
     this.bindAuditTrailLink();
     this.bindLowStockLink();
     this.startLiveSync();
+    this.bindAnalyticsControls();
   },
 
   bindAuditTrailLink() {
@@ -144,6 +151,15 @@ export const AdminDashboardPage = {
       const user = await AuthService.getCurrentUser();
       await Router.navigate(user, ROUTES.ADMIN_INVENTORY);
     });
+  },
+
+  bindAnalyticsControls() {
+    document.querySelectorAll('.analytics-range').forEach(button => button.addEventListener('click', event => {
+      document.querySelectorAll('.analytics-range').forEach(item => item.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      this.analyticsRange = Number(event.currentTarget.dataset.range);
+      this.renderPlanningAnalytics(this.latestRequests || []);
+    }));
   },
 
   startLiveSync() {
@@ -179,6 +195,8 @@ export const AdminDashboardPage = {
       document.getElementById('stat-total-requests').textContent = requests.length;
       document.getElementById('stat-rejected').textContent = rejectedCount;
       DemandInsightsComponent.renderData(requests);
+      this.latestRequests = requests;
+      this.renderPlanningAnalytics(requests);
       this.renderLowStockAlerts(lowStockSeeds);
 
       // Calculate request trend percentage
@@ -230,6 +248,36 @@ export const AdminDashboardPage = {
         <span class="stock-status-badge ${status.key}">${status.label}</span>
       </article>`;
     }).join('');
+  },
+
+  renderPlanningAnalytics(requests) {
+    const range = this.analyticsRange ?? 6;
+    const now = new Date();
+    const months = range ? Array.from({ length: range }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - (range - 1 - index), 1);
+      return { key: `${date.getFullYear()}-${date.getMonth()}`, label: date.toLocaleDateString(undefined, { month: 'short' }) };
+    }) : [];
+    const filtered = range ? requests.filter(request => new Date(request.created_at) >= new Date(now.getFullYear(), now.getMonth() - (range - 1), 1)) : requests;
+    const monthly = months.map(month => ({ ...month, value: filtered.filter(request => {
+      const date = new Date(request.created_at);
+      return `${date.getFullYear()}-${date.getMonth()}` === month.key;
+    }).length }));
+    const monthlyContainer = document.getElementById('monthly-request-chart');
+    if (monthlyContainer) {
+      const max = Math.max(...monthly.map(item => item.value), 1);
+      monthlyContainer.innerHTML = monthly.length ? `<div class="month-bars">${monthly.map(item => `<div class="month-bar-item"><span class="month-bar-value">${item.value}</span><div class="month-bar-track"><i style="height:${Math.max(8, (item.value / max) * 100)}%"></i></div><span>${escapeHtml(item.label)}</span></div>`).join('')}</div>` : '<p class="analytics-empty">Select a period to view monthly request volume.</p>';
+    }
+    const byPurpose = new Map();
+    filtered.forEach(request => {
+      const key = request.purpose_category || 'Uncategorized';
+      byPurpose.set(key, (byPurpose.get(key) || 0) + 1);
+    });
+    const purposes = [...byPurpose.entries()].sort((a, b) => b[1] - a[1]);
+    const purposeContainer = document.getElementById('purpose-category-chart');
+    if (purposeContainer) {
+      const max = Math.max(...purposes.map(([, value]) => value), 1);
+      purposeContainer.innerHTML = purposes.length ? `<div class="purpose-bars">${purposes.slice(0, 5).map(([label, value]) => `<div><div class="purpose-label"><span>${escapeHtml(label)}</span><strong>${value}</strong></div><div class="purpose-track"><i style="width:${(value / max) * 100}%"></i></div></div>`).join('')}</div>` : '<p class="analytics-empty">Purpose analytics will appear after requests are submitted.</p>';
+    }
   },
 
   renderAuditTrail(activity, auditTrailAvailable) {

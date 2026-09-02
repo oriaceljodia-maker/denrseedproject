@@ -165,7 +165,7 @@ export const AdminInventoryPage = {
           <td class="inventory-seed-cell"><img class="inventory-seed-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><strong>${escapeHtml(seed.species_name)}</strong></td>
           <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
           <td>
-            ${escapeHtml(SeedsService.formatQuantity(seed))}
+            ${escapeHtml(SeedsService.formatQuantity(seed))}${Number(seed.reserved_quantity) ? `<small style="display:block;color:var(--text-muted);margin-top:.25rem;">${escapeHtml(String(seed.reserved_quantity))} ${escapeHtml(seed.unit || 'packs')} reserved</small>` : ''}
             <span class="badge stock-status-badge ${stockStatus.key}" style="margin-left: 0.5rem;">${stockStatus.label}</span>
           </td>
           <td>${seed.reorder_level || 0} ${escapeHtml(seed.unit || 'packs')}</td>

@@ -64,6 +64,7 @@ export const PersonnelCatalogPage = {
       this.bindSearchAndFilter();
       this.bindGlobalActions();
       this.openRepeatRequest();
+      this.startLiveSync();
     } catch (err) {
       ToastComponent.show('Failed to fetch catalog.', 'error');
     }
@@ -215,7 +216,7 @@ export const PersonnelCatalogPage = {
           bodyHtml: `
             <div class="form-group">
               <label for="req-quantity">Quantity (${escapeHtml(seed?.unit || 'packs')})</label>
-              <input type="number" id="req-quantity" class="form-input" min="1" value="1" required />
+              <input type="number" id="req-quantity" class="form-input" min="1" max="${escapeAttr(SeedsService.getAvailableQuantity(seed))}" value="1" required />
             </div>
             <div class="form-row">
               <div class="form-group" style="flex:1;"><label for="req-site">Planting Site / Location</label><input id="req-site" class="form-input" placeholder="Barangay, municipality, or project site" required /></div>
@@ -238,6 +239,10 @@ export const PersonnelCatalogPage = {
 
             if (!qty || !purpose) {
               ToastComponent.show('Please complete all fields.', 'error');
+              return;
+            }
+            if (Number(qty) > SeedsService.getAvailableQuantity(seed)) {
+              ToastComponent.show(`Only ${SeedsService.formatQuantity(seed)} is currently available.`, 'error');
               return;
             }
 
@@ -280,5 +285,21 @@ export const PersonnelCatalogPage = {
     } catch (error) {
       console.warn('Unable to prefill repeated request.', error);
     }
+  }
+  ,
+  startLiveSync() {
+    if (this.liveSyncStarted) return;
+    this.liveChannel = SeedsService.subscribeToSeeds(async () => {
+      if (window.location.pathname !== ROUTES.PERSONNEL_CATALOG) return;
+      try {
+        this.allSeeds = await SeedsService.getAllSeeds();
+        this.populateCategoryFilter();
+        this.renderOverview(this.allSeeds);
+        this.renderCatalog(this.allSeeds);
+      } catch (error) {
+        console.warn('Unable to refresh live seed inventory.', error);
+      }
+    });
+    this.liveSyncStarted = true;
   }
 };

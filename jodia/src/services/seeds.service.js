@@ -2,7 +2,7 @@ import { supabase } from '../config/supabase.js';
 
 export const SeedsService = {
   getStockStatus(seed) {
-    const quantity = Number(seed?.quantity) || 0;
+    const quantity = this.getAvailableQuantity(seed);
     const alertAt = Number(seed?.reorder_level) || 0;
     if (quantity <= 0) return { key: 'out-of-stock', label: 'Out of Stock' };
     if (quantity <= alertAt) return { key: 'low-stock', label: 'Low Stock' };
@@ -10,7 +10,11 @@ export const SeedsService = {
   },
 
   formatQuantity(seed) {
-    return `${seed?.quantity ?? 0} ${seed?.unit || 'packs'}`;
+    return `${this.getAvailableQuantity(seed)} ${seed?.unit || 'packs'}`;
+  },
+
+  getAvailableQuantity(seed) {
+    return Math.max(0, (Number(seed?.quantity) || 0) - (Number(seed?.reserved_quantity) || 0));
   },
 
   // Use a calm, consistent fallback when a legacy seed record has no image yet.
