@@ -5,6 +5,7 @@ import { ROUTES } from '../../config/constants.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 import { SeedsService } from '../../services/seeds.service.js';
+import { ModalComponent } from '../../components/modal.component.js';
 
 export const PersonnelMyRequestsPage = {
   render() {
@@ -108,12 +109,13 @@ export const PersonnelMyRequestsPage = {
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status.replaceAll('_', ' '))}</span></td>
           <td style="font-size:0.8125rem;"><div class="request-timeline">${RequestsService.getTimeline(req.status).map(step => `<span class="${step.complete ? 'complete' : ''}">${escapeHtml(step.label)}</span>`).join('')}</div>${req.review_notes ? `<div class="request-admin-note"><strong>Admin note:</strong> ${escapeHtml(req.review_notes)}</div>` : ''}</td>
-          <td>${req.status === 'DISBURSED' ? `<button class="btn btn-secondary btn-request-again" data-id="${req.id}" style="font-size:.75rem;padding:.35rem .55rem;">Request Again</button>` : '—'}</td>
+          <td>${req.status === 'PENDING' ? `<button class="btn btn-danger btn-cancel-request" data-id="${req.id}" style="font-size:.75rem;padding:.35rem .55rem;">Cancel Request</button>` : req.status === 'DISBURSED' ? `<button class="btn btn-secondary btn-request-again" data-id="${req.id}" style="font-size:.75rem;padding:.35rem .55rem;">Request Again</button>` : '—'}</td>
         </tr>
       `).join('');
       this.renderNotifications(requests, seeds);
       this.requests = requests;
       this.bindRequestAgain();
+      this.bindCancelRequest();
     } catch (err) {
       ToastComponent.show('Failed to fetch request history.', 'error');
     }
@@ -134,6 +136,27 @@ export const PersonnelMyRequestsPage = {
       if (request) sessionStorage.setItem('denrRepeatRequest', JSON.stringify({ seedId: request.seed_id, quantity: request.quantity, planting_site: request.planting_site || '', needed_date: request.needed_date || '', purpose_category: request.purpose_category || 'Reforestation', beneficiaries_count: request.beneficiaries_count || '', contact_number: request.contact_number || '', purpose: request.purpose || '' }));
       const currentUser = await AuthService.getCurrentUser();
       await Router.navigate(currentUser, ROUTES.PERSONNEL_CATALOG);
+    }));
+  },
+  bindCancelRequest() {
+    document.querySelectorAll('.btn-cancel-request').forEach(button => button.addEventListener('click', () => {
+      const request = this.requests.find(item => item.id === button.dataset.id);
+      if (!request) return;
+      ModalComponent.open({
+        title: 'Cancel Seed Request?',
+        bodyHtml: `<p>Cancel your pending request for <strong>${escapeHtml(request.seeds?.species_name || 'this seed')}</strong>?</p><p>The reserved ${escapeHtml(String(request.quantity))} ${escapeHtml(request.seeds?.unit || 'packs')} will become available again.</p>`,
+        confirmText: 'Cancel Request',
+        confirmClass: 'btn-danger',
+        onConfirm: async () => {
+          try {
+            await RequestsService.cancelOwnRequest(request.id);
+            ToastComponent.show('Request cancelled. Reserved stock is available again.', 'success');
+            await this.init();
+          } catch (error) {
+            ToastComponent.show(error.message || 'Unable to cancel the request.', 'error');
+          }
+        }
+      });
     }));
   }
 };

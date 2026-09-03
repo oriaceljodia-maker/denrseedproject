@@ -63,9 +63,22 @@ export const RequestsService = {
     return data;
   },
 
+  async cancelOwnRequest(requestId) {
+    const { data, error } = await supabase
+      .from('requests')
+      .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
+      .eq('id', requestId)
+      .eq('status', 'PENDING')
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   getTimeline(status) {
     const steps = ['Submitted', 'Under Review', 'Approved', 'Ready for Release', 'Released'];
     if (status === 'REJECTED') return [...steps.slice(0, 2), 'Rejected'];
+    if (status === 'CANCELLED') return [{ label: 'Submitted', complete: true }, { label: 'Cancelled by requester', complete: true }];
     const completed = status === 'PENDING' ? 1 : status === 'APPROVED' ? 2 : status === 'READY_FOR_RELEASE' ? 3 : status === 'DISBURSED' ? 4 : 0;
     return steps.map((label, index) => ({ label, complete: index <= completed }));
   },

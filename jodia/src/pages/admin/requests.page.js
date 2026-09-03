@@ -180,10 +180,11 @@ export const AdminRequestsPage = {
 
     document.querySelectorAll('.btn-ready-request, .btn-release-request').forEach(btn => {
       btn.addEventListener('click', async event => {
+        const requestId = event.currentTarget.getAttribute('data-id');
         const status = event.currentTarget.classList.contains('btn-ready-request') ? 'READY_FOR_RELEASE' : 'DISBURSED';
         try {
           if (await MaintenanceService.isEnabled()) throw new Error('Request decisions are disabled while maintenance mode is active.');
-          await RequestsService.updateRequestStatus(event.currentTarget.getAttribute('data-id'), status);
+          await RequestsService.updateRequestStatus(requestId, status);
           ToastComponent.show(status === 'READY_FOR_RELEASE' ? 'Request marked ready for release.' : 'Request marked released.', 'success');
           await this.loadRequests();
         } catch (error) {
