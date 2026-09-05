@@ -28,6 +28,12 @@ class App {
     // the session/profile fully settles), which would call logout() and bounce the
     // user right back to the login page.
     supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        sessionStorage.setItem('denr-password-recovery', 'true');
+        const currentUser = await AuthService.getCurrentUser();
+        await Router.navigate(currentUser, '/force-password');
+        return;
+      }
       if (['SIGNED_OUT', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
         const currentUser = await AuthService.getCurrentUser();
         if (currentUser) MaintenanceService.subscribe();

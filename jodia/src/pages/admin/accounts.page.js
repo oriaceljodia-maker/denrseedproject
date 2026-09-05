@@ -3,6 +3,8 @@ import { ToastComponent } from '../../components/toast.component.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { escapeHtml } from '../../../utils/formatters.js';
 import { AccessRequestService } from '../../services/access-request.service.js';
+import { PasswordResetRequestService } from '../../services/password-reset-request.service.js';
+import { AuthService } from '../../services/auth.service.js';
 
 export const AdminAccountsPage = {
   selectedAccessRequestId: null,
@@ -55,6 +57,14 @@ export const AdminAccountsPage = {
       </div>
 
       <div class="card">
+        <div class="section-block">
+          <h2 class="section-title">Password-reset requests</h2>
+          <p>Approve a request to send a secure, one-time password-reset link. The system never displays or emails a password.</p>
+          <div class="table-container"><table class="data-table"><thead><tr><th>Email</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="password-reset-requests-table-body"><tr><td colspan="3" style="text-align:center;">Loading password-reset requests...</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -79,7 +89,57 @@ export const AdminAccountsPage = {
   async init() {
     await this.loadAccounts();
     await this.loadAccessRequests();
+    await this.loadPasswordResetRequests();
     this.bindCreateUser();
+  },
+
+  async loadPasswordResetRequests() {
+    const tbody = document.getElementById('password-reset-requests-table-body');
+    try {
+      const requests = await PasswordResetRequestService.getPending();
+      if (!requests.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No pending password-reset requests.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = requests.map(request => `<tr>
+        <td>${escapeHtml(request.email)}</td>
+        <td>${new Date(request.requested_at).toLocaleDateString()}</td>
+        <td><button class="btn btn-secondary btn-send-password-reset" data-id="${escapeHtml(request.id)}" data-email="${escapeHtml(request.email)}" style="font-size:.75rem;padding:.3rem .55rem;">Send reset link</button> <button class="btn btn-danger btn-decline-password-reset" data-id="${escapeHtml(request.id)}" style="font-size:.75rem;padding:.3rem .55rem;">Decline</button></td>
+      </tr>`).join('');
+      this.bindPasswordResetButtons();
+    } catch (error) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Unable to load password-reset requests. Run the password reset SQL migration.</td></tr>';
+    }
+  },
+
+  bindPasswordResetButtons() {
+    document.querySelectorAll('.btn-send-password-reset').forEach(button => button.addEventListener('click', event => {
+      const { id, email } = event.currentTarget.dataset;
+      ModalComponent.open({
+        title: 'Send password-reset link?',
+        bodyHtml: `<p>Send a secure, one-time password-reset link to <strong>${escapeHtml(email)}</strong>?</p>`,
+        confirmText: 'Send Reset Link',
+        onConfirm: async () => {
+          try {
+            await AuthService.sendPasswordResetEmail(email);
+            await PasswordResetRequestService.markSent(id);
+            ToastComponent.show('Secure password-reset link sent.', 'success');
+            await this.loadPasswordResetRequests();
+          } catch (error) {
+            ToastComponent.show(error.message || 'Unable to send the password-reset link.', 'error');
+          }
+        }
+      });
+    }));
+    document.querySelectorAll('.btn-decline-password-reset').forEach(button => button.addEventListener('click', async event => {
+      try {
+        await PasswordResetRequestService.decline(event.currentTarget.dataset.id);
+        ToastComponent.show('Password-reset request declined.', 'info');
+        await this.loadPasswordResetRequests();
+      } catch (error) {
+        ToastComponent.show(error.message || 'Unable to update password-reset request.', 'error');
+      }
+    }));
   },
 
   async loadAccessRequests() {

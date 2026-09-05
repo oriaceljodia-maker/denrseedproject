@@ -7,6 +7,10 @@ export const Guards = {
       return ROUTES.LOGIN;
     }
 
+    if (sessionStorage.getItem('denr-password-recovery') === 'true') {
+      return ROUTES.FORCE_PASSWORD;
+    }
+
     if (user.requiresPasswordChange) {
       return ROUTES.FORCE_PASSWORD;
     }

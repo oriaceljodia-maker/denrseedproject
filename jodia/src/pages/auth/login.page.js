@@ -3,6 +3,7 @@ import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { AccessRequestService } from '../../services/access-request.service.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
+import { PasswordResetRequestService } from '../../services/password-reset-request.service.js';
 
 export const LoginPage = {
   render() {
@@ -56,7 +57,7 @@ export const LoginPage = {
 
               <button type="submit" id="btn-submit" class="btn btn-primary auth-btn">Sign In</button>
 
-              <p class="auth-footnote">Need help? Contact the administrator if your account is inactive or unregistered.</p>
+              <p class="auth-footnote"><button type="button" class="auth-text-button" id="show-password-reset">Forgot password?</button></p>
             </form>
 
             <form id="access-request-form" class="auth-body" hidden>
@@ -66,6 +67,14 @@ export const LoginPage = {
               <p class="auth-access-copy">Submit your request and an administrator will review it before creating your account.</p>
               <button type="submit" id="btn-access-request" class="btn btn-primary auth-btn">Send Request to Admin</button>
               <p class="auth-footnote">Already have an account? <button type="button" class="auth-text-button" id="switch-to-sign-in">Sign In</button></p>
+            </form>
+
+            <form id="password-reset-request-form" class="auth-body" hidden>
+              <div id="password-reset-request-error" class="auth-alert"></div>
+              <div class="form-group"><label for="password-reset-email">Account Email</label><input type="email" id="password-reset-email" class="form-input" placeholder="you@denr.gov.ph" required /></div>
+              <p class="auth-access-copy">Your request will be sent to an administrator. Once approved, a secure password-reset link will be sent to this email.</p>
+              <button type="submit" id="btn-password-reset-request" class="btn btn-primary auth-btn">Request Password Reset</button>
+              <p class="auth-footnote"><button type="button" class="auth-text-button" id="password-reset-back">Back to Sign In</button></p>
             </form>
           </div>
         </section>
@@ -82,11 +91,13 @@ export const LoginPage = {
     const signInTab = document.getElementById('show-sign-in');
     const accessTab = document.getElementById('show-access-request');
     const accessForm = document.getElementById('access-request-form');
+    const passwordResetForm = document.getElementById('password-reset-request-form');
 
     const showMode = (mode) => {
       const signIn = mode === 'sign-in';
-      form.hidden = !signIn;
-      accessForm.hidden = signIn;
+      form.hidden = mode !== 'sign-in';
+      accessForm.hidden = mode !== 'access';
+      passwordResetForm.hidden = mode !== 'reset';
       signInTab.classList.toggle('active', signIn);
       accessTab.classList.toggle('active', !signIn);
       signInTab.setAttribute('aria-selected', String(signIn));
@@ -95,6 +106,8 @@ export const LoginPage = {
     signInTab?.addEventListener('click', () => showMode('sign-in'));
     accessTab?.addEventListener('click', () => showMode('access'));
     document.getElementById('switch-to-sign-in')?.addEventListener('click', () => showMode('sign-in'));
+    document.getElementById('show-password-reset')?.addEventListener('click', () => showMode('reset'));
+    document.getElementById('password-reset-back')?.addEventListener('click', () => showMode('sign-in'));
 
     // Password visibility toggle
     toggleBtn?.addEventListener('click', () => {
@@ -183,6 +196,27 @@ export const LoginPage = {
       } finally {
         button.disabled = false;
         button.textContent = 'Send Request to Admin';
+      }
+    });
+
+    passwordResetForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const errorBox = document.getElementById('password-reset-request-error');
+      const button = document.getElementById('btn-password-reset-request');
+      errorBox.style.display = 'none';
+      button.disabled = true;
+      button.textContent = 'Sending request...';
+      try {
+        await PasswordResetRequestService.submit(document.getElementById('password-reset-email').value);
+        passwordResetForm.reset();
+        ToastComponent.show('Password-reset request sent. Please wait for administrator approval.', 'success');
+        showMode('sign-in');
+      } catch (error) {
+        errorBox.textContent = error.message || 'Unable to send your password-reset request.';
+        errorBox.style.display = 'block';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Request Password Reset';
       }
     });
   }

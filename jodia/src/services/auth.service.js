@@ -88,6 +88,16 @@ export const AuthService = {
     return data;
   },
 
+  // This is called only by an admin after reviewing a reset request. Supabase
+  // sends a one-time recovery link; no password is exposed to the application.
+  async sendPasswordResetEmail(email) {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/force-password`
+    });
+    if (error) throw error;
+    return data;
+  },
+
   // Audit successful sign-ins only. Passwords, tokens, and failed credential
   // attempts are intentionally never stored by the browser application.
   async recordSuccessfulLogin(user) {
@@ -115,6 +125,8 @@ export const AuthService = {
       .from('profiles')
       .update({ requires_password_change: false, updated_at: new Date() })
       .eq('id', user.id);
+
+    sessionStorage.removeItem('denr-password-recovery');
 
     return data;
   },
