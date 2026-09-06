@@ -1,6 +1,7 @@
 import { AuthService } from '../../services/auth.service.js';
 import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
+import { ROUTES } from '../../config/constants.js';
 
 export const ForcePasswordPage = {
   render() {
@@ -10,14 +11,14 @@ export const ForcePasswordPage = {
           <div class="auth-hero-copy">
             <span class="eyebrow">Account Protection</span>
             <h1>Secure Password Setup</h1>
-            <p>Complete your first-time sign-in by setting a strong password for continued access.</p>
+            <p>Choose a new password to securely restore access to your account.</p>
           </div>
 
           <div class="auth-card">
             <div class="auth-header">
               <img src="/assets/images/logs.jpg" alt="DENR logo" class="auth-logo" />
               <h1 class="auth-title">Set Your New Password</h1>
-              <div class="auth-subtitle">Required before continuing</div>
+              <div class="auth-subtitle">Create a new secure password</div>
             </div>
             <form id="password-reset-form" class="auth-body">
               <div id="reset-error" class="auth-alert"></div>
@@ -49,7 +50,7 @@ export const ForcePasswordPage = {
               </div>
 
               <button type="submit" id="btn-reset-submit" class="btn btn-primary auth-btn">
-                Update Password & Continue
+                Update Password & Return to Login
               </button>
             </form>
           </div>
@@ -91,21 +92,23 @@ export const ForcePasswordPage = {
         errBox.textContent = "Passwords do not match.";
         errBox.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Update Password & Continue';
+        submitBtn.textContent = 'Update Password & Return to Login';
         return;
       }
 
       try {
+        sessionStorage.setItem('denr-password-update-in-progress', 'true');
         await AuthService.updatePassword(newPassword);
-        ToastComponent.show('Password updated successfully.', 'success');
-        const user = await AuthService.getCurrentUser();
-        await Router.navigate(user);
+        await AuthService.logout();
+        ToastComponent.show('Password updated. Please sign in using your new password.', 'success');
+        await Router.navigate(null, ROUTES.LOGIN);
       } catch (err) {
         errBox.textContent = err.message || 'Failed to update password.';
         errBox.style.display = 'block';
       } finally {
+        sessionStorage.removeItem('denr-password-update-in-progress');
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Update Password & Continue';
+        submitBtn.textContent = 'Update Password & Return to Login';
       }
     });
   }

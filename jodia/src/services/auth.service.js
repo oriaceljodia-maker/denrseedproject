@@ -2,6 +2,20 @@ import { supabase } from '../config/supabase.js';
 import { ProfileService } from './profile.service.js';
 
 export const AuthService = {
+  isPasswordRecoveryLink() {
+    const search = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    return search.get('type') === 'recovery' || hash.get('type') === 'recovery';
+  },
+
+  beginPasswordRecovery() {
+    sessionStorage.setItem('denr-password-recovery', 'true');
+  },
+
+  clearPasswordRecovery() {
+    sessionStorage.removeItem('denr-password-recovery');
+  },
+
   // Retrieve session user profile and status
   async getCurrentUser() {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -125,7 +139,7 @@ export const AuthService = {
       .update({ requires_password_change: false, updated_at: new Date() })
       .eq('id', user.id);
 
-    sessionStorage.removeItem('denr-password-recovery');
+    this.clearPasswordRecovery();
 
     return data;
   },
