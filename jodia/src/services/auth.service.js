@@ -88,8 +88,7 @@ export const AuthService = {
     return data;
   },
 
-  // This is called only by an admin after reviewing a reset request. Supabase
-  // sends a one-time recovery link; no password is exposed to the application.
+  // Supabase sends a one-time recovery link; no password is exposed to the application.
   async sendPasswordResetEmail(email) {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/force-password`

@@ -3,7 +3,6 @@ import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { AccessRequestService } from '../../services/access-request.service.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
-import { PasswordResetRequestService } from '../../services/password-reset-request.service.js';
 
 export const LoginPage = {
   render() {
@@ -72,8 +71,8 @@ export const LoginPage = {
             <form id="password-reset-request-form" class="auth-body" hidden>
               <div id="password-reset-request-error" class="auth-alert"></div>
               <div class="form-group"><label for="password-reset-email">Account Email</label><input type="email" id="password-reset-email" class="form-input" placeholder="you@denr.gov.ph" required /></div>
-              <p class="auth-access-copy">Your request will be sent to an administrator. Once approved, a secure password-reset link will be sent to this email.</p>
-              <button type="submit" id="btn-password-reset-request" class="btn btn-primary auth-btn">Request Password Reset</button>
+              <p class="auth-access-copy">Enter your registered email address and we will send a secure, one-time password-reset link.</p>
+              <button type="submit" id="btn-password-reset-request" class="btn btn-primary auth-btn">Send Reset Link</button>
               <p class="auth-footnote"><button type="button" class="auth-text-button" id="password-reset-back">Back to Sign In</button></p>
             </form>
           </div>
@@ -205,18 +204,18 @@ export const LoginPage = {
       const button = document.getElementById('btn-password-reset-request');
       errorBox.style.display = 'none';
       button.disabled = true;
-      button.textContent = 'Sending request...';
+      button.textContent = 'Sending reset link...';
       try {
-        await PasswordResetRequestService.submit(document.getElementById('password-reset-email').value);
+        await AuthService.sendPasswordResetEmail(document.getElementById('password-reset-email').value.trim());
         passwordResetForm.reset();
-        ToastComponent.show('Password-reset request sent. Please wait for administrator approval.', 'success');
+        ToastComponent.show('If this email belongs to an account, a secure reset link has been sent. Check the inbox and Spam folder.', 'success');
         showMode('sign-in');
       } catch (error) {
         errorBox.textContent = error.message || 'Unable to send your password-reset request.';
         errorBox.style.display = 'block';
       } finally {
         button.disabled = false;
-        button.textContent = 'Request Password Reset';
+        button.textContent = 'Send Reset Link';
       }
     });
   }
