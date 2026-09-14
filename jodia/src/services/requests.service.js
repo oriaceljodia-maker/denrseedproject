@@ -7,7 +7,7 @@ export const RequestsService = {
       .from('requests')
       .select(`
         *,
-        seeds ( species_name, scientific_name, category, image_url, unit ),
+        seeds ( species_name, scientific_name, category, source_location, image_url, unit, seedlot_no, ipt_no, date_collected, collectors, processing_status ),
         profiles ( full_name )
       `, { count: 'exact' })
       .order('created_at', { ascending: false });
@@ -79,7 +79,7 @@ export const RequestsService = {
     const steps = ['Submitted', 'Under Review', 'Approved', 'Ready for Release', 'Released'];
     if (status === 'REJECTED') return [...steps.slice(0, 2), 'Rejected'];
     if (status === 'CANCELLED') return [{ label: 'Submitted', complete: true }, { label: 'Cancelled by requester', complete: true }];
-    const completed = status === 'PENDING' ? 1 : status === 'APPROVED' ? 2 : status === 'READY_FOR_RELEASE' ? 3 : status === 'DISBURSED' ? 4 : 0;
+    const completed = status === 'PENDING' ? 1 : status === 'APPROVED' ? 2 : status === 'READY_FOR_RELEASE' ? 3 : status === 'RELEASED' ? 4 : 0;
     return steps.map((label, index) => ({ label, complete: index <= completed }));
   },
 

@@ -235,6 +235,7 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="new-seedlot">Seedlot No. <span class="field-optional">(optional)</span></label><input id="new-seedlot" class="form-input" placeholder="e.g. H00042" /></div>
               <div class="form-group"><label for="new-ipt">IPT No. <span class="field-optional">(optional)</span></label><input id="new-ipt" class="form-input" placeholder="e.g. PT-05-356" /></div>
               <div class="form-group"><label for="new-date-collected">Date Collected <span class="field-optional">(optional)</span></label><input type="date" id="new-date-collected" class="form-input" /></div>
+              <div class="form-group"><label for="new-collectors">Collectors <span class="field-optional">(optional)</span></label><input id="new-collectors" class="form-input" placeholder="e.g. Juan Dela Cruz, Maria Santos" /></div>
             </div>
             <div class="form-group"><label for="new-notes">Notes <span class="field-optional">(optional)</span></label><textarea id="new-notes" class="form-input" rows="3" placeholder="Optional notes about this accession"></textarea></div>
           </div>
@@ -254,6 +255,7 @@ export const AdminInventoryPage = {
           const seedlot_no = document.getElementById('new-seedlot').value.trim() || null;
           const ipt_no = document.getElementById('new-ipt').value.trim() || null;
           const date_collected = document.getElementById('new-date-collected').value || null;
+          const collectors = document.getElementById('new-collectors').value.trim() || null;
 
           if (!species_name) {
             ToastComponent.show('Species name is required.', 'error');
@@ -261,7 +263,7 @@ export const AdminInventoryPage = {
           }
 
           try {
-            await SeedsService.addSeed({ species_name, scientific_name, category, source_location, image_url, quantity, unit, processing_status, notes, reorder_level, seedlot_no, ipt_no, date_collected });
+            await SeedsService.addSeed({ species_name, scientific_name, category, source_location, image_url, quantity, unit, processing_status, notes, reorder_level, seedlot_no, ipt_no, date_collected, collectors });
             ToastComponent.show('New seed entry created.', 'success');
             await this.loadInventory();
           } catch (err) {
@@ -297,6 +299,10 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="edit-unit">Unit</label><select id="edit-unit" class="form-input">${['g', 'kg', 'pcs', 'packs'].map(unit => `<option ${seed.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}</select></div>
               <div class="form-group"><label for="edit-processing-status">Lab / Processing Status</label><select id="edit-processing-status" class="form-input">${['Newly collected', 'Moisture content', 'For Germination Test', 'Germinating', 'Ready for Distribution'].map(status => `<option ${seed.processing_status === status ? 'selected' : ''}>${status}</option>`).join('')}</select></div>
               <div class="form-group"><label for="edit-reorder">Low Stock Alert At</label><input type="number" id="edit-reorder" class="form-input" min="0" value="${escapeAttr(seed.reorder_level || 0)}" required /></div>
+              <div class="form-group"><label for="edit-seedlot">Seedlot No. <span class="field-optional">(optional)</span></label><input id="edit-seedlot" class="form-input" value="${escapeAttr(seed.seedlot_no || '')}" /></div>
+              <div class="form-group"><label for="edit-ipt">IPT No. <span class="field-optional">(optional)</span></label><input id="edit-ipt" class="form-input" value="${escapeAttr(seed.ipt_no || '')}" /></div>
+              <div class="form-group"><label for="edit-date-collected">Date Collected <span class="field-optional">(optional)</span></label><input type="date" id="edit-date-collected" class="form-input" value="${escapeAttr(seed.date_collected || '')}" /></div>
+              <div class="form-group"><label for="edit-collectors">Collectors <span class="field-optional">(optional)</span></label><input id="edit-collectors" class="form-input" value="${escapeAttr(seed.collectors || '')}" placeholder="e.g. Juan Dela Cruz, Maria Santos" /></div>
             </div>
             <div class="form-group">
               <label for="edit-notes">Notes <span class="field-optional">(optional)</span></label>
@@ -324,7 +330,11 @@ export const AdminInventoryPage = {
                 unit: document.getElementById('edit-unit').value,
                 processing_status: document.getElementById('edit-processing-status').value.trim() || null,
                 reorder_level: updatedReorder,
-                notes: updatedNotes || null
+                notes: updatedNotes || null,
+                seedlot_no: document.getElementById('edit-seedlot').value.trim() || null,
+                ipt_no: document.getElementById('edit-ipt').value.trim() || null,
+                date_collected: document.getElementById('edit-date-collected').value || null,
+                collectors: document.getElementById('edit-collectors').value.trim() || null
               });
               ToastComponent.show('Inventory updated successfully.', 'success');
               await this.loadInventory();

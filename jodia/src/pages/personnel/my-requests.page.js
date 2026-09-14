@@ -109,7 +109,7 @@ export const PersonnelMyRequestsPage = {
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status.replaceAll('_', ' '))}</span></td>
           <td style="font-size:0.8125rem;"><div class="request-timeline">${RequestsService.getTimeline(req.status).map(step => `<span class="${step.complete ? 'complete' : ''}">${escapeHtml(step.label)}</span>`).join('')}</div>${req.review_notes ? `<div class="request-admin-note"><strong>Admin note:</strong> ${escapeHtml(req.review_notes)}</div>` : ''}</td>
-          <td>${req.status === 'PENDING' ? `<button class="btn btn-danger btn-cancel-request" data-id="${req.id}" style="font-size:.75rem;padding:.35rem .55rem;">Cancel Request</button>` : req.status === 'DISBURSED' ? `<button class="btn btn-secondary btn-request-again" data-id="${req.id}" style="font-size:.75rem;padding:.35rem .55rem;">Request Again</button>` : '—'}</td>
+          <td>${req.status === 'PENDING' ? `<button class="btn btn-danger btn-cancel-request" data-id="${req.id}" style="font-size:.75rem;padding:.35rem .55rem;">Cancel Request</button>` : req.status === 'RELEASED' ? `<button class="btn btn-secondary btn-request-again" data-id="${req.id}" style="font-size:.75rem;padding:.35rem .55rem;">Request Again</button>` : '—'}</td>
         </tr>
       `).join('');
       this.renderNotifications(requests, seeds);
@@ -123,7 +123,7 @@ export const PersonnelMyRequestsPage = {
   ,
   renderNotifications(requests, seeds = []) {
     const container = document.getElementById('my-notifications-list');
-    const notices = requests.filter(request => ['APPROVED', 'REJECTED', 'READY_FOR_RELEASE', 'DISBURSED'].includes(request.status)).slice(0, 4)
+    const notices = requests.filter(request => ['APPROVED', 'REJECTED', 'READY_FOR_RELEASE', 'RELEASED'].includes(request.status)).slice(0, 4)
       .map(request => `<p class="personnel-notice"><strong>${escapeHtml(request.seeds?.species_name || 'Seed request')}</strong> — ${escapeHtml(request.status.replaceAll('_', ' ').toLowerCase())}${request.review_notes ? `: ${escapeHtml(request.review_notes)}` : ''}</p>`);
     const stockNotices = seeds.filter(seed => SeedsService.getStockStatus(seed).key !== 'in-stock').slice(0, 2)
       .map(seed => `<p class="personnel-notice"><strong>${escapeHtml(seed.species_name)}</strong> — ${escapeHtml(SeedsService.getStockStatus(seed).label)} (${escapeHtml(SeedsService.formatQuantity(seed))} available)</p>`);

@@ -4,85 +4,87 @@ import { ToastComponent } from '../../components/toast.component.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { escapeAttr, escapeHtml } from '../../../utils/formatters.js';
 
+const dateText = value => value ? new Date(value).toLocaleDateString() : '—';
+const csvCell = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
+const statusLabel = value => String(value || '').replaceAll('_', ' ');
+
 export const AdminReportsPage = {
   data: null,
 
   render() {
-    return `<div class="admin-container reports-page"><div class="page-header"><div><div class="eyebrow">Reports & logs</div><h1 class="page-title">Inventory Analytics & Request History</h1><p class="page-subtitle">A live summary of inventory health and submitted seed requests.</p></div><div class="report-actions"><button class="btn btn-secondary" id="report-excel">Export Excel</button><button class="btn btn-danger" id="report-pdf">PDF</button></div></div><section class="stats-grid" id="report-summary"></section><section class="card"><h2 class="section-title">Inventory Analytics</h2><div class="table-container"><table class="data-table"><thead><tr><th>Seed</th><th>Stock</th><th>Status</th><th>Requests</th></tr></thead><tbody id="report-inventory"></tbody></table></div></section><section class="card"><h2 class="section-title">Request History</h2><div class="table-container"><table class="data-table"><thead><tr><th>Requested By</th><th>Seed</th><th>Quantity Requested</th><th>Purpose</th><th>Date Submitted</th><th>Status</th><th>Actions</th></tr></thead><tbody id="report-requests"></tbody></table></div></section></div>`;
+    return `<div class="admin-container reports-page">
+      <div class="page-header"><div><div class="eyebrow">Reports & analytics</div><h1 class="page-title">Inventory, Collection & Distribution Reports</h1><p class="page-subtitle">Filter live records, review demand patterns, and export report-ready files.</p></div><div class="report-actions"><button class="btn btn-secondary" id="report-csv">Export CSV</button><button class="btn btn-secondary" id="report-excel">Export Excel</button><button class="btn btn-danger" id="report-pdf">PDF</button></div></div>
+      <section class="card report-filters"><h2 class="section-title">Report filters</h2><div class="filter-bar"><select id="report-date-preset" class="form-input"><option value="all">All dates</option><option value="today">Today</option><option value="month">This month</option><option value="custom">Custom range</option></select><input type="date" id="report-date-from" class="form-input" aria-label="Start date" /><input type="date" id="report-date-to" class="form-input" aria-label="End date" /><select id="report-seed-filter" class="form-input"><option value="">All seeds</option></select><select id="report-category-filter" class="form-input"><option value="">All categories</option></select><select id="report-source-filter" class="form-input"><option value="">All sources / locations</option></select><select id="report-status-filter" class="form-input"><option value="">All request statuses</option><option value="PENDING">Pending</option><option value="APPROVED">Approved</option><option value="READY_FOR_RELEASE">Ready for Release</option><option value="RELEASED">Released</option><option value="REJECTED">Rejected</option><option value="CANCELLED">Cancelled</option></select></div></section>
+      <section class="stats-grid" id="report-summary"></section>
+      <section class="card"><h2 class="section-title">Inventory Availability</h2><p class="report-section-note">Current, reserved, and available quantities remain separated by their original unit.</p><div class="table-container"><table class="data-table"><thead><tr><th>Seed</th><th>Category</th><th>Source</th><th>Current Stock</th><th>Reserved</th><th>Available</th><th>Status</th></tr></thead><tbody id="report-inventory"></tbody></table></div></section>
+      <section class="card"><h2 class="section-title">Seed Collection & Processing</h2><div class="table-container"><table class="data-table"><thead><tr><th>Seed</th><th>Seedlot No.</th><th>IPT No.</th><th>Collectors</th><th>Source</th><th>Date Collected</th><th>Quantity</th><th>Lab / Processing Status</th></tr></thead><tbody id="report-collection"></tbody></table></div></section>
+      <section class="card"><h2 class="section-title">Request History</h2><div class="table-container"><table class="data-table"><thead><tr><th>Requested By</th><th>Seed</th><th>Quantity Requested</th><th>Purpose</th><th>Date Submitted</th><th>Status</th><th>Admin Note / Rejection Reason</th><th>Actions</th></tr></thead><tbody id="report-requests"></tbody></table></div></section>
+      <section class="card"><h2 class="section-title">Distribution History</h2><p class="report-section-note">Tracks processed requests: approved, ready for release, released, rejected, and cancelled.</p><div class="table-container"><table class="data-table"><thead><tr><th>Requested By</th><th>Seed</th><th>Quantity</th><th>Needed Date</th><th>Status</th><th>Admin Note</th></tr></thead><tbody id="report-distribution"></tbody></table></div></section>
+      <section class="card"><h2 class="section-title">Monthly Demand by Seed & Purpose</h2><p class="report-section-note">Request count is used for comparisons so different units are never added together.</p><div id="report-demand" class="report-demand-grid"></div></section>
+    </div>`;
   },
 
   async init() {
     try {
       const [seeds, requests] = await Promise.all([SeedsService.getAllSeeds(), RequestsService.getRequests()]);
       this.data = { seeds, requests };
-      this.renderData();
-      document.getElementById('report-excel')?.addEventListener('click', () => this.downloadExcelReport());
-      document.getElementById('report-pdf')?.addEventListener('click', () => this.printReport());
+      this.populateFilters(); this.bindEvents(); this.renderData();
     } catch (error) { ToastComponent.show('Failed to load reports.', 'error'); }
   },
 
-  formatQuantity(request) {
-    return `${request.quantity} ${request.seeds?.unit || 'units'}`;
+  populateFilters() {
+    const addOptions = (id, values) => { const select = document.getElementById(id); const first = select.innerHTML; select.innerHTML = first + [...new Set(values.filter(Boolean))].sort().map(value => `<option value="${escapeAttr(value)}">${escapeHtml(value)}</option>`).join(''); };
+    addOptions('report-seed-filter', this.data.seeds.map(seed => seed.species_name));
+    addOptions('report-category-filter', this.data.seeds.map(seed => seed.category));
+    addOptions('report-source-filter', this.data.seeds.map(seed => seed.source_location));
   },
 
-  getStatus(seed) {
-    const available = SeedsService.getAvailableQuantity ? SeedsService.getAvailableQuantity(seed) : seed.quantity;
-    return available <= 0 ? 'Out of Stock' : available <= seed.reorder_level ? 'Low Stock' : 'Available';
+  bindEvents() {
+    document.querySelectorAll('.report-filters .form-input').forEach(input => input.addEventListener('change', () => this.renderData()));
+    document.getElementById('report-excel')?.addEventListener('click', () => this.downloadExcelReport());
+    document.getElementById('report-csv')?.addEventListener('click', () => this.downloadCsvReports());
+    document.getElementById('report-pdf')?.addEventListener('click', () => this.printReport());
+  },
+
+  formatQuantity(request) { return `${request.quantity} ${request.seeds?.unit || 'units'}`; },
+  formatSeedQuantity(seed, field = 'quantity') { return `${Number(seed[field] || 0)} ${seed.unit || 'packs'}`; },
+  getStatus(seed) { const available = SeedsService.getAvailableQuantity ? SeedsService.getAvailableQuantity(seed) : seed.quantity; return available <= 0 ? 'Out of Stock' : available <= seed.reorder_level ? 'Low Stock' : 'Available'; },
+  unitBreakdown(items, field, unitGetter) { const groups = new Map(); items.forEach(item => { const unit = unitGetter(item) || 'units'; groups.set(unit, (groups.get(unit) || 0) + (Number(item[field]) || 0)); }); return groups.size ? [...groups.entries()].map(([unit, quantity]) => `${quantity} ${unit}`).join(' · ') : '0'; },
+
+  filteredData() {
+    const value = id => document.getElementById(id)?.value || '';
+    const preset = value('report-date-preset'), fromValue = value('report-date-from'), toValue = value('report-date-to'), seedName = value('report-seed-filter'), category = value('report-category-filter'), source = value('report-source-filter'), status = value('report-status-filter');
+    const today = new Date(); today.setHours(0, 0, 0, 0); const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const matchesSeed = seed => (!seedName || seed.species_name === seedName) && (!category || seed.category === category) && (!source || seed.source_location === source);
+    const matchesDate = request => { const date = new Date(request.created_at); date.setHours(0, 0, 0, 0); if (preset === 'today' && date.getTime() !== today.getTime()) return false; if (preset === 'month' && date < startOfMonth) return false; if (preset === 'custom') { if (fromValue && date < new Date(`${fromValue}T00:00:00`)) return false; if (toValue && date > new Date(`${toValue}T23:59:59`)) return false; } return true; };
+    const seeds = this.data.seeds.filter(matchesSeed), allowedIds = new Set(seeds.map(seed => seed.id));
+    const requests = this.data.requests.filter(request => allowedIds.has(request.seed_id) && matchesDate(request) && (!status || request.status === status));
+    return { seeds, requests };
   },
 
   renderData() {
-    const { seeds, requests } = this.data;
-    const totalUnits = seeds.reduce((sum, seed) => sum + (Number(seed.quantity) || 0), 0);
-    const outOfStock = seeds.filter(seed => this.getStatus(seed) === 'Out of Stock').length;
-    document.getElementById('report-summary').innerHTML = `<div class="stat-card"><div class="stat-title">Total Seeds</div><div class="stat-value">${seeds.length}</div></div><div class="stat-card"><div class="stat-title">Total Units</div><div class="stat-value">${totalUnits}</div></div><div class="stat-card"><div class="stat-title">Out of Stock</div><div class="stat-value">${outOfStock}</div></div><div class="stat-card"><div class="stat-title">Total Requests</div><div class="stat-value">${requests.length}</div></div>`;
-    const requestCount = requests.reduce((map, request) => (map.set(request.seed_id, (map.get(request.seed_id) || 0) + 1), map), new Map());
-    document.getElementById('report-inventory').innerHTML = seeds.map(seed => `<tr><td><strong>${escapeHtml(seed.species_name)}</strong></td><td>${escapeHtml(SeedsService.formatQuantity(seed))}</td><td>${this.getStatus(seed)}</td><td>${requestCount.get(seed.id) || 0}</td></tr>`).join('') || '<tr><td colspan="4">No seed records found.</td></tr>';
-    document.getElementById('report-requests').innerHTML = requests.map(request => `<tr><td>${escapeHtml(request.profiles?.full_name || 'Personnel')}</td><td>${escapeHtml(request.seeds?.species_name || 'N/A')}</td><td>${escapeHtml(this.formatQuantity(request))}</td><td>${escapeHtml(request.purpose_category || request.purpose || 'Not specified')}</td><td>${new Date(request.created_at).toLocaleDateString()}</td><td>${escapeHtml(request.status)}</td><td><button class="btn btn-secondary btn-view-report-request" data-id="${escapeAttr(request.id)}" style="font-size:.75rem;padding:.3rem .55rem;">View</button></td></tr>`).join('') || '<tr><td colspan="7">No requests found.</td></tr>';
-    this.bindRequestDetails();
+    const { seeds, requests } = this.filteredData();
+    const count = label => seeds.filter(seed => this.getStatus(seed) === label).length;
+    document.getElementById('report-summary').innerHTML = `<div class="stat-card"><div class="stat-title">Seed Varieties</div><div class="stat-value">${seeds.length}</div></div><div class="stat-card"><div class="stat-title">Current Stock by Unit</div><div class="stat-value stat-value-units">${escapeHtml(this.unitBreakdown(seeds, 'quantity', seed => seed.unit))}</div></div><div class="stat-card"><div class="stat-title">Reserved Stock by Unit</div><div class="stat-value stat-value-units">${escapeHtml(this.unitBreakdown(seeds, 'reserved_quantity', seed => seed.unit))}</div></div><div class="stat-card"><div class="stat-title">Availability Alerts</div><div class="stat-value stat-value-units">${count('Low Stock')} low · ${count('Out of Stock')} out</div></div><div class="stat-card"><div class="stat-title">Filtered Requests</div><div class="stat-value">${requests.length}</div></div>`;
+    document.getElementById('report-inventory').innerHTML = seeds.map(seed => `<tr><td><strong>${escapeHtml(seed.species_name)}</strong><small>${escapeHtml(seed.scientific_name || '')}</small></td><td>${escapeHtml(seed.category || '—')}</td><td>${escapeHtml(seed.source_location || '—')}</td><td>${escapeHtml(this.formatSeedQuantity(seed))}</td><td>${escapeHtml(this.formatSeedQuantity(seed, 'reserved_quantity'))}</td><td>${escapeHtml(SeedsService.formatQuantity(seed))}</td><td><span class="badge ${this.getStatus(seed).toLowerCase().replaceAll(' ', '-')}">${this.getStatus(seed)}</span></td></tr>`).join('') || '<tr><td colspan="7">No inventory records match these filters.</td></tr>';
+    document.getElementById('report-collection').innerHTML = seeds.map(seed => `<tr><td><strong>${escapeHtml(seed.species_name)}</strong></td><td>${escapeHtml(seed.seedlot_no || '—')}</td><td>${escapeHtml(seed.ipt_no || '—')}</td><td>${escapeHtml(seed.collectors || '—')}</td><td>${escapeHtml(seed.source_location || '—')}</td><td>${dateText(seed.date_collected)}</td><td>${escapeHtml(this.formatSeedQuantity(seed))}</td><td>${escapeHtml(seed.processing_status || '—')}</td></tr>`).join('') || '<tr><td colspan="8">No seed collection records match these filters.</td></tr>';
+    document.getElementById('report-requests').innerHTML = requests.map(request => `<tr><td>${escapeHtml(request.profiles?.full_name || 'Personnel')}</td><td>${escapeHtml(request.seeds?.species_name || 'N/A')}</td><td>${escapeHtml(this.formatQuantity(request))}</td><td>${escapeHtml(request.purpose_category || request.purpose || 'Not specified')}</td><td>${dateText(request.created_at)}</td><td><span class="badge badge-${escapeAttr(request.status.toLowerCase())}">${escapeHtml(statusLabel(request.status))}</span></td><td>${escapeHtml(request.review_notes || '—')}</td><td><button class="btn btn-secondary btn-view-report-request" data-id="${escapeAttr(request.id)}">View</button></td></tr>`).join('') || '<tr><td colspan="8">No request records match these filters.</td></tr>';
+    const processed = requests.filter(request => request.status !== 'PENDING');
+    document.getElementById('report-distribution').innerHTML = processed.map(request => `<tr><td>${escapeHtml(request.profiles?.full_name || 'Personnel')}</td><td>${escapeHtml(request.seeds?.species_name || 'N/A')}</td><td>${escapeHtml(this.formatQuantity(request))}</td><td>${dateText(request.needed_date)}</td><td><span class="badge badge-${escapeAttr(request.status.toLowerCase())}">${escapeHtml(statusLabel(request.status))}</span></td><td>${escapeHtml(request.review_notes || '—')}</td></tr>`).join('') || '<tr><td colspan="6">No processed requests match these filters.</td></tr>';
+    this.renderDemand(requests); this.bindRequestDetails();
   },
 
-  bindRequestDetails() {
-    document.querySelectorAll('.btn-view-report-request').forEach(button => button.addEventListener('click', event => {
-      const request = this.data?.requests.find(item => item.id === event.currentTarget.dataset.id);
-      if (!request) return;
-      ModalComponent.open({
-        title: 'Request Details',
-        bodyHtml: `<div class="request-detail-list"><p><strong>Requested by:</strong> ${escapeHtml(request.profiles?.full_name || 'Personnel')}</p><p><strong>Seed:</strong> ${escapeHtml(request.seeds?.species_name || 'N/A')}</p><p><strong>Quantity:</strong> ${escapeHtml(this.formatQuantity(request))}</p><p><strong>Purpose:</strong> ${escapeHtml(request.purpose_category || request.purpose || 'Not specified')}</p><p><strong>Planting site:</strong> ${escapeHtml(request.planting_site || 'Not provided')}</p><p><strong>Date submitted:</strong> ${new Date(request.created_at).toLocaleString()}</p><p><strong>Status:</strong> ${escapeHtml(request.status)}</p><p><strong>Admin note:</strong> ${escapeHtml(request.review_notes || 'None')}</p></div>`,
-        confirmText: 'Close',
-        cancelText: null,
-        onConfirm: () => {}
-      });
-    }));
+  renderDemand(requests) {
+    const group = key => [...requests.reduce((map, request) => { const label = key(request); map.set(label, (map.get(label) || 0) + 1); return map; }, new Map()).entries()].sort((a, b) => b[1] - a[1]);
+    const bars = (title, values) => { const max = Math.max(1, ...values.map(([, count]) => count)); return `<div class="demand-panel"><h3>${title}</h3>${values.length ? values.slice(0, 8).map(([label, count]) => `<div class="demand-bar-row"><span>${escapeHtml(label)}</span><div class="demand-bar-track"><i style="width:${(count / max) * 100}%"></i></div><strong>${count}</strong></div>`).join('') : '<p class="report-section-note">No requests in this filter.</p>'}</div>`; };
+    document.getElementById('report-demand').innerHTML = bars('Monthly requests', group(request => new Date(request.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }))) + bars('Most requested seeds', group(request => request.seeds?.species_name || 'Unknown seed')) + bars('Purpose categories', group(request => request.purpose_category || 'Not specified'));
   },
 
-  downloadExcelReport() {
-    if (!this.data) return;
-    const xmlEscape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-    const cell = value => `<Cell><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
-    const row = values => `<Row>${values.map(cell).join('')}</Row>`;
-    const { seeds, requests } = this.data;
-    const inventoryRows = seeds.map(seed => row([seed.species_name, SeedsService.formatQuantity(seed), this.getStatus(seed)]));
-    const requestRows = requests.map(request => row([request.profiles?.full_name || 'Personnel', request.seeds?.species_name || 'N/A', this.formatQuantity(request), request.purpose_category || request.purpose || 'Not specified', new Date(request.created_at).toLocaleDateString(), request.status, request.review_notes || '']));
-    const workbook = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Inventory"><Table>${row(['Seed', 'Current Stock', 'Status'])}${inventoryRows.join('')}</Table></Worksheet><Worksheet ss:Name="Request History"><Table>${row(['Requested By', 'Seed', 'Quantity Requested', 'Purpose', 'Date Submitted', 'Status', 'Admin Note'])}${requestRows.join('')}</Table></Worksheet></Workbook>`;
-    const blob = new Blob([workbook], { type: 'application/vnd.ms-excel' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `denr-seed-inventory-report-${new Date().toISOString().slice(0, 10)}.xls`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(link.href);
-    ToastComponent.show('Excel report downloaded.', 'success');
-  },
+  bindRequestDetails() { document.querySelectorAll('.btn-view-report-request').forEach(button => button.addEventListener('click', event => { const request = this.data?.requests.find(item => item.id === event.currentTarget.dataset.id); if (!request) return; ModalComponent.open({ title: 'Request Details', bodyHtml: `<div class="request-detail-list"><p><strong>Requested by:</strong> ${escapeHtml(request.profiles?.full_name || 'Personnel')}</p><p><strong>Seed:</strong> ${escapeHtml(request.seeds?.species_name || 'N/A')}</p><p><strong>Quantity:</strong> ${escapeHtml(this.formatQuantity(request))}</p><p><strong>Purpose:</strong> ${escapeHtml(request.purpose_category || request.purpose || 'Not specified')}</p><p><strong>Planting site:</strong> ${escapeHtml(request.planting_site || 'Not provided')}</p><p><strong>Needed date:</strong> ${dateText(request.needed_date)}</p><p><strong>Status:</strong> ${escapeHtml(statusLabel(request.status))}</p><p><strong>Admin note:</strong> ${escapeHtml(request.review_notes || 'None')}</p></div>`, confirmText: 'Close', onConfirm: () => {} }); })); },
 
-  printReport() {
-    if (!this.data) return;
-    const report = document.querySelector('.reports-page').cloneNode(true);
-    report.querySelector('.report-actions')?.remove();
-    report.querySelectorAll('.btn-view-report-request').forEach(button => button.replaceWith(document.createTextNode('View in system')));
-    const popup = window.open('', '_blank', 'width=1000,height=800');
-    if (!popup) return ToastComponent.show('Allow pop-ups to create the PDF.', 'error');
-    popup.document.write(`<!doctype html><html><head><title>DENR Seed Inventory Report</title><style>body{font-family:Arial,sans-serif;color:#102d4c;padding:30px}h1{font-size:24px}table{width:100%;border-collapse:collapse;margin:15px 0 28px}th{background:#137a38;color:white;text-align:left}th,td{padding:9px;border:1px solid #dce5df;font-size:12px}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat-card{border:1px solid #dce5df;padding:12px;border-radius:7px}.stat-title{font-size:11px}.stat-value{font-size:23px;font-weight:bold;margin-top:5px}.eyebrow{font-size:11px;color:#137a38;text-transform:uppercase;font-weight:bold}.page-subtitle{color:#536b83}@media print{body{padding:0}}</style></head><body><h1>DENR TALIPAN — SEED INVENTORY REPORT</h1><p>Generated: ${new Date().toLocaleString()} — Select “Save as PDF” as the print destination.</p>${report.innerHTML}</body></html>`);
-    popup.document.close(); popup.focus(); popup.print();
-  }
+  reportRows() { const { seeds, requests } = this.filteredData(); return { inventory: [['Seed', 'Scientific Name', 'Category', 'Source', 'Current Stock', 'Reserved', 'Available', 'Status'], ...seeds.map(seed => [seed.species_name, seed.scientific_name, seed.category, seed.source_location, this.formatSeedQuantity(seed), this.formatSeedQuantity(seed, 'reserved_quantity'), SeedsService.formatQuantity(seed), this.getStatus(seed)])], collection: [['Seed', 'Seedlot No.', 'IPT No.', 'Collectors', 'Source', 'Date Collected', 'Quantity', 'Lab / Processing Status'], ...seeds.map(seed => [seed.species_name, seed.seedlot_no, seed.ipt_no, seed.collectors, seed.source_location, dateText(seed.date_collected), this.formatSeedQuantity(seed), seed.processing_status])], requests: [['Requested By', 'Seed', 'Quantity Requested', 'Purpose', 'Date Submitted', 'Status', 'Admin Note / Rejection Reason'], ...requests.map(request => [request.profiles?.full_name || 'Personnel', request.seeds?.species_name, this.formatQuantity(request), request.purpose_category || request.purpose, dateText(request.created_at), statusLabel(request.status), request.review_notes])], distribution: [['Requested By', 'Seed', 'Quantity', 'Needed Date', 'Status', 'Admin Note'], ...requests.filter(request => request.status !== 'PENDING').map(request => [request.profiles?.full_name || 'Personnel', request.seeds?.species_name, this.formatQuantity(request), dateText(request.needed_date), statusLabel(request.status), request.review_notes])] }; },
+  downloadFile(name, content, type) { const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([content], { type })); link.download = name; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(link.href), 0); },
+  downloadCsvReports() { Object.entries(this.reportRows()).forEach(([name, rows]) => this.downloadFile(`denr-${name}-${new Date().toISOString().slice(0, 10)}.csv`, rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8')); ToastComponent.show('CSV reports downloaded.', 'success'); },
+  downloadExcelReport() { const xmlEscape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); const cell = value => `<Cell><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`; const row = values => `<Row>${values.map(cell).join('')}</Row>`; const names = { inventory: 'Availability', collection: 'Collection', requests: 'Request History', distribution: 'Distribution' }; const workbook = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${Object.entries(this.reportRows()).map(([name, rows]) => `<Worksheet ss:Name="${names[name]}"><Table>${rows.map(row).join('')}</Table></Worksheet>`).join('')}</Workbook>`; this.downloadFile(`denr-seed-reports-${new Date().toISOString().slice(0, 10)}.xls`, workbook, 'application/vnd.ms-excel'); ToastComponent.show('Excel report downloaded.', 'success'); },
+  printReport() { const report = document.querySelector('.reports-page')?.cloneNode(true); if (!report) return; report.querySelector('.report-actions')?.remove(); report.querySelector('.report-filters')?.remove(); report.querySelectorAll('.btn-view-report-request').forEach(button => button.replaceWith(document.createTextNode('View in system'))); const popup = window.open('', '_blank', 'width=1100,height=800'); if (!popup) return ToastComponent.show('Allow pop-ups to create the PDF.', 'error'); popup.document.write(`<!doctype html><html><head><title>DENR Seed Reports</title><style>body{font-family:Arial,sans-serif;color:#102d4c;padding:28px}h1{font-size:24px}h2{font-size:17px;margin-top:25px}table{width:100%;border-collapse:collapse;margin:10px 0 20px}th{background:#137a38;color:white;text-align:left}th,td{padding:7px;border:1px solid #dce5df;font-size:10px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat-card{border:1px solid #dce5df;padding:10px;border-radius:7px}.stat-value{font-size:17px;font-weight:bold}.demand-panel{margin:18px 0}.demand-bar-row{display:grid;grid-template-columns:130px 1fr 25px;gap:7px;font-size:11px;margin:5px 0}.demand-bar-track{background:#e7f0e9}.demand-bar-track i{display:block;height:10px;background:#137a38}.badge{font-size:10px}.eyebrow,.report-section-note{color:#536b83}@media print{body{padding:0}}</style></head><body><h1>DENR TALIPAN — SEED REPORTS</h1><p>Generated: ${new Date().toLocaleString()} — Select “Save as PDF” in the print dialog.</p>${report.innerHTML}</body></html>`); popup.document.close(); popup.focus(); popup.print(); }
 };

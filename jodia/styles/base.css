@@ -42,6 +42,8 @@
 
 html {
   scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -53,6 +55,9 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -382,9 +387,11 @@ body::after {
 }
 
 @media (max-width: 760px) {
-  .app-header { display: none; }
+  .app-header { display: none; width:100%; min-width:0; position:static; }
   .app-root { padding-bottom: .75rem; }
-  .app-footer { padding: 1rem; }
+  .app-footer { width:100%; min-width:0; margin-top:0; padding: 1rem; position:static; }
+  .footer-inner, .footer-links { max-width:100%; min-width:0; }
+  .footer-links { gap:.35rem; }
   .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .data-table { min-width: 620px; }
   .form-row { flex-direction: column; }

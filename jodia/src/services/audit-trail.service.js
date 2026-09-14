@@ -44,5 +44,10 @@ export const AuditTrailService = {
       activity: limit ? activity.slice(0, limit) : activity,
       auditTrailAvailable: !auditResult.error
     };
+  },
+
+  async clearAllActivity() {
+    const { error } = await supabase.rpc('clear_audit_activity');
+    if (error) throw error;
   }
 };

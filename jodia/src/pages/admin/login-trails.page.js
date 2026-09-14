@@ -23,6 +23,7 @@ export const AdminLoginTrailsPage = {
             <input type="search" id="login-trails-search" class="form-input" placeholder="Search by action, user, or details..." />
           </div>
           <button type="button" id="btn-refresh-login-trails" class="btn btn-secondary">Refresh</button>
+          <button type="button" id="btn-clear-login-trails" class="btn btn-danger">Clear All</button>
         </div>
 
         <div class="card">
@@ -55,6 +56,12 @@ export const AdminLoginTrailsPage = {
 
     document.getElementById('btn-refresh-login-trails')?.addEventListener('click', async () => {
       await this.loadActivity();
+      ToastComponent.show('Audit trails refreshed.', 'success');
+    });
+
+    document.getElementById('btn-clear-login-trails')?.addEventListener('click', () => {
+      if (!window.confirm('Clear all sign-in and administrative audit entries? This cannot be undone.')) return;
+      this.clearActivity();
     });
 
   },
@@ -69,6 +76,16 @@ export const AdminLoginTrailsPage = {
       ToastComponent.show(error.message || 'Failed to fetch audit activity.', 'error');
       const tbody = document.getElementById('login-trails-table-body');
       if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Unable to load audit activity.</td></tr>';
+    }
+  },
+
+  async clearActivity() {
+    try {
+      await AuditTrailService.clearAllActivity();
+      await this.loadActivity();
+      ToastComponent.show('Audit trails cleared.', 'success');
+    } catch (error) {
+      ToastComponent.show(error.message || 'Unable to clear audit trails. Run audit_trail_management.sql first.', 'error');
     }
   },
 

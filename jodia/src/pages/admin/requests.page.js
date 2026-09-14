@@ -30,7 +30,7 @@ export const AdminRequestsPage = {
             <option value="APPROVED">Approved</option>
             <option value="READY_FOR_RELEASE">Ready for Release</option>
             <option value="REJECTED">Rejected</option>
-            <option value="DISBURSED">Disbursed</option>
+            <option value="RELEASED">Released</option>
           </select>
         </div>
 
@@ -181,7 +181,7 @@ export const AdminRequestsPage = {
     document.querySelectorAll('.btn-ready-request, .btn-release-request').forEach(btn => {
       btn.addEventListener('click', async event => {
         const requestId = event.currentTarget.getAttribute('data-id');
-        const status = event.currentTarget.classList.contains('btn-ready-request') ? 'READY_FOR_RELEASE' : 'DISBURSED';
+        const status = event.currentTarget.classList.contains('btn-ready-request') ? 'READY_FOR_RELEASE' : 'RELEASED';
         try {
           if (await MaintenanceService.isEnabled()) throw new Error('Request decisions are disabled while maintenance mode is active.');
           await RequestsService.updateRequestStatus(requestId, status);
