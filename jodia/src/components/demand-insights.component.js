@@ -11,7 +11,7 @@ export const DemandInsightsComponent = {
         </article>
         <article class="card demand-insight-card">
           <h2 class="demand-insight-title">Top Demanded Seeds</h2>
-          <div id="top-demanded-seeds" class="demand-donut-wrap">Loading demand data...</div>
+          <div id="top-demanded-seeds" class="demand-pie-wrap">Loading demand data...</div>
           <p class="demand-insight-note">Share of submitted requests across all seed varieties.</p>
         </article>
       </section>`;
@@ -20,11 +20,11 @@ export const DemandInsightsComponent = {
   renderData(requests) {
     const rankings = this.buildRankings(requests);
     const featured = document.getElementById('top-requested-seed');
-    const donut = document.getElementById('top-demanded-seeds');
-    if (!featured || !donut) return;
+    const pie = document.getElementById('top-demanded-seeds');
+    if (!featured || !pie) return;
     if (!rankings.length) {
       featured.innerHTML = '<p class="demand-empty">No seed requests yet.</p>';
-      donut.innerHTML = '<p class="demand-empty">Demand analytics will appear after requests are submitted.</p>';
+      pie.innerHTML = '<p class="demand-empty">Demand analytics will appear after requests are submitted.</p>';
       return;
     }
 
@@ -43,7 +43,7 @@ export const DemandInsightsComponent = {
       current += share;
       return segment;
     });
-    donut.innerHTML = `<div class="demand-donut" style="background:conic-gradient(${segments.join(', ')})"><span>${total}<small>requests</small></span></div><div class="demand-legend">${seeds.map((seed, index) => `<div><i style="background:${colors[index]}"></i><span>${escapeHtml(seed.name)}</span><strong>${Math.round((seed.requestCount / total) * 100)}%</strong></div>`).join('')}</div>`;
+    pie.innerHTML = `<div class="demand-pie" role="img" aria-label="Pie chart showing request share by seed species" style="background:conic-gradient(${segments.join(', ')})"></div><div class="demand-legend">${seeds.map((seed, index) => `<div><i style="background:${colors[index]}"></i><span>${escapeHtml(seed.name)}</span><strong>${Math.round((seed.requestCount / total) * 100)}%</strong></div>`).join('')}</div>`;
   },
 
   buildRankings(requests) {

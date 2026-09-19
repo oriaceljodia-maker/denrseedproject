@@ -10,14 +10,22 @@ export const AdminRequestsPage = {
 
   render() {
     return `
-      <div class="admin-container">
-        <div class="catalog-hero" style="margin-bottom: 1.25rem;">
-          <div class="eyebrow">Request oversight</div>
-          <h1>Seed Distribution Requests</h1>
-          <p>Review incoming allocation requests from field personnel and keep restoration operations moving with clear approvals.</p>
-        </div>
+      <div class="admin-container requests-page">
+        <header class="requests-page-hero">
+          <div class="eyebrow">Seed program</div>
+          <h1>Seed Requests</h1>
+          <p>Review incoming requests from field personnel and keep restoration operations moving with clear approvals.</p>
+        </header>
 
-        <div class="filter-bar" style="margin-bottom: 1rem;">
+        <section class="requests-controls" aria-label="Request filters">
+          <div class="request-status-chips" role="group" aria-label="Filter requests by status">
+            <button type="button" class="request-status-chip active" data-status="">All Requests</button>
+            <button type="button" class="request-status-chip" data-status="PENDING">Pending</button>
+            <button type="button" class="request-status-chip" data-status="APPROVED">Approved</button>
+            <button type="button" class="request-status-chip" data-status="READY_FOR_RELEASE">Ready for Release</button>
+            <button type="button" class="request-status-chip" data-status="REJECTED">Rejected</button>
+          </div>
+          <div class="filter-bar">
           <div class="search-wrapper">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/>
@@ -33,9 +41,10 @@ export const AdminRequestsPage = {
             <option value="REJECTED">Rejected</option>
             <option value="RELEASED">Released</option>
           </select>
-        </div>
+          </div>
+        </section>
 
-        <div class="card">
+        <div class="card requests-table-card">
           <div class="table-container">
             <table class="data-table">
               <thead>
@@ -121,6 +130,7 @@ export const AdminRequestsPage = {
   bindSearchAndFilter() {
     const searchInput = document.getElementById('requests-search');
     const statusFilter = document.getElementById('requests-status-filter');
+    const statusChips = document.querySelectorAll('.request-status-chip');
 
     const applyFilters = () => {
       const query = (searchInput?.value || '').toLowerCase().trim();
@@ -139,7 +149,16 @@ export const AdminRequestsPage = {
     };
 
     searchInput?.addEventListener('input', applyFilters);
-    statusFilter?.addEventListener('change', applyFilters);
+    statusFilter?.addEventListener('change', () => {
+      statusChips.forEach(chip => chip.classList.toggle('active', chip.dataset.status === statusFilter.value));
+      applyFilters();
+    });
+    statusChips.forEach(chip => chip.addEventListener('click', () => {
+      statusChips.forEach(item => item.classList.remove('active'));
+      chip.classList.add('active');
+      if (statusFilter) statusFilter.value = chip.dataset.status || '';
+      applyFilters();
+    }));
   },
 
   bindActionButtons() {

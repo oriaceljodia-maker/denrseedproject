@@ -25,7 +25,13 @@ export const PersonnelCatalogPage = {
           </div>
         </div>
 
-        <section class="catalog-summary-grid" id="catalog-overview-grid" aria-label="Catalog summary"></section>
+        <section class="inventory-snapshot" aria-labelledby="inventory-snapshot-title">
+          <div class="inventory-snapshot-copy">
+            <h2 id="inventory-snapshot-title">Inventory Snapshot</h2>
+            <p>Live stock details for your field operations, with low-stock alerts and quick access to request forms.</p>
+          </div>
+          <div class="catalog-summary-grid" id="catalog-overview-grid" aria-label="Catalog summary"></div>
+        </section>
 
         <div class="catalog-toolbar">
           <div class="search-wrapper">
@@ -75,18 +81,22 @@ export const PersonnelCatalogPage = {
 
     container.innerHTML = `
       <div class="catalog-summary-card">
+        <span class="catalog-summary-icon" aria-hidden="true">▦</span>
         <span>Total varieties</span>
         <strong>${totalSeeds}</strong>
       </div>
       <div class="catalog-summary-card">
+        <span class="catalog-summary-icon" aria-hidden="true">◉</span>
         <span>Total recorded quantity</span>
         <strong class="overview-unit-total">${escapeHtml(totalAvailable)}</strong>
       </div>
       <div class="catalog-summary-card">
+        <span class="catalog-summary-icon catalog-summary-warning" aria-hidden="true">△</span>
         <span>Low stock alerts</span>
         <strong>${lowStock}</strong>
       </div>
       <div class="catalog-summary-card">
+        <span class="catalog-summary-icon" aria-hidden="true">▦</span>
         <span>Seed categories</span>
         <strong>${categories}</strong>
       </div>
