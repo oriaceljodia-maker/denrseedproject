@@ -21,7 +21,7 @@
 .analytics-section { margin: 1.25rem 0 1.5rem; font-family: 'Public Sans', sans-serif; }
 .analytics-section-heading { margin-bottom: .85rem; }
 .analytics-section-heading .eyebrow { margin-bottom: .55rem; }
-.analytics-section-heading h2, .analytics-card h3 { font-family: 'Fraunces', Georgia, serif; color: var(--denr-navy-primary); }
+.analytics-section-heading h2, .analytics-card h3 { font-family: 'Public Sans', Arial, sans-serif; color: var(--denr-navy-primary); font-weight: 800; letter-spacing: -.02em; }
 .analytics-section-heading h2 { margin: 0; font-size: 1.45rem; }
 .analytics-section-heading p { margin: .35rem 0 0; color: var(--text-muted); font-size: .9rem; }
 .analytics-controls { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
