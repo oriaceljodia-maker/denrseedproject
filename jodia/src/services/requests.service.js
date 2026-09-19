@@ -24,14 +24,18 @@ export const RequestsService = {
   // Submit a seed request
   async createRequest(seedId, quantityRequested, requestDetails) {
     const { data: { user } } = await supabase.auth.getUser();
+    const quantity = Number(quantityRequested);
+    if (!user?.id) throw new Error('Your session has expired. Please sign in again.');
+    if (!seedId || !Number.isFinite(quantity) || quantity <= 0) throw new Error('Choose a seed and enter a valid quantity.');
+    if (!requestDetails || typeof requestDetails !== 'object') throw new Error('Request details are incomplete.');
 
     const { data, error } = await supabase
       .from('requests')
       .insert([{
         user_id: user.id,
         seed_id: seedId,
-        quantity: quantityRequested,
-        purpose: requestDetails.purpose,
+        quantity,
+        purpose: String(requestDetails.purpose || '').trim() || null,
         planting_site: requestDetails.planting_site,
         needed_date: requestDetails.needed_date || null,
         purpose_category: requestDetails.purpose_category,
@@ -88,5 +92,9 @@ export const RequestsService = {
       .channel('public:requests')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, onUpdate)
       .subscribe();
+  },
+
+  unsubscribe(channel) {
+    if (channel) supabase.removeChannel(channel);
   }
 };

@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { formatQuantity } from '../../utils/formatters.js';
 
 export const SeedsService = {
   getStockStatus(seed) {
@@ -10,7 +11,7 @@ export const SeedsService = {
   },
 
   formatQuantity(seed) {
-    return `${this.getAvailableQuantity(seed)} ${seed?.unit || 'packs'}`;
+    return formatQuantity(this.getAvailableQuantity(seed), seed?.unit || 'packs');
   },
 
   getAvailableQuantity(seed) {
@@ -27,6 +28,7 @@ export const SeedsService = {
     const { data, error } = await supabase
       .from('seeds')
       .select('*')
+      .eq('is_archived', false)
       .order('species_name', { ascending: true });
 
     if (error) throw error;
@@ -58,19 +60,20 @@ export const SeedsService = {
     return data;
   },
 
-  // Permanently remove a seed entry. Related requests are removed by the
-  // database foreign-key cascade configured for requests.seed_id.
-  async deleteSeed(id) {
+  // Archiving preserves the request history and removes the seed from active
+  // inventory and personnel catalog views.
+  async archiveSeed(id) {
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from('seeds')
-      .delete()
-      .eq('id', id);
+      .update({ is_archived: true, archived_at: new Date().toISOString(), archived_by: user?.id || null, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('is_archived', false);
 
     if (error) throw error;
   },
 
-  // Used to make the delete confirmation clear about linked requests that
-  // PostgreSQL will remove through the existing ON DELETE CASCADE rule.
+  // Used to make archive confirmation clear about linked history.
   async getRequestCount(id) {
     const { count, error } = await supabase
       .from('requests')

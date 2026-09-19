@@ -29,11 +29,11 @@ export const UserService = {
   // NOTE: create_new_user_account RPC must be exposed to the 'authenticated' role
   // with EXECUTE privilege for the anon/authenticated key to call it. It inserts
   // into auth.users (SECURITY DEFINER) and the trigger auto-creates the profile.
-  async createPersonnelAccount(email, fullName, role = 'personnel', password = null) {
+  async createPersonnelAccount(email, fullName, password) {
     const { data, error } = await supabase.rpc('create_new_user_account', {
       user_email: email,
       user_full_name: fullName,
-      user_role: role,
+      user_role: 'personnel',
       user_password: password
     });
 

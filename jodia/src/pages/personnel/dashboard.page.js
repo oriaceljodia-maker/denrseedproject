@@ -36,8 +36,8 @@ export const PersonnelDashboardPage = {
           <div class="quick-request-layout">
             <form id="quick-request-form" class="quick-request-form">
               <div class="form-group"><label for="quick-request-seed">Select Seed *</label><select id="quick-request-seed" class="form-input" required><option value="">-- Choose a seed --</option></select></div>
-              <div class="form-group"><label for="quick-request-quantity">Quantity *</label><input id="quick-request-quantity" class="form-input" type="number" min="1" placeholder="e.g., 10" required /></div>
-              <div class="form-group"><label for="quick-request-purpose">Notes / Purpose</label><textarea id="quick-request-purpose" class="form-input" rows="4" placeholder="e.g., For reforestation project in Barangay..."></textarea></div>
+              <div class="form-group"><label for="quick-request-quantity">Quantity *</label><input id="quick-request-quantity" class="form-input" type="number" min="0.001" step="0.001" placeholder="e.g., 10 or 0.5" required /></div>
+              <div class="form-group"><label for="quick-request-purpose">Notes / Purpose *</label><textarea id="quick-request-purpose" class="form-input" rows="4" placeholder="e.g., For reforestation project in Barangay..." required></textarea></div>
               <button class="btn btn-primary" type="submit">Submit Request</button>
             </form>
             <aside class="quick-request-help"><h3>How it works</h3><ol><li>Select a seed variety from the dropdown.</li><li>Enter the quantity you need.</li><li>Add purpose or project notes.</li><li>Submit—an admin will review the request.</li></ol><p>✓ Requests are reviewed within 1–3 business days.</p></aside>
@@ -66,10 +66,10 @@ export const PersonnelDashboardPage = {
     document.getElementById('dashboard-total-requests').textContent = requests.length;
     document.getElementById('dashboard-pending-requests').textContent = requests.filter(request => request.status === 'PENDING').length;
 
-    document.getElementById('quick-request-seed').innerHTML = '<option value="">-- Choose a seed --</option>' + availableSeeds.map(seed => `<option value="${escapeAttr(seed.id)}">${escapeHtml(seed.species_name)} (${seed.quantity} packs)</option>`).join('');
+    document.getElementById('quick-request-seed').innerHTML = '<option value="">-- Choose a seed --</option>' + availableSeeds.map(seed => `<option value="${escapeAttr(seed.id)}">${escapeHtml(seed.species_name)} (${escapeHtml(SeedsService.formatQuantity(seed))} available)</option>`).join('');
     const tbody = document.getElementById('dashboard-recent-requests');
     const recentRequests = requests.slice(0, 5);
-    tbody.innerHTML = recentRequests.length ? recentRequests.map(request => `<tr><td><strong>${escapeHtml(request.seeds?.species_name) || 'N/A'}</strong></td><td>${request.quantity} packs</td><td>${new Date(request.created_at).toLocaleDateString()}</td><td><span class="badge badge-${escapeAttr(request.status.toLowerCase())}">${escapeHtml(request.status)}</span></td><td>${escapeHtml(request.review_notes) || '-'}</td></tr>`).join('') : '<tr><td colspan="5" class="dashboard-empty">No requests yet. Submit a quick request below.</td></tr>';
+    tbody.innerHTML = recentRequests.length ? recentRequests.map(request => `<tr><td><strong>${escapeHtml(request.seeds?.species_name) || 'N/A'}</strong></td><td>${escapeHtml(SeedsService.formatQuantity({ quantity: request.quantity, unit: request.seeds?.unit }))}</td><td>${new Date(request.created_at).toLocaleDateString()}</td><td><span class="badge badge-${escapeAttr(request.status.toLowerCase())}">${escapeHtml(request.status)}</span></td><td>${escapeHtml(request.review_notes) || '-'}</td></tr>`).join('') : '<tr><td colspan="5" class="dashboard-empty">No requests yet. Submit a quick request below.</td></tr>';
   },
 
   bindEvents() {
@@ -79,11 +79,20 @@ export const PersonnelDashboardPage = {
     document.getElementById('quick-request-form')?.addEventListener('submit', async (event) => {
       event.preventDefault();
       const seedId = document.getElementById('quick-request-seed').value;
-      const quantity = Number.parseInt(document.getElementById('quick-request-quantity').value, 10);
+      const quantity = Number(document.getElementById('quick-request-quantity').value);
       const purpose = document.getElementById('quick-request-purpose').value.trim();
-      if (!seedId || !quantity) return ToastComponent.show('Select a seed and enter a valid quantity.', 'error');
+      const seed = this.seeds.find(item => item.id === seedId);
+      if (!seedId || !Number.isFinite(quantity) || quantity <= 0 || !purpose) return ToastComponent.show('Select a seed, enter a valid quantity, and provide a purpose.', 'error');
+      if (!seed || quantity > SeedsService.getAvailableQuantity(seed)) return ToastComponent.show(`Only ${SeedsService.formatQuantity(seed)} is currently available.`, 'error');
       try {
-        await RequestsService.createRequest(seedId, quantity, purpose);
+        await RequestsService.createRequest(seedId, quantity, {
+          purpose,
+          planting_site: null,
+          needed_date: null,
+          purpose_category: 'Request',
+          beneficiaries_count: null,
+          contact_number: null
+        });
         ToastComponent.show('Request submitted for approval.', 'success');
         await this.init();
       } catch (err) {

@@ -3,11 +3,12 @@ import { AuthService } from '../../services/auth.service.js';
 import { Router } from '../../router/router.js';
 import { ROUTES } from '../../config/constants.js';
 import { ToastComponent } from '../../components/toast.component.js';
-import { escapeHtml } from '../../../utils/formatters.js';
+import { escapeHtml, formatQuantity } from '../../../utils/formatters.js';
 import { SeedsService } from '../../services/seeds.service.js';
 import { ModalComponent } from '../../components/modal.component.js';
 
 export const PersonnelMyRequestsPage = {
+  requestChannel: null,
   render() {
     return `
       <div class="catalog-container">
@@ -104,7 +105,7 @@ export const PersonnelMyRequestsPage = {
       tbody.innerHTML = requests.map(req => `
         <tr>
           <td><strong>${escapeHtml(req.seeds?.species_name) || 'N/A'}</strong></td>
-          <td>${req.quantity} ${escapeHtml(req.seeds?.unit || 'packs')}</td>
+          <td>${escapeHtml(formatQuantity(req.quantity, req.seeds?.unit || 'packs'))}</td>
           <td style="max-width: 200px; font-size:0.8125rem;"><strong>${escapeHtml(req.purpose_category || 'Request')}</strong><br/>${escapeHtml(req.planting_site || 'Location not provided')}<br/><span style="color:var(--text-muted);">${escapeHtml(req.purpose) || 'No additional purpose provided'}</span></td>
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status.replaceAll('_', ' '))}</span></td>
@@ -116,9 +117,20 @@ export const PersonnelMyRequestsPage = {
       this.requests = requests;
       this.bindRequestAgain();
       this.bindCancelRequest();
+      this.startLiveSync();
     } catch (err) {
       ToastComponent.show('Failed to fetch request history.', 'error');
     }
+  },
+  startLiveSync() {
+    if (this.requestChannel) RequestsService.unsubscribe(this.requestChannel);
+    let timer;
+    this.requestChannel = RequestsService.subscribeToRequests(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (window.location.pathname === '/personnel/my-requests') this.init();
+      }, 180);
+    });
   }
   ,
   renderNotifications(requests, seeds = []) {
@@ -144,7 +156,7 @@ export const PersonnelMyRequestsPage = {
       if (!request) return;
       ModalComponent.open({
         title: 'Cancel Seed Request?',
-        bodyHtml: `<p>Cancel your pending request for <strong>${escapeHtml(request.seeds?.species_name || 'this seed')}</strong>?</p><p>The reserved ${escapeHtml(String(request.quantity))} ${escapeHtml(request.seeds?.unit || 'packs')} will become available again.</p>`,
+        bodyHtml: `<p>Cancel your pending request for <strong>${escapeHtml(request.seeds?.species_name || 'this seed')}</strong>?</p><p>The reserved ${escapeHtml(formatQuantity(request.quantity, request.seeds?.unit || 'packs'))} will become available again.</p>`,
         confirmText: 'Cancel Request',
         confirmClass: 'btn-danger',
         onConfirm: async () => {

@@ -6,7 +6,7 @@ import { AuditTrailService } from '../../services/audit-trail.service.js';
 import { Router } from '../../router/router.js';
 import { AuthService } from '../../services/auth.service.js';
 import { ROUTES } from '../../config/constants.js';
-import { escapeHtml } from '../../../utils/formatters.js';
+import { escapeHtml, formatQuantity, formatUnitTotals } from '../../../utils/formatters.js';
 
 export const AdminDashboardPage = {
   render() {
@@ -58,7 +58,7 @@ export const AdminDashboardPage = {
         <section class="stats-grid">
           <div class="stat-card" style="--stat-icon-color: var(--denr-green-primary);">
             <div class="stat-card-content">
-              <div><div class="stat-title">Total Inventory</div><div class="stat-value" id="stat-total-packs">-</div></div>
+              <div><div class="stat-title">Total Inventory</div><div class="stat-value stat-value-units" id="stat-total-inventory">-</div></div>
               <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4-8-4Z"/><path d="m4 8 8 4 8-4M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>
             </div>
           </div>
@@ -185,12 +185,12 @@ export const AdminDashboardPage = {
       const rejectedCount = requests.filter(r => r.status === 'REJECTED').length;
       const lowStockSeeds = seeds.filter(seed => SeedsService.getStockStatus(seed).key !== 'in-stock');
       const lowStockCount = lowStockSeeds.length;
-      const totalPacks = seeds.reduce((sum, s) => sum + (s.quantity || 0), 0);
+      const totalInventory = formatUnitTotals(seeds, seed => SeedsService.getAvailableQuantity(seed), seed => seed.unit);
 
       document.getElementById('stat-total-seeds').textContent = seeds.length;
       document.getElementById('stat-pending-requests').textContent = pendingCount;
       document.getElementById('stat-low-stock').textContent = lowStockCount;
-      document.getElementById('stat-total-packs').textContent = totalPacks;
+      document.getElementById('stat-total-inventory').textContent = totalInventory;
       document.getElementById('stat-approved').textContent = approvedCount;
       document.getElementById('stat-total-requests').textContent = requests.length;
       document.getElementById('stat-rejected').textContent = rejectedCount;
@@ -221,7 +221,7 @@ export const AdminDashboardPage = {
         <tr>
           <td>${escapeHtml(req.profiles?.full_name) || 'Personnel'}</td>
           <td>${escapeHtml(req.seeds?.species_name) || 'N/A'}</td>
-          <td>${req.quantity ?? '—'}</td>
+          <td>${req.quantity === null || req.quantity === undefined ? '—' : escapeHtml(formatQuantity(req.quantity, req.seeds?.unit || 'units'))}</td>
           <td><span class="badge badge-${escapeHtml((req.status || 'Unknown').toLowerCase())}">${escapeHtml(req.status || 'Unknown')}</span></td>
           <td>${req.created_at ? new Date(req.created_at).toLocaleDateString() : 'Unknown'}</td>
         </tr>

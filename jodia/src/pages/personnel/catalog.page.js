@@ -5,7 +5,7 @@ import { Router } from '../../router/router.js';
 import { ROUTES } from '../../config/constants.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
-import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
+import { escapeHtml, escapeAttr, formatUnitTotals } from '../../../utils/formatters.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
 
 export const PersonnelCatalogPage = {
@@ -73,8 +73,8 @@ export const PersonnelCatalogPage = {
   renderOverview(seeds) {
     const totalSeeds = seeds.length;
     const categories = new Set(seeds.map(s => s.category).filter(Boolean)).size;
-    const lowStock = seeds.filter(s => s.quantity <= s.reorder_level).length;
-    const totalAvailable = seeds.reduce((sum, seed) => sum + (seed.quantity || 0), 0);
+    const lowStock = seeds.filter(s => SeedsService.getAvailableQuantity(s) <= Number(s.reorder_level || 0)).length;
+    const totalAvailable = formatUnitTotals(seeds, seed => SeedsService.getAvailableQuantity(seed), seed => seed.unit);
 
     const container = document.getElementById('catalog-overview-grid');
     if (!container) return;
@@ -86,7 +86,7 @@ export const PersonnelCatalogPage = {
       </div>
       <div class="overview-card">
         <span>Total recorded quantity</span>
-        <strong>${totalAvailable}</strong>
+        <strong class="overview-unit-total">${escapeHtml(totalAvailable)}</strong>
       </div>
       <div class="overview-card">
         <span>Low stock alerts</span>
@@ -216,7 +216,7 @@ export const PersonnelCatalogPage = {
           bodyHtml: `
             <div class="form-group">
               <label for="req-quantity">Quantity (${escapeHtml(seed?.unit || 'packs')})</label>
-              <input type="number" id="req-quantity" class="form-input" min="1" max="${escapeAttr(SeedsService.getAvailableQuantity(seed))}" value="1" required />
+              <input type="number" id="req-quantity" class="form-input" min="0.001" step="0.001" max="${escapeAttr(SeedsService.getAvailableQuantity(seed))}" value="1" required />
             </div>
             <div class="form-row">
               <div class="form-group" style="flex:1;"><label for="req-site">Planting Site / Location</label><input id="req-site" class="form-input" placeholder="Barangay, municipality, or project site" required /></div>
@@ -237,9 +237,9 @@ export const PersonnelCatalogPage = {
             const qty = document.getElementById('req-quantity').value;
             const purpose = document.getElementById('req-purpose').value;
 
-            if (!qty || !purpose) {
+            if (!Number.isFinite(Number(qty)) || Number(qty) <= 0 || !purpose || !document.getElementById('req-site').value.trim() || !document.getElementById('req-contact').value.trim()) {
               ToastComponent.show('Please complete all fields.', 'error');
-              return;
+              return false;
             }
             if (Number(qty) > SeedsService.getAvailableQuantity(seed)) {
               ToastComponent.show(`Only ${SeedsService.formatQuantity(seed)} is currently available.`, 'error');
@@ -248,17 +248,18 @@ export const PersonnelCatalogPage = {
 
             try {
               if (await MaintenanceService.isEnabled()) throw new Error('Requests are temporarily unavailable while maintenance mode is active.');
-              await RequestsService.createRequest(seedId, parseInt(qty, 10), {
+              await RequestsService.createRequest(seedId, Number(qty), {
                 purpose,
                 planting_site: document.getElementById('req-site').value.trim(),
                 needed_date: document.getElementById('req-needed-date').value,
                 purpose_category: document.getElementById('req-category').value,
-                beneficiaries_count: parseInt(document.getElementById('req-beneficiaries').value, 10) || null,
+                beneficiaries_count: Number(document.getElementById('req-beneficiaries').value) || null,
                 contact_number: document.getElementById('req-contact').value.trim()
               });
               ToastComponent.show('Request submitted for approval.', 'success');
             } catch (err) {
               ToastComponent.show(err.message || 'Failed to submit request.', 'error');
+              return false;
             }
           }
         });

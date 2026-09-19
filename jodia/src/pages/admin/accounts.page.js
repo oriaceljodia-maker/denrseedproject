@@ -17,7 +17,7 @@ export const AdminAccountsPage = {
       <div class="card">
         <div class="section-block">
           <h2 class="section-title">Create new personnel account</h2>
-          <p>Enter registration details for a new personnel account. Admins can assign role and optional password.</p>
+          <p>Create a personnel account with a strong temporary password. The user must change it after their first sign-in.</p>
           <div class="form-row">
             <div class="form-group" style="flex: 1; min-width: 220px;">
               <label for="new-user-email">Email address</label>
@@ -30,15 +30,8 @@ export const AdminAccountsPage = {
           </div>
           <div class="form-row">
             <div class="form-group" style="flex: 1; min-width: 220px;">
-              <label for="new-user-role">Role</label>
-              <select id="new-user-role" class="form-input">
-                <option value="personnel" selected>Personnel</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 220px;">
               <label for="new-user-password">Temporary password</label>
-              <input type="text" id="new-user-password" class="form-input" placeholder="Leave blank to auto-generate" />
+              <input type="password" id="new-user-password" class="form-input" minlength="12" placeholder="At least 12 characters" />
             </div>
           </div>
           <button id="btn-create-user" class="btn btn-secondary">Create account</button>
@@ -125,24 +118,23 @@ export const AdminAccountsPage = {
   async createUser() {
     const email = document.getElementById('new-user-email').value.trim();
     const fullName = document.getElementById('new-user-fullname').value.trim();
-    const role = document.getElementById('new-user-role').value;
-    const password = document.getElementById('new-user-password').value.trim() || null;
+    const password = document.getElementById('new-user-password').value;
     const messageEl = document.getElementById('create-user-message');
 
-    if (!email || !fullName) {
+    if (!email || !fullName || password.length < 12) {
       messageEl.style.display = 'block';
-      messageEl.textContent = 'Email and full name are required to create a new account.';
+      messageEl.textContent = 'Email, full name, and a temporary password of at least 12 characters are required.';
       return;
     }
 
     try {
-      await UserService.createPersonnelAccount(email, fullName, role, password);
+      await UserService.createPersonnelAccount(email, fullName, password);
       if (this.selectedAccessRequestId) {
         await AccessRequestService.updateStatus(this.selectedAccessRequestId, 'APPROVED');
         this.selectedAccessRequestId = null;
       }
       messageEl.style.display = 'block';
-      messageEl.textContent = 'Account created successfully. Temporary password has been issued.';
+      messageEl.textContent = 'Personnel account created. Give the temporary password to the user through an approved secure channel.';
       messageEl.style.color = 'var(--denr-green-primary)';
       document.getElementById('new-user-email').value = '';
       document.getElementById('new-user-fullname').value = '';

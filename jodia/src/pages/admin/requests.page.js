@@ -1,11 +1,12 @@
 import { RequestsService } from '../../services/requests.service.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
-import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
+import { escapeHtml, escapeAttr, formatQuantity } from '../../../utils/formatters.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
 
 export const AdminRequestsPage = {
   allRequests: [],
+  requestChannel: null,
 
   render() {
     return `
@@ -61,6 +62,18 @@ export const AdminRequestsPage = {
   async init() {
     await this.loadRequests();
     this.bindSearchAndFilter();
+    this.startLiveSync();
+  },
+
+  startLiveSync() {
+    if (this.requestChannel) RequestsService.unsubscribe(this.requestChannel);
+    let timer;
+    this.requestChannel = RequestsService.subscribeToRequests(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (window.location.pathname === '/admin/requests') this.loadRequests();
+      }, 180);
+    });
   },
 
   async loadRequests() {
@@ -88,7 +101,7 @@ export const AdminRequestsPage = {
         <tr>
           <td><strong>${escapeHtml(req.profiles?.full_name) || 'Personnel'}</strong></td>
           <td>${escapeHtml(req.seeds?.species_name) || 'N/A'}</td>
-          <td><strong>${req.quantity}</strong> ${escapeHtml(req.seeds?.unit || 'packs')}</td>
+          <td><strong>${escapeHtml(formatQuantity(req.quantity, req.seeds?.unit || 'packs'))}</strong></td>
           <td style="max-width: 250px; font-size: 0.8125rem;"><strong>${escapeHtml(req.purpose_category || 'Request')}</strong><br/>${escapeHtml(req.planting_site || 'Location not provided')}<br/>${escapeHtml(req.purpose) || 'N/A'}</td>
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status)}</span></td>
@@ -145,6 +158,7 @@ export const AdminRequestsPage = {
               await this.loadRequests();
             } catch (err) {
               ToastComponent.show(err.message || 'Approval failed.', 'error');
+              return false;
             }
           }
         });
@@ -165,6 +179,10 @@ export const AdminRequestsPage = {
           confirmText: 'Reject Request',
           onConfirm: async () => {
             const notes = document.getElementById('reject-reason').value.trim();
+            if (!notes) {
+              ToastComponent.show('Provide a reason for rejection.', 'error');
+              return false;
+            }
             try {
               if (await MaintenanceService.isEnabled()) throw new Error('Request decisions are disabled while maintenance mode is active.');
               await RequestsService.updateRequestStatus(reqId, 'REJECTED', notes);
@@ -172,6 +190,7 @@ export const AdminRequestsPage = {
               await this.loadRequests();
             } catch (err) {
               ToastComponent.show(err.message || 'Rejection failed.', 'error');
+              return false;
             }
           }
         });

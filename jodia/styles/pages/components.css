@@ -457,6 +457,76 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Operational UI refinement: clearer sections, controls, and data density. */
+.catalog-hero,
+.page-header {
+  position: relative;
+}
+
+.catalog-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 1.25rem 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--denr-green-primary), transparent 68%);
+  opacity: .55;
+}
+
+.filter-bar,
+.catalog-toolbar {
+  padding: .7rem;
+  border: 1px solid rgba(15, 122, 56, .11);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,.58);
+  box-shadow: 0 8px 24px rgba(2,18,37,.04);
+}
+
+.data-table tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--denr-green-primary);
+}
+
+.table-container {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+}
+
+.section-title {
+  letter-spacing: -.01em;
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  right: -34px;
+  bottom: -34px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--stat-icon-color, var(--denr-green-primary)) 10%, transparent);
+  pointer-events: none;
+}
+
+.stat-card-content { position: relative; z-index: 1; }
+
+.overview-unit-total,
+.stat-value-units {
+  font-size: clamp(.95rem, 1.35vw, 1.25rem) !important;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.btn-archive-seed {
+  color: #8a5a00;
+  border-color: rgba(180, 118, 0, .35);
+  background: rgba(255, 248, 230, .9);
+}
+
+.btn-archive-seed:hover { background: #fff2cf; }
+
 /* Report-specific presentation */
 .reports-page .card { margin-bottom: 1.25rem; }
 .report-actions { display:flex; flex-wrap:wrap; gap:.6rem; }
@@ -477,4 +547,6 @@
   .report-actions { width:100%; }
   .report-actions .btn { flex:1 1 120px; padding:.6rem .75rem; }
   .report-demand-grid { grid-template-columns:1fr; }
+  .filter-bar { padding: .6rem; }
+  .filter-bar .form-input { width: 100%; min-width: 0; }
 }

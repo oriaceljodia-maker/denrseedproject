@@ -40,9 +40,19 @@ export const ModalComponent = {
       close();
     });
     document.getElementById('modal-confirm').addEventListener('click', async () => {
-      document.removeEventListener('keydown', handleEscape);
-      if (onConfirm) await onConfirm();
-      close();
+      const confirmButton = document.getElementById('modal-confirm');
+      confirmButton.disabled = true;
+      try {
+        // Returning false lets forms show validation or database errors without
+        // unexpectedly closing and losing the user's input.
+        const shouldClose = onConfirm ? await onConfirm() : true;
+        if (shouldClose !== false) {
+          document.removeEventListener('keydown', handleEscape);
+          close();
+        }
+      } finally {
+        if (document.getElementById('modal-confirm')) confirmButton.disabled = false;
+      }
     });
   }
 };

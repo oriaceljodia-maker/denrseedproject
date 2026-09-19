@@ -1,7 +1,7 @@
 import { SeedsService } from '../../services/seeds.service.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
-import { escapeHtml, escapeAttr } from '../../../utils/formatters.js';
+import { escapeHtml, escapeAttr, formatQuantity } from '../../../utils/formatters.js';
 
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -165,18 +165,18 @@ export const AdminInventoryPage = {
           <td class="inventory-seed-cell"><img class="inventory-seed-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><strong>${escapeHtml(seed.species_name)}</strong></td>
           <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
           <td>
-            ${escapeHtml(SeedsService.formatQuantity(seed))}${Number(seed.reserved_quantity) ? `<small style="display:block;color:var(--text-muted);margin-top:.25rem;">${escapeHtml(String(seed.reserved_quantity))} ${escapeHtml(seed.unit || 'packs')} reserved</small>` : ''}
+            ${escapeHtml(SeedsService.formatQuantity(seed))}${Number(seed.reserved_quantity) ? `<small style="display:block;color:var(--text-muted);margin-top:.25rem;">${escapeHtml(formatQuantity(seed.reserved_quantity, seed.unit || 'packs'))} reserved</small>` : ''}
             <span class="badge stock-status-badge ${stockStatus.key}" style="margin-left: 0.5rem;">${stockStatus.label}</span>
           </td>
-          <td>${seed.reorder_level || 0} ${escapeHtml(seed.unit || 'packs')}</td>
+          <td>${escapeHtml(formatQuantity(seed.reorder_level || 0, seed.unit || 'packs'))}</td>
           <td>
             <button class="btn btn-secondary inventory-action-button btn-edit-seed" data-id="${escapeAttr(seed.id)}">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
               Edit
             </button>
-            <button class="btn btn-danger inventory-action-button btn-delete-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
-              Delete
+            <button class="btn btn-secondary inventory-action-button btn-archive-seed" data-id="${escapeAttr(seed.id)}" data-name="${escapeAttr(seed.species_name)}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7"/><path d="M2 7h20M9 11h6M9 15h6M9 3h6v4H9z"/></svg>
+              Archive
             </button>
           </td>
         </tr>
@@ -184,7 +184,7 @@ export const AdminInventoryPage = {
     }).join('');
 
     this.bindEditButtons();
-    this.bindDeleteButtons();
+    this.bindArchiveButtons();
   },
 
   bindSearchAndFilter() {
@@ -228,10 +228,10 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="new-scientific-name">Scientific Name</label><input type="text" id="new-scientific-name" class="form-input" placeholder="e.g. Pterocarpus indicus" /></div>
               <div class="form-group"><label for="new-category">Category</label><select id="new-category" class="form-input"><option value="Timber">Timber</option><option value="Fruit-bearing">Fruit-bearing</option><option value="Native">Native</option><option value="Ornamental">Ornamental</option><option value="Other">Other</option></select></div>
               <div class="form-group"><label for="new-source-location">Source / Location</label><input type="text" id="new-source-location" class="form-input" placeholder="e.g. Pagbilao Nursery" /></div>
-              <div class="form-group"><label for="new-quantity">Stock Quantity</label><input type="number" id="new-quantity" class="form-input" min="0" placeholder="e.g. 120" required /></div>
+              <div class="form-group"><label for="new-quantity">Stock Quantity</label><input type="number" id="new-quantity" class="form-input" min="0" step="0.001" placeholder="e.g. 120 or 0.5" required /></div>
               <div class="form-group"><label for="new-unit">Unit</label><select id="new-unit" class="form-input"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option><option value="packs" selected>packs</option></select></div>
               <div class="form-group"><label for="new-processing-status">Lab / Processing Status</label><select id="new-processing-status" class="form-input"><option>Newly collected</option><option>Moisture content</option><option>For Germination Test</option><option>Germinating</option><option>Ready for Distribution</option></select></div>
-              <div class="form-group"><label for="new-reorder">Low Stock Alert At</label><input type="number" id="new-reorder" class="form-input" min="0" value="10" required /></div>
+              <div class="form-group"><label for="new-reorder">Low Stock Alert At</label><input type="number" id="new-reorder" class="form-input" min="0" step="0.001" value="10" required /></div>
               <div class="form-group"><label for="new-seedlot">Seedlot No. <span class="field-optional">(optional)</span></label><input id="new-seedlot" class="form-input" placeholder="e.g. H00042" /></div>
               <div class="form-group"><label for="new-ipt">IPT No. <span class="field-optional">(optional)</span></label><input id="new-ipt" class="form-input" placeholder="e.g. PT-05-356" /></div>
               <div class="form-group"><label for="new-date-collected">Date Collected <span class="field-optional">(optional)</span></label><input type="date" id="new-date-collected" class="form-input" /></div>
@@ -245,8 +245,8 @@ export const AdminInventoryPage = {
           const species_name = document.getElementById('new-species').value.trim();
           const category = document.getElementById('new-category').value.trim();
           const image_url = selectedImage.file ? await readImageFile(selectedImage.file) : null;
-          const quantity = parseInt(document.getElementById('new-quantity').value, 10);
-          const reorder_level = parseInt(document.getElementById('new-reorder').value, 10);
+          const quantity = Number(document.getElementById('new-quantity').value);
+          const reorder_level = Number(document.getElementById('new-reorder').value);
           const scientific_name = document.getElementById('new-scientific-name').value.trim() || null;
           const source_location = document.getElementById('new-source-location').value.trim() || null;
           const unit = document.getElementById('new-unit').value;
@@ -257,8 +257,8 @@ export const AdminInventoryPage = {
           const date_collected = document.getElementById('new-date-collected').value || null;
           const collectors = document.getElementById('new-collectors').value.trim() || null;
 
-          if (!species_name) {
-            ToastComponent.show('Species name is required.', 'error');
+          if (!species_name || !Number.isFinite(quantity) || quantity < 0 || !Number.isFinite(reorder_level) || reorder_level < 0) {
+            ToastComponent.show('Enter a species name and valid non-negative stock and alert quantities.', 'error');
             return;
           }
 
@@ -295,10 +295,10 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="edit-scientific-name">Scientific Name</label><input id="edit-scientific-name" class="form-input" value="${escapeAttr(seed.scientific_name || '')}" /></div>
               <div class="form-group"><label for="edit-category">Category</label><input id="edit-category" class="form-input" value="${escapeAttr(seed.category || '')}" /></div>
               <div class="form-group"><label for="edit-source-location">Source / Location</label><input id="edit-source-location" class="form-input" value="${escapeAttr(seed.source_location || '')}" /></div>
-              <div class="form-group"><label for="edit-quantity">Stock Quantity</label><input type="number" id="edit-quantity" class="form-input" min="0" value="${escapeAttr(seed.quantity)}" required /></div>
+              <div class="form-group"><label for="edit-quantity">Stock Quantity</label><input type="number" id="edit-quantity" class="form-input" min="0" step="0.001" value="${escapeAttr(seed.quantity)}" required /></div>
               <div class="form-group"><label for="edit-unit">Unit</label><select id="edit-unit" class="form-input">${['g', 'kg', 'pcs', 'packs'].map(unit => `<option ${seed.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}</select></div>
               <div class="form-group"><label for="edit-processing-status">Lab / Processing Status</label><select id="edit-processing-status" class="form-input">${['Newly collected', 'Moisture content', 'For Germination Test', 'Germinating', 'Ready for Distribution'].map(status => `<option ${seed.processing_status === status ? 'selected' : ''}>${status}</option>`).join('')}</select></div>
-              <div class="form-group"><label for="edit-reorder">Low Stock Alert At</label><input type="number" id="edit-reorder" class="form-input" min="0" value="${escapeAttr(seed.reorder_level || 0)}" required /></div>
+              <div class="form-group"><label for="edit-reorder">Low Stock Alert At</label><input type="number" id="edit-reorder" class="form-input" min="0" step="0.001" value="${escapeAttr(seed.reorder_level || 0)}" required /></div>
               <div class="form-group"><label for="edit-seedlot">Seedlot No. <span class="field-optional">(optional)</span></label><input id="edit-seedlot" class="form-input" value="${escapeAttr(seed.seedlot_no || '')}" /></div>
               <div class="form-group"><label for="edit-ipt">IPT No. <span class="field-optional">(optional)</span></label><input id="edit-ipt" class="form-input" value="${escapeAttr(seed.ipt_no || '')}" /></div>
               <div class="form-group"><label for="edit-date-collected">Date Collected <span class="field-optional">(optional)</span></label><input type="date" id="edit-date-collected" class="form-input" value="${escapeAttr(seed.date_collected || '')}" /></div>
@@ -315,9 +315,14 @@ export const AdminInventoryPage = {
             const updatedImageUrl = selectedImage.file
               ? await readImageFile(selectedImage.file)
               : (selectedImage.imageUrl || null);
-            const updatedQty = parseInt(document.getElementById('edit-quantity').value, 10);
-            const updatedReorder = parseInt(document.getElementById('edit-reorder').value, 10);
+            const updatedQty = Number(document.getElementById('edit-quantity').value);
+            const updatedReorder = Number(document.getElementById('edit-reorder').value);
             const updatedNotes = document.getElementById('edit-notes').value.trim();
+
+            if (!document.getElementById('edit-species').value.trim() || !Number.isFinite(updatedQty) || updatedQty < 0 || !Number.isFinite(updatedReorder) || updatedReorder < 0) {
+              ToastComponent.show('Enter a species name and valid non-negative stock and alert quantities.', 'error');
+              return false;
+            }
 
             try {
               await SeedsService.updateSeed(id, {
@@ -340,6 +345,7 @@ export const AdminInventoryPage = {
               await this.loadInventory();
             } catch (err) {
               ToastComponent.show(err.message || 'Failed to update item.', 'error');
+              return false;
             }
           }
         });
@@ -348,8 +354,8 @@ export const AdminInventoryPage = {
     });
   },
 
-  bindDeleteButtons() {
-    document.querySelectorAll('.btn-delete-seed').forEach(btn => {
+  bindArchiveButtons() {
+    document.querySelectorAll('.btn-archive-seed').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const target = e.currentTarget;
         const id = target.getAttribute('data-id');
@@ -364,21 +370,22 @@ export const AdminInventoryPage = {
         }
 
         const linkedRequestsWarning = requestCount > 0
-          ? `<p><strong>${requestCount} linked ${requestCount === 1 ? 'request will' : 'requests will'} also be permanently removed.</strong></p>`
+          ? `<p><strong>${requestCount} linked ${requestCount === 1 ? 'request' : 'requests'} will be retained for history.</strong></p>`
           : '';
 
         ModalComponent.open({
-          title: 'Delete Seed?',
-          bodyHtml: `<p>Are you sure you want to delete <strong>${escapeHtml(name)}</strong>? This action cannot be undone.</p>${linkedRequestsWarning}`,
-          confirmText: 'Delete',
-          confirmClass: 'btn-danger',
+          title: 'Archive Seed?',
+          bodyHtml: `<p>Archive <strong>${escapeHtml(name)}</strong>?</p><p>It will no longer appear in active inventory or the personnel catalog, but its request history will be preserved.</p>${linkedRequestsWarning}`,
+          confirmText: 'Archive Seed',
+          confirmClass: 'btn-secondary',
           onConfirm: async () => {
             try {
-              await SeedsService.deleteSeed(id);
-              ToastComponent.show('Seed entry deleted.', 'success');
+              await SeedsService.archiveSeed(id);
+              ToastComponent.show('Seed archived. Request history was retained.', 'success');
               await this.loadInventory();
             } catch (err) {
-              ToastComponent.show(err.message || 'Failed to delete seed entry.', 'error');
+              ToastComponent.show(err.message || 'Failed to archive seed entry.', 'error');
+              return false;
             }
           }
         });
