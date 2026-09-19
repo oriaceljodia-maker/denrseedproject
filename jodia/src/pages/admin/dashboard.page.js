@@ -17,10 +17,10 @@ export const AdminDashboardPage = {
             <span class="eyebrow">Operational dashboard</span>
             <h1 class="hero-title">DENR Seed Control Center</h1>
             <p class="hero-text">Monitor inventory, pending requests, and low-stock alerts through a field-focused operations hub for reforestation and conservation teams.</p>
-            <div class="hero-badges">
-              <span class="hero-badge">Reforestation focused</span>
-              <span class="hero-badge">Quick approvals</span>
-              <span class="hero-badge">Field-ready insights</span>
+            <div class="dashboard-hero-actions">
+              <button type="button" id="dashboard-review-requests" class="btn btn-primary">Review Requests</button>
+              <button type="button" id="dashboard-add-seed" class="btn btn-secondary">Add Seed</button>
+              <span class="dashboard-live-note" id="dashboard-last-updated">● Live updates enabled</span>
             </div>
           </div>
           <div class="hero-card">
@@ -82,6 +82,12 @@ export const AdminDashboardPage = {
           </div>
         </section>
 
+        <section class="dashboard-attention" id="dashboard-attention" aria-live="polite">
+          <span class="dashboard-attention-icon" aria-hidden="true">!</span>
+          <span id="dashboard-attention-copy">Checking low-stock items…</span>
+          <button type="button" class="dashboard-attention-link" id="dashboard-attention-action">View inventory</button>
+        </section>
+
         ${DemandInsightsComponent.render()}
 
         <section class="analytics-section" aria-label="Planning analytics">
@@ -135,6 +141,7 @@ export const AdminDashboardPage = {
     await this.loadMetrics();
     this.bindAuditTrailLink();
     this.bindLowStockLink();
+    this.bindPrimaryActions();
     this.startLiveSync();
     this.bindAnalyticsControls();
   },
@@ -151,6 +158,15 @@ export const AdminDashboardPage = {
       const user = await AuthService.getCurrentUser();
       await Router.navigate(user, ROUTES.ADMIN_INVENTORY);
     });
+  },
+
+  bindPrimaryActions() {
+    document.getElementById('dashboard-review-requests')?.addEventListener('click', async () => {
+      await Router.navigate(await AuthService.getCurrentUser(), ROUTES.ADMIN_REQUESTS);
+    });
+    const goToInventory = async () => Router.navigate(await AuthService.getCurrentUser(), ROUTES.ADMIN_INVENTORY);
+    document.getElementById('dashboard-add-seed')?.addEventListener('click', goToInventory);
+    document.getElementById('dashboard-attention-action')?.addEventListener('click', goToInventory);
   },
 
   bindAnalyticsControls() {
@@ -194,6 +210,12 @@ export const AdminDashboardPage = {
       document.getElementById('stat-approved').textContent = approvedCount;
       document.getElementById('stat-total-requests').textContent = requests.length;
       document.getElementById('stat-rejected').textContent = rejectedCount;
+      const attention = document.getElementById('dashboard-attention-copy');
+      if (attention) attention.textContent = lowStockCount
+        ? `${lowStockCount} low-stock ${lowStockCount === 1 ? 'item needs' : 'items need'} attention.`
+        : 'All active seed inventory is above its low-stock alert level.';
+      const updated = document.getElementById('dashboard-last-updated');
+      if (updated) updated.textContent = `● Updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
       DemandInsightsComponent.renderData(requests);
       this.latestRequests = requests;
       this.renderPlanningAnalytics(requests);

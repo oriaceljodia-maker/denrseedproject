@@ -16,7 +16,7 @@ export const HeaderComponent = {
     headerEl.innerHTML = `
       <div class="header-brand">
         <div class="header-logo-wrap">
-          <img src="/assets/images/logs.jpg" alt="DENR logo" class="header-logo" />
+          <img src="/assets/images/seed-portal-logo.png" alt="DENR Seed Inventory logo" class="header-logo" />
         </div>
         <div class="header-brand-copy">
           <div class="header-title">DENR Talipan</div>

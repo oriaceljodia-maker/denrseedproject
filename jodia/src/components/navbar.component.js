@@ -52,7 +52,7 @@ export const NavbarComponent = {
     const avatar = user.avatarUrl ? `<img src="${escapeAttr(user.avatarUrl)}" alt="" />` : '';
     return `
       <aside class="app-sidebar">
-        <div class="sidebar-brand"><img src="/assets/images/logs.jpg" alt="DENR logo" /><div><strong>DENR Talipan</strong><span>Seed Inventory System</span></div></div>
+        <div class="sidebar-brand"><img src="/assets/images/seed-portal-logo.png" alt="DENR Seed Inventory logo" /><div><strong>DENR Talipan</strong><span>Seed Inventory System</span></div></div>
         <a href="${ROUTES.PROFILE}" class="sidebar-profile" data-link>${`<span class="sidebar-avatar">${avatar}<span class="sidebar-avatar-initial">${initial}</span></span>`}<span class="sidebar-profile-copy"><strong>${escapeHtml(user.fullName)}</strong><span>${roleLabel}</span></span></a>
         <nav class="sidebar-nav" aria-label="Main navigation">${sidebarNavigation}</nav>
         <div class="sidebar-footer"><a href="${ROUTES.PROFILE}" class="sidebar-link ${currentPath === ROUTES.PROFILE ? 'active' : ''}" data-link><span class="sidebar-link-icon">${navigationIcons.profile}</span><span>Profile</span></a><button type="button" class="sidebar-link sidebar-logout" id="btn-sidebar-logout"><span class="sidebar-link-icon">${navigationIcons.logout}</span><span>Logout</span></button></div>

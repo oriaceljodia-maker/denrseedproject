@@ -7,7 +7,7 @@ import { MaintenanceService } from '../../services/maintenance.service.js';
 export const LoginPage = {
   render() {
     return `
-      <div class="auth-layout">
+      <div class="auth-layout login-layout">
         <section class="auth-hero">
           <div class="auth-hero-copy">
             <span class="eyebrow">Department of Environment and Natural Resources</span>
