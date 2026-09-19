@@ -395,6 +395,7 @@
   color: var(--denr-navy-primary);
   min-height: 220px;
   justify-content: center;
+  background: rgba(211, 231, 218, .91);
 }
 
 .admin-dashboard .hero-copy::after {
@@ -448,12 +449,13 @@
 
 .dashboard-hero-actions .btn-secondary {
   color: #fff;
-  background: rgba(255,255,255,.17);
-  border-color: rgba(255,255,255,.42);
+  background: var(--denr-green-primary);
+  border-color: var(--denr-green-primary);
+  box-shadow: 0 8px 16px rgba(15,122,56,.20);
 }
 
-.dashboard-hero-actions .btn-secondary:hover { background: rgba(255,255,255,.2); }
-.dashboard-live-note { color: #fff; font-size: .76rem; font-weight: 800; }
+.dashboard-hero-actions .btn-secondary:hover { background: var(--denr-green-hover); }
+.dashboard-live-note { display: inline-flex; align-items: center; min-height: 36px; padding: 0 .8rem; border-radius: 999px; color: #fff; background: var(--denr-green-primary); box-shadow: 0 8px 16px rgba(15,122,56,.20); font-size: .76rem; font-weight: 800; }
 
 .dashboard-attention {
   display: flex;

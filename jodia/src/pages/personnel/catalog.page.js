@@ -81,22 +81,22 @@ export const PersonnelCatalogPage = {
 
     container.innerHTML = `
       <div class="catalog-summary-card">
-        <span class="catalog-summary-icon" aria-hidden="true">▦</span>
+        <span class="catalog-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></span>
         <span>Total varieties</span>
         <strong>${totalSeeds}</strong>
       </div>
       <div class="catalog-summary-card">
-        <span class="catalog-summary-icon" aria-hidden="true">◉</span>
+        <span class="catalog-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg></span>
         <span>Total recorded quantity</span>
         <strong class="overview-unit-total">${escapeHtml(totalAvailable)}</strong>
       </div>
       <div class="catalog-summary-card">
-        <span class="catalog-summary-icon catalog-summary-warning" aria-hidden="true">△</span>
+        <span class="catalog-summary-icon catalog-summary-warning" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 3.8 19h16.4L12 4Z"/><path d="M12 9v4m0 3h.01"/></svg></span>
         <span>Low stock alerts</span>
         <strong>${lowStock}</strong>
       </div>
       <div class="catalog-summary-card">
-        <span class="catalog-summary-icon" aria-hidden="true">▦</span>
+        <span class="catalog-summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z"/><path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9"/></svg></span>
         <span>Seed categories</span>
         <strong>${categories}</strong>
       </div>

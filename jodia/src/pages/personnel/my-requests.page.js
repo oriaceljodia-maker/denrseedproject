@@ -25,18 +25,22 @@ export const PersonnelMyRequestsPage = {
 
         <div class="request-summary">
           <div class="request-summary-card">
+            <span class="request-summary-icon" aria-hidden="true">▤</span>
             <span>Total Requests</span>
             <strong id="summary-total">-</strong>
           </div>
           <div class="request-summary-card">
+            <span class="request-summary-icon request-summary-pending" aria-hidden="true">◷</span>
             <span>Pending</span>
             <strong id="summary-pending" class="status-warning">-</strong>
           </div>
           <div class="request-summary-card">
+            <span class="request-summary-icon request-summary-approved" aria-hidden="true">✓</span>
             <span>Approved</span>
             <strong id="summary-approved" class="status-success">-</strong>
           </div>
           <div class="request-summary-card">
+            <span class="request-summary-icon request-summary-rejected" aria-hidden="true">×</span>
             <span>Rejected</span>
             <strong id="summary-rejected" class="status-danger">-</strong>
           </div>

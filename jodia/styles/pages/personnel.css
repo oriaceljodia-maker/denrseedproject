@@ -235,12 +235,17 @@
 }
 
 .request-summary-card {
-  padding: 1.25rem;
+  padding: 1rem;
   border-radius: var(--radius-xl);
   background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.72));
   border: 1px solid rgba(255,255,255,0.5);
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(14px);
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: .7rem;
+  align-items: center;
 }
 
 .request-summary-card span {
@@ -254,9 +259,27 @@
 }
 
 .request-summary-card strong {
+  grid-column: 2;
   font-size: 1.5rem;
   color: var(--denr-navy-primary);
 }
+
+.request-summary-icon {
+  grid-row: 1 / 3;
+  display: grid !important;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin: 0 !important;
+  border-radius: 11px;
+  background: rgba(59, 130, 246, .12);
+  color: var(--status-info) !important;
+  font-size: 1.2rem !important;
+  line-height: 1;
+}
+.request-summary-pending { background: rgba(245, 158, 11, .14); color: var(--status-warning) !important; }
+.request-summary-approved { background: rgba(22, 163, 74, .12); color: var(--status-success) !important; }
+.request-summary-rejected { background: rgba(220, 38, 38, .1); color: var(--status-danger) !important; }
 
 .catalog-summary-grid {
   display: grid;
@@ -323,6 +346,8 @@
   font-size: .85rem !important;
   margin: 0 !important;
 }
+
+.catalog-summary-icon svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 .catalog-summary-warning { color: var(--status-danger) !important; background: rgba(220, 38, 38, .1); }
   }
