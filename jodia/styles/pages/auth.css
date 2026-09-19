@@ -228,12 +228,12 @@
 }
 
 .login-layout .auth-hero-copy {
-  padding: 2.25rem;
-  border: 1px solid rgba(255,255,255,.22);
-  border-radius: var(--radius-xl);
-  background: rgba(4, 25, 43, .38);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(7px);
+  padding: 2.25rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .login-layout .auth-hero-copy h1,
@@ -245,9 +245,10 @@
 .login-layout .auth-hero-copy > p { color: rgba(255,255,255,.84); }
 .login-layout .auth-hero-copy .eyebrow { color: #e7ffec; background: rgba(255,255,255,.14); }
 .login-layout .hero-features span { color: rgba(255,255,255,.78); background: rgba(4,25,43,.32); border-color: rgba(255,255,255,.2); }
+.login-layout .auth-card { justify-self: end; max-width: 430px; }
 
 @media (max-width: 900px) {
-  .login-layout .auth-hero-copy { padding: 1.5rem; }
+  .login-layout .auth-hero-copy { padding: 1.5rem 0; }
 }
 
 @media (max-width: 900px) {
@@ -260,4 +261,6 @@
     max-width: 470px;
     width: 100%;
   }
+
+  .login-layout .auth-card { justify-self: start; }
 }

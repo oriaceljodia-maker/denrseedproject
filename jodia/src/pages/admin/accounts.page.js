@@ -8,46 +8,24 @@ export const AdminAccountsPage = {
   selectedAccessRequestId: null,
   render() {
     return `
-      <div class="admin-container">
+      <div class="admin-container accounts-page">
         <div style="margin-bottom: 1.5rem;">
           <h1 style="font-size: 1.5rem; color: var(--denr-navy-primary);">Personnel User Accounts</h1>
-          <p style="font-size: 0.875rem; color: var(--text-muted);">Manage registered personnel, roles, and status controls</p>
+          <div class="accounts-page-heading">
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Manage registered personnel, roles, and status controls</p>
+            <button id="btn-open-create-user" class="btn btn-primary">Create Personnel Account</button>
+          </div>
         </div>
 
-      <div class="card">
-        <div class="section-block">
-          <h2 class="section-title">Create new personnel account</h2>
-          <p>Create a personnel account with a strong temporary password. The user must change it after their first sign-in.</p>
-          <div class="form-row">
-            <div class="form-group" style="flex: 1; min-width: 220px;">
-              <label for="new-user-email">Email address</label>
-              <input type="email" id="new-user-email" class="form-input" placeholder="email@denr.gov.ph" />
-            </div>
-            <div class="form-group" style="flex: 1; min-width: 220px;">
-              <label for="new-user-fullname">Full name</label>
-              <input type="text" id="new-user-fullname" class="form-input" placeholder="Juan Dela Cruz" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group" style="flex: 1; min-width: 220px;">
-              <label for="new-user-password">Temporary password</label>
-              <input type="password" id="new-user-password" class="form-input" minlength="12" placeholder="At least 12 characters" />
-            </div>
-          </div>
-          <button id="btn-create-user" class="btn btn-secondary">Create account</button>
-          <div id="create-user-message" class="table-empty-message" style="display:none; margin-top:1rem;"></div>
-        </div>
-      </div>
-
-      <div class="card">
+      <section class="card accounts-section">
         <div class="section-block">
           <h2 class="section-title">Pending access requests</h2>
           <p>Requests submitted from the public Get Access form. Use the details to create an account, then mark the request approved.</p>
           <div class="table-container"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="access-requests-table-body"><tr><td colspan="4" style="text-align:center;">Loading access requests...</td></tr></tbody></table></div>
         </div>
-      </div>
+      </section>
 
-      <div class="card">
+      <section class="card accounts-section">
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -64,7 +42,7 @@ export const AdminAccountsPage = {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
     `;
   },
@@ -98,11 +76,8 @@ export const AdminAccountsPage = {
   bindAccessRequestButtons() {
     document.querySelectorAll('.btn-use-access-request').forEach(button => button.addEventListener('click', event => {
       const target = event.currentTarget;
-      document.getElementById('new-user-email').value = target.dataset.email;
-      document.getElementById('new-user-fullname').value = target.dataset.name;
-      document.getElementById('btn-create-user').focus();
       this.selectedAccessRequestId = target.dataset.id;
-      ToastComponent.show('Request details added to the account form. Create the account, then approve the request.', 'info');
+      this.openCreateUserModal({ email: target.dataset.email, fullName: target.dataset.name });
     }));
     document.querySelectorAll('.btn-decline-access-request').forEach(button => button.addEventListener('click', async event => {
       try {
@@ -115,16 +90,10 @@ export const AdminAccountsPage = {
     }));
   },
 
-  async createUser() {
-    const email = document.getElementById('new-user-email').value.trim();
-    const fullName = document.getElementById('new-user-fullname').value.trim();
-    const password = document.getElementById('new-user-password').value;
-    const messageEl = document.getElementById('create-user-message');
-
+  async createUser({ email, fullName, password }) {
     if (!email || !fullName || password.length < 12) {
-      messageEl.style.display = 'block';
-      messageEl.textContent = 'Email, full name, and a temporary password of at least 12 characters are required.';
-      return;
+      ToastComponent.show('Email, full name, and a temporary password of at least 12 characters are required.', 'error');
+      return false;
     }
 
     try {
@@ -133,24 +102,41 @@ export const AdminAccountsPage = {
         await AccessRequestService.updateStatus(this.selectedAccessRequestId, 'APPROVED');
         this.selectedAccessRequestId = null;
       }
-      messageEl.style.display = 'block';
-      messageEl.textContent = 'Personnel account created. Give the temporary password to the user through an approved secure channel.';
-      messageEl.style.color = 'var(--denr-green-primary)';
-      document.getElementById('new-user-email').value = '';
-      document.getElementById('new-user-fullname').value = '';
-      document.getElementById('new-user-password').value = '';
+      ToastComponent.show('Personnel account created. Give the temporary password to the user through an approved secure channel.', 'success');
       await this.loadAccounts();
       await this.loadAccessRequests();
+      return true;
     } catch (err) {
-      messageEl.style.display = 'block';
-      messageEl.textContent = err.message || 'Failed to create the account.';
-      messageEl.style.color = 'var(--status-danger)';
+      ToastComponent.show(err.message || 'Failed to create the account.', 'error');
+      return false;
     }
   },
 
   bindCreateUser() {
-    document.getElementById('btn-create-user')?.addEventListener('click', async () => {
-      await this.createUser();
+    document.getElementById('btn-open-create-user')?.addEventListener('click', () => {
+      this.selectedAccessRequestId = null;
+      this.openCreateUserModal();
+    });
+  },
+
+  openCreateUserModal({ email = '', fullName = '' } = {}) {
+    ModalComponent.open({
+      title: 'Create New Personnel Account',
+      bodyHtml: `
+        <p class="modal-intro">Create a personnel account with a strong temporary password. The user will be required to change it after signing in.</p>
+        <div class="form-row">
+          <div class="form-group"><label for="new-user-email">Email address</label><input type="email" id="new-user-email" class="form-input" value="${escapeHtml(email)}" placeholder="email@denr.gov.ph" required /></div>
+          <div class="form-group"><label for="new-user-fullname">Full name</label><input type="text" id="new-user-fullname" class="form-input" value="${escapeHtml(fullName)}" placeholder="Juan Dela Cruz" required /></div>
+        </div>
+        <div class="form-group"><label for="new-user-password">Temporary password</label><input type="password" id="new-user-password" class="form-input" minlength="12" placeholder="At least 12 characters" required /></div>
+      `,
+      confirmText: 'Create Account',
+      confirmClass: 'btn-primary',
+      onConfirm: () => this.createUser({
+        email: document.getElementById('new-user-email')?.value.trim() || '',
+        fullName: document.getElementById('new-user-fullname')?.value.trim() || '',
+        password: document.getElementById('new-user-password')?.value || ''
+      })
     });
   },
 

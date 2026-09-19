@@ -25,13 +25,7 @@ export const PersonnelCatalogPage = {
           </div>
         </div>
 
-        <div class="banner-card">
-          <div>
-            <h2>Inventory snapshot</h2>
-            <p>Live stock details for your field operations, with low-stock alerts and quick access to request forms.</p>
-          </div>
-          <div class="catalog-overview-grid" id="catalog-overview-grid"></div>
-        </div>
+        <section class="catalog-summary-grid" id="catalog-overview-grid" aria-label="Catalog summary"></section>
 
         <div class="catalog-toolbar">
           <div class="search-wrapper">
@@ -80,19 +74,19 @@ export const PersonnelCatalogPage = {
     if (!container) return;
 
     container.innerHTML = `
-      <div class="overview-card">
+      <div class="catalog-summary-card">
         <span>Total varieties</span>
         <strong>${totalSeeds}</strong>
       </div>
-      <div class="overview-card">
+      <div class="catalog-summary-card">
         <span>Total recorded quantity</span>
         <strong class="overview-unit-total">${escapeHtml(totalAvailable)}</strong>
       </div>
-      <div class="overview-card">
+      <div class="catalog-summary-card">
         <span>Low stock alerts</span>
         <strong>${lowStock}</strong>
       </div>
-      <div class="overview-card">
+      <div class="catalog-summary-card">
         <span>Seed categories</span>
         <strong>${categories}</strong>
       </div>

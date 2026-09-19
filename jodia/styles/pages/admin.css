@@ -353,6 +353,84 @@
   color: #b91c1c;
 }
 
+/* Dashboard-only scenic surface. Other administration pages remain quiet and
+   task-focused, while the operational overview gets the field context. */
+.admin-dashboard {
+  position: relative;
+  isolation: isolate;
+}
+
+.admin-dashboard::before {
+  content: '';
+  position: absolute;
+  inset: 0 -1rem;
+  z-index: -1;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(244, 250, 245, .84), rgba(225, 241, 233, .68)),
+    url('/assets/images/forest-tree-seed-building.jpeg') center/cover;
+  opacity: .82;
+}
+
+.admin-dashboard .dashboard-hero,
+.admin-dashboard .stats-grid,
+.admin-dashboard .dashboard-main-grid,
+.admin-dashboard .dashboard-analytics-grid,
+.admin-dashboard .dashboard-lower-grid {
+  position: relative;
+}
+
+.admin-dashboard .hero-copy,
+.admin-dashboard .hero-card,
+.admin-dashboard .stat-card,
+.admin-dashboard .card,
+.admin-dashboard .dashboard-attention {
+  background: rgba(255, 255, 255, .78);
+  border: 1px solid rgba(255, 255, 255, .72);
+  box-shadow: 0 12px 28px rgba(11, 39, 69, .10);
+  backdrop-filter: blur(14px);
+}
+
+.admin-dashboard .hero-copy {
+  color: var(--denr-navy-primary);
+  min-height: 220px;
+  justify-content: center;
+}
+
+.admin-dashboard .hero-copy::after {
+  background: linear-gradient(120deg, rgba(15, 122, 56, .13), rgba(255, 255, 255, .02));
+}
+
+.admin-dashboard .hero-copy .eyebrow {
+  color: var(--denr-green-primary);
+  background: rgba(15, 122, 56, .12);
+}
+
+.admin-dashboard .hero-title { color: var(--denr-navy-primary); }
+.admin-dashboard .hero-text { color: var(--text-muted); }
+.admin-dashboard .hero-card { padding: 1.05rem; }
+.admin-dashboard .hero-stats-grid div,
+.admin-dashboard .hero-graph { background: rgba(255, 255, 255, .65); }
+.admin-dashboard .stat-card { padding: .9rem 1rem; }
+.admin-dashboard .stat-value { font-size: 1.65rem; }
+
+.accounts-page-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.accounts-section { margin-bottom: 1.5rem; }
+.accounts-section .section-block { padding: 1.15rem; }
+.modal-intro { margin: 0 0 1rem; color: var(--text-muted); line-height: 1.5; }
+
+@media (max-width: 700px) {
+  .accounts-page-heading { align-items: flex-start; flex-direction: column; }
+  .accounts-page-heading .btn { width: 100%; }
+  .admin-dashboard::before { inset: 0 -.4rem; border-radius: 18px; }
+}
+
 .dashboard-hero-actions {
   display: flex;
   align-items: center;

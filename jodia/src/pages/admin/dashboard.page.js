@@ -11,12 +11,12 @@ import { escapeHtml, formatQuantity, formatUnitTotals } from '../../../utils/for
 export const AdminDashboardPage = {
   render() {
     return `
-      <div class="admin-container">
+      <div class="admin-container admin-dashboard">
         <section class="dashboard-hero">
           <div class="hero-copy">
-            <span class="eyebrow">Operational dashboard</span>
-            <h1 class="hero-title">DENR Seed Control Center</h1>
-            <p class="hero-text">Monitor inventory, pending requests, and low-stock alerts through a field-focused operations hub for reforestation and conservation teams.</p>
+            <span class="eyebrow">Operations overview</span>
+            <h1 class="hero-title">Here’s today’s snapshot</h1>
+            <p class="hero-text">Review seed stock, request activity, and low-stock alerts for field operations and reforestation planning.</p>
             <div class="dashboard-hero-actions">
               <button type="button" id="dashboard-review-requests" class="btn btn-primary">Review Requests</button>
               <button type="button" id="dashboard-add-seed" class="btn btn-secondary">Add Seed</button>
