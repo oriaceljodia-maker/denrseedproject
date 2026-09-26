@@ -5,6 +5,7 @@ import { NavbarComponent } from '../components/navbar.component.js';
 import { FooterComponent } from '../components/footer.component.js';
 import { MaintenanceBannerComponent } from '../components/maintenance-banner.component.js';
 import { MaintenanceService } from '../services/maintenance.service.js';
+import { LoadingComponent } from '../components/loading.component.js';
 
 // Page Controller Imports
 import { LoginPage } from '../pages/auth/login.page.js';
@@ -27,6 +28,8 @@ import { ProfilePage } from '../pages/profile/profile.page.js';
 
 export const Router = {
   async navigate(user, path = window.location.pathname) {
+    LoadingComponent.show('Loading page…');
+    try {
     const targetPath = Guards.determineTargetRoute(user, path);
     console.debug('Navigating to', targetPath, 'for user', user?.role || 'guest');
 
@@ -137,6 +140,9 @@ export const Router = {
     const footerHtml = FooterComponent.render();
     root.innerHTML = bannerHtml + content + footerHtml;
     if (hasNavbar) NavbarComponent.bindEvents(user);
-    if (binder) binder();
+    if (binder) await binder();
+    } finally {
+      LoadingComponent.hide();
+    }
   }
 };

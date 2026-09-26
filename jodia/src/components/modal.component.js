@@ -42,6 +42,7 @@ export const ModalComponent = {
     document.getElementById('modal-confirm').addEventListener('click', async () => {
       const confirmButton = document.getElementById('modal-confirm');
       confirmButton.disabled = true;
+      confirmButton.classList.add('is-loading');
       try {
         // Returning false lets forms show validation or database errors without
         // unexpectedly closing and losing the user's input.
@@ -51,7 +52,10 @@ export const ModalComponent = {
           close();
         }
       } finally {
-        if (document.getElementById('modal-confirm')) confirmButton.disabled = false;
+        if (document.getElementById('modal-confirm')) {
+          confirmButton.disabled = false;
+          confirmButton.classList.remove('is-loading');
+        }
       }
     });
   }

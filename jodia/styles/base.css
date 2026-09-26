@@ -132,6 +132,34 @@ body::after {
   animation: spin 0.8s linear infinite;
 }
 
+/* Shared loading states: shown for route/data loading and asynchronous actions. */
+.system-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(5, 25, 43, .24);
+  backdrop-filter: blur(3px);
+  transition: opacity .18s ease;
+}
+
+.system-loading-overlay.is-visible { opacity: 1; pointer-events: auto; }
+.system-loading-card { display: inline-flex; align-items: center; gap: .75rem; min-width: 180px; padding: .85rem 1rem; border: 1px solid rgba(255,255,255,.55); border-radius: 14px; background: rgba(255,255,255,.93); box-shadow: var(--shadow-md); color: var(--denr-navy-primary); font-size: .86rem; font-weight: 750; }
+.system-loader, .inline-loader { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(15,122,56,.18); border-top-color: var(--denr-green-primary); border-radius: 50%; animation: spin .72s linear infinite; }
+.inline-loading { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 48px; width: 100%; color: var(--text-muted); font-size: .86rem; }
+.inline-loader { width: 16px; height: 16px; border-width: 2px; }
+.btn.is-loading { position: relative; color: transparent !important; pointer-events: none; }
+.btn.is-loading::after { content: ''; position: absolute; width: 16px; height: 16px; left: calc(50% - 8px); top: calc(50% - 8px); border: 2px solid rgba(255,255,255,.42); border-top-color: #fff; border-radius: 50%; animation: spin .72s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner, .system-loader, .inline-loader, .btn.is-loading::after { animation-duration: 1.8s; }
+  .system-loading-overlay { transition: none; }
+}
+
 .auth-layout {
   min-height: calc(100vh - 60px);
   display: flex;
