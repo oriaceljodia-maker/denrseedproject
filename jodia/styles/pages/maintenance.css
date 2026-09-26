@@ -48,3 +48,40 @@
   margin: 0;
   color: var(--text-muted);
 }
+
+/* Personnel maintenance lock screen. Admin pages remain accessible so that
+   authorized staff can switch maintenance mode off again. */
+.personnel-maintenance-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at 50% 25%, rgba(69, 173, 105, .20), transparent 34%),
+    linear-gradient(135deg, #083d26, #062d1d 58%, #0a452a);
+}
+
+.personnel-maintenance-card {
+  width: min(100%, 480px);
+  padding: 2rem 2.2rem;
+  border: 1px solid rgba(255,255,255,.68);
+  border-radius: 24px;
+  background: rgba(255,255,255,.97);
+  box-shadow: 0 24px 60px rgba(0,0,0,.26);
+  text-align: center;
+}
+
+.maintenance-illustration { width: 160px; margin: 0 auto .75rem; }
+.maintenance-illustration svg { display: block; width: 100%; height: auto; }
+.maintenance-kicker { display: inline-flex; padding: .32rem .62rem; border-radius: 999px; background: rgba(15,122,56,.11); color: var(--denr-green-primary); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.personnel-maintenance-card h1 { margin: .75rem 0 0; color: var(--denr-navy-primary); font-size: clamp(1.5rem, 4vw, 2rem); text-transform: uppercase; letter-spacing: .03em; }
+.maintenance-divider { display: flex; align-items: center; justify-content: center; gap: .65rem; margin: .75rem 0; color: var(--denr-green-primary); }
+.maintenance-divider::before, .maintenance-divider::after { content: ''; width: 64px; height: 1px; background: rgba(11,39,69,.16); }
+.maintenance-admin-note { margin: 0 auto; max-width: 360px; color: var(--text-muted); line-height: 1.65; }
+.maintenance-wait-copy { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; margin: 1.25rem 0 0; color: var(--denr-green-primary); font-size: .8rem; font-weight: 700; }
+.maintenance-wait-loader { width: 14px; height: 14px; border: 2px solid rgba(15,122,56,.2); border-top-color: var(--denr-green-primary); border-radius: 50%; animation: spin .9s linear infinite; }
+
+@media (max-width: 520px) {
+  .personnel-maintenance-screen { padding: 1rem; }
+  .personnel-maintenance-card { padding: 1.5rem 1.15rem; border-radius: 18px; }
+}

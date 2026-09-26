@@ -1,11 +1,12 @@
 import { Guards } from './guards.js';
-import { ROUTES } from '../config/constants.js';
+import { ROLES, ROUTES } from '../config/constants.js';
 import { HeaderComponent } from '../components/header.component.js';
 import { NavbarComponent } from '../components/navbar.component.js';
 import { FooterComponent } from '../components/footer.component.js';
 import { MaintenanceBannerComponent } from '../components/maintenance-banner.component.js';
 import { MaintenanceService } from '../services/maintenance.service.js';
 import { LoadingComponent } from '../components/loading.component.js';
+import { PersonnelMaintenanceComponent } from '../components/personnel-maintenance.component.js';
 
 // Page Controller Imports
 import { LoginPage } from '../pages/auth/login.page.js';
@@ -141,8 +142,16 @@ export const Router = {
         console.warn('Maintenance settings are unavailable. Run the maintenance SQL migration.', error);
       }
     }
-    const bannerHtml = MaintenanceBannerComponent.render(maintenanceConfig);
-    const footerHtml = FooterComponent.render();
+    const personnelMaintenanceActive = user?.role === ROLES.PERSONNEL && Boolean(maintenanceConfig.maintenance_enabled);
+    if (personnelMaintenanceActive) {
+      document.getElementById('app-header')?.classList.add('hidden');
+      content = PersonnelMaintenanceComponent.render(maintenanceConfig);
+      binder = null;
+      hasNavbar = false;
+    }
+
+    const bannerHtml = personnelMaintenanceActive ? '' : MaintenanceBannerComponent.render(maintenanceConfig);
+    const footerHtml = personnelMaintenanceActive ? '' : FooterComponent.render();
     root.innerHTML = bannerHtml + content + footerHtml;
     if (hasNavbar) NavbarComponent.bindEvents(user);
     if (binder) await binder();
