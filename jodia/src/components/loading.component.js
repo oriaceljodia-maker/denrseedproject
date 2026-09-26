@@ -24,7 +24,7 @@ export const LoadingComponent = {
     const overlay = document.getElementById('system-loading-overlay');
     if (!overlay) return;
     overlay.classList.remove('is-visible');
-    window.setTimeout(() => { if (!overlay.classList.contains('is-visible')) overlay.hidden = true; }, 180);
+    window.setTimeout(() => { if (!overlay.classList.contains('is-visible')) overlay.hidden = true; }, 80);
   },
 
   inline(message = 'Loading…') {

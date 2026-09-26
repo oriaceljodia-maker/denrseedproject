@@ -144,7 +144,7 @@ body::after {
   pointer-events: none;
   background: rgba(5, 25, 43, .24);
   backdrop-filter: blur(3px);
-  transition: opacity .18s ease;
+  transition: opacity .08s ease;
 }
 
 .system-loading-overlay.is-visible { opacity: 1; pointer-events: auto; }

@@ -28,9 +28,14 @@ import { ProfilePage } from '../pages/profile/profile.page.js';
 
 export const Router = {
   async navigate(user, path = window.location.pathname) {
-    LoadingComponent.show('Loading page…');
-    try {
     const targetPath = Guards.determineTargetRoute(user, path);
+    // The sign-in screen is intentionally immediate. For authenticated pages,
+    // wait briefly so quick route changes do not flash a loader.
+    const showLoader = targetPath !== ROUTES.LOGIN;
+    const loaderTimer = showLoader
+      ? window.setTimeout(() => LoadingComponent.show('Loading page…'), 160)
+      : null;
+    try {
     console.debug('Navigating to', targetPath, 'for user', user?.role || 'guest');
 
     if (window.location.pathname !== targetPath) {
@@ -142,6 +147,7 @@ export const Router = {
     if (hasNavbar) NavbarComponent.bindEvents(user);
     if (binder) await binder();
     } finally {
+      if (loaderTimer) window.clearTimeout(loaderTimer);
       LoadingComponent.hide();
     }
   }
