@@ -148,6 +148,9 @@ export const Router = {
       content = PersonnelMaintenanceComponent.render(maintenanceConfig);
       binder = null;
       hasNavbar = false;
+      PersonnelMaintenanceComponent.startWatching();
+    } else {
+      PersonnelMaintenanceComponent.stopWatching();
     }
 
     const bannerHtml = personnelMaintenanceActive ? '' : MaintenanceBannerComponent.render(maintenanceConfig);

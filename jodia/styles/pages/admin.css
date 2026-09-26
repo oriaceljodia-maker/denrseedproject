@@ -719,7 +719,7 @@
 .trend-line { fill: none; stroke: var(--denr-green-primary); stroke-width: 3; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
 .trend-labels { display: flex; justify-content: space-between; color: var(--text-muted); font-size: .64rem; }
 .top-requested-image { width: 68px; height: 68px; object-fit: cover; border-radius: 16px; box-shadow: var(--shadow-sm); }
-.demand-pie-wrap { display: flex; align-items: center; gap: 1rem; min-height: 152px; }
+.demand-pie-wrap { display: flex; align-items: center; justify-content: center; gap: 1rem; min-height: 152px; }
 .demand-pie { flex: 0 0 146px; width: 146px; height: 146px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.5), 0 8px 20px rgba(11,39,69,.10); }
 .demand-legend { display: grid; flex: 0 1 215px; gap: .45rem; min-width: 0; }.demand-legend div { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: .35rem; font-size: .77rem; }.demand-legend i { width: 9px; height: 9px; border-radius: 50%; }.demand-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }.demand-legend strong { color: var(--denr-navy-primary); }
 

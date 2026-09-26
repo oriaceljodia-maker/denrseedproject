@@ -1,7 +1,10 @@
 import { escapeHtml } from '../../utils/formatters.js';
+import { MaintenanceService } from '../services/maintenance.service.js';
 
 /** Full-screen personnel lock screen shown while an admin enables maintenance. */
 export const PersonnelMaintenanceComponent = {
+  pollTimer: null,
+
   render(config = {}) {
     const note = config.announcement_message?.trim()
       || 'The seed request service is temporarily unavailable while the system is being maintained.';
@@ -28,5 +31,29 @@ export const PersonnelMaintenanceComponent = {
           <p class="maintenance-wait-copy"><span class="maintenance-wait-loader" aria-hidden="true"></span>This page will reopen automatically when maintenance is complete.</p>
         </section>
       </main>`;
+  },
+
+  startWatching() {
+    if (this.pollTimer) return;
+    // Realtime normally updates this view immediately. This small fallback
+    // poll ensures personnel still return automatically if a mobile browser
+    // briefly disconnects its realtime socket in the background.
+    this.pollTimer = window.setInterval(async () => {
+      try {
+        const config = await MaintenanceService.load();
+        if (!config.maintenance_enabled) {
+          this.stopWatching();
+          window.dispatchEvent(new CustomEvent('denr-maintenance-changed', { detail: config }));
+        }
+      } catch (error) {
+        console.warn('Unable to check maintenance status.', error);
+      }
+    }, 3000);
+  },
+
+  stopWatching() {
+    if (!this.pollTimer) return;
+    window.clearInterval(this.pollTimer);
+    this.pollTimer = null;
   }
 };
