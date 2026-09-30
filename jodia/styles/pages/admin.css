@@ -856,3 +856,4 @@
 .seed-image-remove { color: var(--status-danger); }
 .seed-image-remove:hover { color: #b91c1c; }
 @media (max-width: 520px) { .seed-stock-fields, .seed-form-grid { grid-template-columns: 1fr; gap: 0; } }
+ .activation-code-display { margin: 1rem 0 .75rem; padding: .9rem; border: 1px dashed var(--denr-green-primary); border-radius: 10px; color: var(--denr-navy-primary); background: rgba(15,122,56,.08); font: 700 1rem/1.4 var(--font-mono, monospace); letter-spacing: .06em; overflow-wrap: anywhere; }

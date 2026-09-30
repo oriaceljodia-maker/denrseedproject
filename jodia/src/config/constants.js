@@ -6,6 +6,8 @@ export const ROLES = {
 export const ROUTES = {
   LOGIN: '/login',
   FORCE_PASSWORD: '/force-password',
+  TOTP_SETUP: '/setup-authenticator',
+  TOTP_VERIFY: '/verify-authenticator',
   PROFILE: '/profile',
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_INVENTORY: '/admin/inventory',

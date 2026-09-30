@@ -15,6 +15,11 @@ export const Guards = {
       return ROUTES.FORCE_PASSWORD;
     }
 
+    if ((currentPath === ROUTES.TOTP_SETUP || currentPath === ROUTES.TOTP_VERIFY)
+      && user.role !== ROLES.PERSONNEL) {
+      return ROUTES.ADMIN_DASHBOARD;
+    }
+
     // Redirect to default route if user is at login or password page
     if (currentPath === ROUTES.LOGIN || currentPath === ROUTES.FORCE_PASSWORD || currentPath === '/') {
       return user.role === ROLES.ADMIN ? ROUTES.ADMIN_DASHBOARD : ROUTES.PERSONNEL_DASHBOARD;

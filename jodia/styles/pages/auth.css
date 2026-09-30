@@ -191,6 +191,10 @@
 .auth-access-copy { color: var(--text-muted); font-size: .84rem; line-height: 1.5; margin: -.15rem 0 .7rem; }
 .auth-text-button { appearance: none; padding: 0; border: 0; background: transparent; color: var(--denr-green-primary); font: inherit; font-weight: 800; cursor: pointer; }
 .auth-text-button:hover { text-decoration: underline; }
+.auth-totp-card { max-width: 520px; }
+.totp-qr-area { display: grid; place-items: center; min-height: 190px; margin-bottom: 1rem; padding: 1rem; border: 1px dashed rgba(15,122,56,.35); border-radius: 14px; background: rgba(15,122,56,.04); }
+.totp-qr-area img { width: 174px; height: 174px; }
+.totp-secret { display: block; max-width: 100%; overflow-wrap: anywhere; margin: 0 0 1rem; padding: .7rem; border-radius: 9px; color: var(--denr-navy-primary); background: rgba(11,39,69,.06); font-size: .76rem; }
 
 @media (max-width: 620px) {
   .auth-layout { padding: 1rem; }

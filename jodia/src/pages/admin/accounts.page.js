@@ -90,22 +90,60 @@ export const AdminAccountsPage = {
     }));
   },
 
-  async createUser({ email, fullName, password }) {
-    if (!email || !fullName || password.length < 12) {
-      ToastComponent.show('Email, full name, and a temporary password of at least 12 characters are required.', 'error');
+  generateActivationCode() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return `DENR-${Array.from(bytes, byte => alphabet[byte % alphabet.length]).join('').match(/.{1,4}/g).join('-')}`;
+  },
+
+  showActivationCode(email, activationCode) {
+    ModalComponent.open({
+      title: 'One-time Account Code Created',
+      bodyHtml: `<p class="modal-intro">Give this one-time code to <strong>${escapeHtml(email)}</strong> through your approved channel. It expires in 48 hours and will not be shown again.</p><div class="activation-code-display">${escapeHtml(activationCode)}</div><button type="button" id="copy-activation-code" class="btn btn-secondary">Copy code</button>`,
+      confirmText: 'I have saved the code',
+      confirmClass: 'btn-primary',
+      onConfirm: () => true
+    });
+    document.getElementById('copy-activation-code')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(activationCode);
+        ToastComponent.show('Activation code copied.', 'success');
+      } catch {
+        ToastComponent.show('Copy was blocked. Select and copy the code manually.', 'info');
+      }
+    });
+  },
+
+  async issueRecoveryCode(userId, email) {
+    const recoveryCode = this.generateActivationCode();
+    try {
+      await UserService.issuePersonnelRecoveryCode(userId, recoveryCode);
+      ToastComponent.show('Recovery code created. Save it before closing the dialog.', 'success');
+      await this.loadAccounts();
+      window.setTimeout(() => this.showActivationCode(email, recoveryCode), 0);
+    } catch (error) {
+      ToastComponent.show(error.message || 'Unable to create a recovery code.', 'error');
+    }
+  },
+
+  async createUser({ email, fullName }) {
+    if (!email || !fullName) {
+      ToastComponent.show('Email and full name are required.', 'error');
       return false;
     }
 
     try {
-      await UserService.createPersonnelAccount(email, fullName, password);
+      const activationCode = this.generateActivationCode();
+      await UserService.createPersonnelActivationAccount(email, fullName, activationCode);
       if (this.selectedAccessRequestId) {
         await AccessRequestService.updateStatus(this.selectedAccessRequestId, 'APPROVED');
         this.selectedAccessRequestId = null;
       }
-      ToastComponent.show('Personnel account created. Give the temporary password to the user through an approved secure channel.', 'success');
+      ToastComponent.show('Personnel account created. Save the activation code before closing it.', 'success');
       await this.loadAccounts();
       await this.loadAccessRequests();
-      return true;
+      window.setTimeout(() => this.showActivationCode(email, activationCode), 0);
+      return false;
     } catch (err) {
       ToastComponent.show(err.message || 'Failed to create the account.', 'error');
       return false;
@@ -121,21 +159,19 @@ export const AdminAccountsPage = {
 
   openCreateUserModal({ email = '', fullName = '' } = {}) {
     ModalComponent.open({
-      title: 'Create New Personnel Account',
+      title: 'Create Personnel Account',
       bodyHtml: `
-        <p class="modal-intro">Create a personnel account with a strong temporary password. The user will be required to change it after signing in.</p>
+        <p class="modal-intro">Create an account without assigning a password. The system will generate a one-time 48-hour activation code for the user to set their own password and authenticator.</p>
         <div class="form-row">
           <div class="form-group"><label for="new-user-email">Email address</label><input type="email" id="new-user-email" class="form-input" value="${escapeHtml(email)}" placeholder="email@denr.gov.ph" required /></div>
           <div class="form-group"><label for="new-user-fullname">Full name</label><input type="text" id="new-user-fullname" class="form-input" value="${escapeHtml(fullName)}" placeholder="Juan Dela Cruz" required /></div>
         </div>
-        <div class="form-group"><label for="new-user-password">Temporary password</label><input type="password" id="new-user-password" class="form-input" minlength="12" placeholder="At least 12 characters" required /></div>
       `,
       confirmText: 'Create Account',
       confirmClass: 'btn-primary',
       onConfirm: () => this.createUser({
         email: document.getElementById('new-user-email')?.value.trim() || '',
-        fullName: document.getElementById('new-user-fullname')?.value.trim() || '',
-        password: document.getElementById('new-user-password')?.value || ''
+        fullName: document.getElementById('new-user-fullname')?.value.trim() || ''
       })
     });
   },
@@ -168,6 +204,7 @@ export const AdminAccountsPage = {
             <button class="btn btn-secondary btn-toggle-status" data-id="${escapeHtml(u.id)}" data-name="${escapeHtml(u.full_name)}" data-active="${u.is_active}" style="color: var(--denr-navy-primary); border-color: var(--border-color); font-size:0.75rem; padding: 0.25rem 0.5rem;">
               ${u.is_active ? 'Disable Account' : 'Enable Account'}
             </button>
+            ${u.role === 'personnel' ? `<button class="btn btn-secondary btn-issue-recovery" data-id="${escapeHtml(u.id)}" data-email="${escapeHtml(u.email || '')}" style="font-size:0.75rem; padding: 0.25rem 0.5rem;">Recovery Code</button>` : ''}
           </td>
         </tr>
       `).join('');
@@ -202,5 +239,18 @@ export const AdminAccountsPage = {
         });
       });
     });
+    document.querySelectorAll('.btn-issue-recovery').forEach(button => button.addEventListener('click', event => {
+      const target = event.currentTarget;
+      ModalComponent.open({
+        title: 'Create Recovery Code?',
+        bodyHtml: '<p>This invalidates the user’s current password. They must choose a new password and verify their authenticator to sign in again.</p>',
+        confirmText: 'Create Recovery Code',
+        confirmClass: 'btn-primary',
+        onConfirm: async () => {
+          await this.issueRecoveryCode(target.dataset.id, target.dataset.email || 'this user');
+          return false;
+        }
+      });
+    }));
   }
 };
