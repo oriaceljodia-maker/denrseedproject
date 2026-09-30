@@ -3,7 +3,6 @@ import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { AccessRequestService } from '../../services/access-request.service.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
-import { ROUTES } from '../../config/constants.js';
 
 export const LoginPage = {
   render() {
@@ -57,7 +56,7 @@ export const LoginPage = {
 
               <button type="submit" id="btn-submit" class="btn btn-primary auth-btn">Sign In</button>
 
-              <p class="auth-footnote"><button type="button" class="auth-text-button" id="show-password-reset">Forgot password?</button> · <button type="button" class="auth-text-button" id="show-activation">Activate or recover account</button></p>
+              <p class="auth-footnote"><button type="button" class="auth-text-button" id="show-password-reset">Forgot password?</button></p>
             </form>
 
             <form id="access-request-form" class="auth-body" hidden>
@@ -72,18 +71,9 @@ export const LoginPage = {
             <form id="password-reset-request-form" class="auth-body" hidden>
               <div id="password-reset-request-error" class="auth-alert"></div>
               <div class="form-group"><label for="password-reset-email">Account Email</label><input type="email" id="password-reset-email" class="form-input" placeholder="you@denr.gov.ph" required /></div>
-              <p class="auth-access-copy">Password reset is handled by an administrator using a one-time recovery code. Contact your administrator to request one.</p>
-              <button type="button" id="btn-password-reset-request" class="btn btn-primary auth-btn">Contact Administrator</button>
+              <p class="auth-access-copy">Enter your registered email address and we will send a secure, one-time password-reset link.</p>
+              <button type="submit" id="btn-password-reset-request" class="btn btn-primary auth-btn">Send Reset Link</button>
               <p class="auth-footnote"><button type="button" class="auth-text-button" id="password-reset-back">Back to Sign In</button></p>
-            </form>
-
-            <form id="activation-form" class="auth-body" hidden>
-              <div id="activation-error" class="auth-alert"></div>
-              <div class="form-group"><label for="activation-email">Account Email</label><input type="email" id="activation-email" class="form-input" placeholder="you@denr.gov.ph" required /></div>
-              <div class="form-group"><label for="activation-code">Activation or recovery code</label><input type="text" id="activation-code" class="form-input" autocomplete="one-time-code" placeholder="Enter the code from your administrator" required /></div>
-              <p class="auth-access-copy">The one-time code is valid for 48 hours. You will choose your own password, then verify or set up your authenticator.</p>
-              <button type="submit" id="btn-activate-account" class="btn btn-primary auth-btn">Continue</button>
-              <p class="auth-footnote"><button type="button" class="auth-text-button" id="activation-back">Back to Sign In</button></p>
             </form>
           </div>
         </section>
@@ -101,14 +91,12 @@ export const LoginPage = {
     const accessTab = document.getElementById('show-access-request');
     const accessForm = document.getElementById('access-request-form');
     const passwordResetForm = document.getElementById('password-reset-request-form');
-    const activationForm = document.getElementById('activation-form');
 
     const showMode = (mode) => {
       const signIn = mode === 'sign-in';
       form.hidden = mode !== 'sign-in';
       accessForm.hidden = mode !== 'access';
       passwordResetForm.hidden = mode !== 'reset';
-      activationForm.hidden = mode !== 'activate';
       signInTab.classList.toggle('active', signIn);
       accessTab.classList.toggle('active', !signIn);
       signInTab.setAttribute('aria-selected', String(signIn));
@@ -118,15 +106,13 @@ export const LoginPage = {
     accessTab?.addEventListener('click', () => showMode('access'));
     document.getElementById('switch-to-sign-in')?.addEventListener('click', () => showMode('sign-in'));
     document.getElementById('show-password-reset')?.addEventListener('click', () => showMode('reset'));
-    document.getElementById('show-activation')?.addEventListener('click', () => showMode('activate'));
     document.getElementById('password-reset-back')?.addEventListener('click', () => showMode('sign-in'));
-    document.getElementById('activation-back')?.addEventListener('click', () => showMode('sign-in'));
 
     // Password visibility toggle
     toggleBtn?.addEventListener('click', () => {
       const isPassword = passwordInput.type === 'password';
       passwordInput.type = isPassword ? 'text' : 'password';
-      toggleBtn.innerHTML = isPassword
+      toggleBtn.innerHTML = isPassword 
         ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
         : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>`;
     });
@@ -157,15 +143,6 @@ export const LoginPage = {
           const sessionData = await AuthService.getSessionDebug();
           console.error('Login failed with active session but missing profile.', sessionData);
           throw new Error('Your account is inactive or has no profile. Please contact the administrator.');
-        }
-        if ((user.activationExpiresAt || user.recoveryExpiresAt) && user.requiresPasswordChange) {
-          try {
-            if (user.activationExpiresAt) await AuthService.validateActivationSession();
-            if (user.recoveryExpiresAt) await AuthService.validateRecoverySession();
-          } catch (activationError) {
-            await AuthService.logout();
-            throw activationError;
-          }
         }
         // Audit logging must not prevent a legitimate user from entering the app.
         AuthService.recordSuccessfulLogin(user).catch((auditError) => {
@@ -221,36 +198,24 @@ export const LoginPage = {
       }
     });
 
-    document.getElementById('btn-password-reset-request')?.addEventListener('click', () => {
-      ToastComponent.show('Contact an administrator and ask for a one-time recovery code.', 'info');
-      showMode('sign-in');
-    });
-
-    activationForm?.addEventListener('submit', async event => {
+    passwordResetForm?.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const errorBox = document.getElementById('activation-error');
-      const button = document.getElementById('btn-activate-account');
+      const errorBox = document.getElementById('password-reset-request-error');
+      const button = document.getElementById('btn-password-reset-request');
       errorBox.style.display = 'none';
       button.disabled = true;
-      button.textContent = 'Checking code…';
+      button.textContent = 'Sending reset link...';
       try {
-        await AuthService.login(
-          document.getElementById('activation-email').value.trim(),
-          document.getElementById('activation-code').value.trim()
-        );
-        const user = await AuthService.getCurrentUser();
-        if (user?.activationExpiresAt) await AuthService.validateActivationSession();
-        else if (user?.recoveryExpiresAt) await AuthService.validateRecoverySession();
-        else throw new Error('This code is not valid for account activation or recovery.');
-        if (!user?.requiresPasswordChange) throw new Error('This account has already been activated. Sign in with your personal password.');
-        await Router.navigate(user, ROUTES.FORCE_PASSWORD);
+        await AuthService.sendPasswordResetEmail(document.getElementById('password-reset-email').value.trim());
+        passwordResetForm.reset();
+        ToastComponent.show('If this email belongs to an account, a secure reset link has been sent. Check the inbox and Spam folder.', 'success');
+        showMode('sign-in');
       } catch (error) {
-        await AuthService.logout();
-        errorBox.textContent = error.message || 'The activation code is invalid or has expired.';
+        errorBox.textContent = error.message || 'Unable to send your password-reset request.';
         errorBox.style.display = 'block';
       } finally {
         button.disabled = false;
-        button.textContent = 'Activate Account';
+        button.textContent = 'Send Reset Link';
       }
     });
   }

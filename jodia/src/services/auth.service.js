@@ -64,10 +64,6 @@ export const AuthService = {
       fullName: profile.full_name,
       role: profile.role,
       requiresPasswordChange: profile.requires_password_change,
-      requiresTotpSetup: profile.requires_totp_setup === true,
-      activationExpiresAt: profile.activation_expires_at || null,
-      activationCompletedAt: profile.activation_completed_at || null,
-      recoveryExpiresAt: profile.recovery_expires_at || null,
       department: profile.department || '',
       phone: profile.phone || '',
       office: profile.office || '',
@@ -79,6 +75,15 @@ export const AuthService = {
   // Authenticate user with credentials
   async login(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+  },
+
+  // Supabase sends a one-time recovery link; no password is exposed to the application.
+  async sendPasswordResetEmail(email) {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/force-password`
+    });
     if (error) throw error;
     return data;
   },
@@ -105,46 +110,15 @@ export const AuthService = {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
 
-    const { error: setupError } = await supabase.rpc('mark_password_setup_complete');
-    if (setupError) throw setupError;
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase
+      .from('profiles')
+      .update({ requires_password_change: false, updated_at: new Date() })
+      .eq('id', user.id);
 
     this.clearPasswordRecovery();
 
     return data;
-  },
-
-  async validateActivationSession() {
-    const { data, error } = await supabase.rpc('validate_personnel_activation');
-    if (error) throw error;
-    return data;
-  },
-
-  async validateRecoverySession() {
-    const { data, error } = await supabase.rpc('validate_personnel_recovery_code');
-    if (error) throw error;
-    return data;
-  },
-
-  async completePersonnelActivation() {
-    const { data, error } = await supabase.rpc('complete_personnel_activation');
-    if (error) throw error;
-    return data;
-  },
-
-  async getMfaState() {
-    const [factorsResult, assuranceResult] = await Promise.all([
-      supabase.auth.mfa.listFactors(),
-      supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-    ]);
-    if (factorsResult.error) throw factorsResult.error;
-    if (assuranceResult.error) throw assuranceResult.error;
-    const factors = factorsResult.data?.totp || [];
-    const verifiedFactor = factors.find(factor => factor.status === 'verified') || null;
-    return {
-      verifiedFactor,
-      currentLevel: assuranceResult.data?.currentLevel || 'aal1',
-      nextLevel: assuranceResult.data?.nextLevel || 'aal1'
-    };
   },
 
   // Logout session

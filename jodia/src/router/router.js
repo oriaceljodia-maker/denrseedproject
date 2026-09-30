@@ -7,12 +7,10 @@ import { MaintenanceBannerComponent } from '../components/maintenance-banner.com
 import { MaintenanceService } from '../services/maintenance.service.js';
 import { LoadingComponent } from '../components/loading.component.js';
 import { PersonnelMaintenanceComponent } from '../components/personnel-maintenance.component.js';
-import { AuthService } from '../services/auth.service.js';
 
 // Page Controller Imports
 import { LoginPage } from '../pages/auth/login.page.js';
 import { ForcePasswordPage } from '../pages/auth/force-password.page.js';
-import { TotpSetupPage, TotpVerifyPage } from '../pages/auth/totp.page.js';
 
 // Admin Pages
 import { AdminDashboardPage } from '../pages/admin/dashboard.page.js';
@@ -31,18 +29,7 @@ import { ProfilePage } from '../pages/profile/profile.page.js';
 
 export const Router = {
   async navigate(user, path = window.location.pathname) {
-    let targetPath = Guards.determineTargetRoute(user, path);
-    const authSetupRoutes = [ROUTES.LOGIN, ROUTES.FORCE_PASSWORD, ROUTES.TOTP_SETUP, ROUTES.TOTP_VERIFY];
-    if (user?.role === ROLES.PERSONNEL && !user.requiresPasswordChange && !authSetupRoutes.includes(targetPath)) {
-      try {
-        const mfa = await AuthService.getMfaState();
-        if (user.requiresTotpSetup || !mfa.verifiedFactor) targetPath = ROUTES.TOTP_SETUP;
-        else if (mfa.currentLevel !== 'aal2') targetPath = ROUTES.TOTP_VERIFY;
-      } catch (error) {
-        console.warn('Unable to check authenticator status.', error);
-        targetPath = ROUTES.TOTP_VERIFY;
-      }
-    }
+    const targetPath = Guards.determineTargetRoute(user, path);
     // The sign-in screen is intentionally immediate. For authenticated pages,
     // wait briefly so quick route changes do not flash a loader.
     const showLoader = targetPath !== ROUTES.LOGIN;
@@ -60,7 +47,7 @@ export const Router = {
     HeaderComponent.render(user);
 
     const root = document.getElementById('app-root');
-    const isAuthPage = [ROUTES.LOGIN, ROUTES.FORCE_PASSWORD, ROUTES.TOTP_SETUP, ROUTES.TOTP_VERIFY].includes(targetPath);
+    const isAuthPage = targetPath === ROUTES.LOGIN || targetPath === ROUTES.FORCE_PASSWORD;
 
     // Build page content
     let content = '';
@@ -76,16 +63,6 @@ export const Router = {
       case ROUTES.FORCE_PASSWORD:
         content = ForcePasswordPage.render();
         binder = () => ForcePasswordPage.bindEvents();
-        break;
-
-      case ROUTES.TOTP_SETUP:
-        content = TotpSetupPage.render();
-        binder = () => TotpSetupPage.bindEvents();
-        break;
-
-      case ROUTES.TOTP_VERIFY:
-        content = TotpVerifyPage.render();
-        binder = () => TotpVerifyPage.bindEvents();
         break;
 
       case ROUTES.PROFILE:
