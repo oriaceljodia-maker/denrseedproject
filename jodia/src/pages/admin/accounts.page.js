@@ -10,10 +10,10 @@ export const AdminAccountsPage = {
     return `
       <div class="admin-container accounts-page">
         <div style="margin-bottom: 1.5rem;">
-          <h1 style="font-size: 1.5rem; color: var(--denr-navy-primary);">Personnel User Accounts</h1>
+          <h1 style="font-size: 1.5rem; color: var(--denr-navy-primary);">Account Management</h1>
           <div class="accounts-page-heading">
-            <p style="font-size: 0.875rem; color: var(--text-muted);">Manage registered personnel, roles, and status controls</p>
-            <button id="btn-open-create-user" class="btn btn-primary">Create Personnel Account</button>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Manage personnel and admin accounts, roles, and account status</p>
+            <button id="btn-open-create-user" class="btn btn-primary">Create Account</button>
           </div>
         </div>
 
@@ -38,7 +38,7 @@ export const AdminAccountsPage = {
               </tr>
             </thead>
             <tbody id="accounts-table-body">
-              <tr><td colspan="5" style="text-align:center;">Loading personnel accounts...</td></tr>
+              <tr><td colspan="5" style="text-align:center;">Loading accounts...</td></tr>
             </tbody>
           </table>
         </div>
@@ -90,19 +90,23 @@ export const AdminAccountsPage = {
     }));
   },
 
-  async createUser({ email, fullName, password }) {
+  async createUser({ email, fullName, password, role = 'personnel' }) {
     if (!email || !fullName || password.length < 12) {
       ToastComponent.show('Email, full name, and a temporary password of at least 12 characters are required.', 'error');
       return false;
     }
 
     try {
-      await UserService.createPersonnelAccount(email, fullName, password);
+      await UserService.createAccount(email, fullName, password, role);
       if (this.selectedAccessRequestId) {
-        await AccessRequestService.updateStatus(this.selectedAccessRequestId, 'APPROVED');
+        try {
+          await AccessRequestService.updateStatus(this.selectedAccessRequestId, 'APPROVED');
+        } catch (error) {
+          ToastComponent.show('Account created, but the access request could not be marked approved. Do not create the account again.', 'error');
+        }
         this.selectedAccessRequestId = null;
       }
-      ToastComponent.show('Personnel account created. Give the temporary password to the user through an approved secure channel.', 'success');
+      ToastComponent.show(`${role === 'admin' ? 'Admin' : 'Personnel'} account created. Give the temporary password to the user through an approved secure channel.`, 'success');
       await this.loadAccounts();
       await this.loadAccessRequests();
       return true;
@@ -121,13 +125,14 @@ export const AdminAccountsPage = {
 
   openCreateUserModal({ email = '', fullName = '' } = {}) {
     ModalComponent.open({
-      title: 'Create New Personnel Account',
+      title: 'Create New Account',
       bodyHtml: `
-        <p class="modal-intro">Create a personnel account with a strong temporary password. The user will be required to change it after signing in.</p>
+        <p class="modal-intro">Choose an account role and set a strong temporary password. The user will be required to change it after signing in.</p>
         <div class="form-row">
           <div class="form-group"><label for="new-user-email">Email address</label><input type="email" id="new-user-email" class="form-input" value="${escapeHtml(email)}" placeholder="email@denr.gov.ph" required /></div>
           <div class="form-group"><label for="new-user-fullname">Full name</label><input type="text" id="new-user-fullname" class="form-input" value="${escapeHtml(fullName)}" placeholder="Juan Dela Cruz" required /></div>
         </div>
+        <div class="form-group"><label for="new-user-role">Role</label><select id="new-user-role" class="form-input"><option value="personnel">Personnel</option><option value="admin">Admin</option></select><small class="form-hint">Admin accounts can manage inventory, requests, and other accounts.</small></div>
         <div class="form-group"><label for="new-user-password">Temporary password</label><input type="password" id="new-user-password" class="form-input" minlength="12" placeholder="At least 12 characters" required /></div>
       `,
       confirmText: 'Create Account',
@@ -135,7 +140,8 @@ export const AdminAccountsPage = {
       onConfirm: () => this.createUser({
         email: document.getElementById('new-user-email')?.value.trim() || '',
         fullName: document.getElementById('new-user-fullname')?.value.trim() || '',
-        password: document.getElementById('new-user-password')?.value || ''
+        password: document.getElementById('new-user-password')?.value || '',
+        role: document.getElementById('new-user-role')?.value || 'personnel'
       })
     });
   },

@@ -3,6 +3,7 @@ import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr, formatQuantity } from '../../../utils/formatters.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
+import { RequestLetterComponent } from '../../components/request-letter.component.js';
 
 export const AdminRequestsPage = {
   allRequests: [],
@@ -115,6 +116,7 @@ export const AdminRequestsPage = {
           <td>${new Date(req.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${escapeHtml(req.status.toLowerCase())}">${escapeHtml(req.status)}</span></td>
           <td>
+            <button type="button" class="btn btn-secondary btn-view-request-letter" data-id="${escapeAttr(req.id)}" style="padding:.25rem .625rem;font-size:.75rem;margin-bottom:.35rem;">View Request Letter</button><br/>
             ${isPending ? `
               <button class="btn btn-primary btn-approve" data-id="${escapeAttr(req.id)}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Approve</button>
               <button class="btn btn-danger btn-reject" data-id="${escapeAttr(req.id)}" style="padding: 0.25rem 0.625rem; font-size:0.75rem;">Reject</button>
@@ -162,6 +164,18 @@ export const AdminRequestsPage = {
   },
 
   bindActionButtons() {
+    document.querySelectorAll('.btn-view-request-letter').forEach(button => {
+      button.addEventListener('click', async () => {
+        const request = this.allRequests.find(item => item.id === button.dataset.id);
+        if (!request || button.disabled) return;
+        button.disabled = true;
+        try {
+          await RequestLetterComponent.open(request);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
     document.querySelectorAll('.btn-approve').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const reqId = e.currentTarget.getAttribute('data-id');

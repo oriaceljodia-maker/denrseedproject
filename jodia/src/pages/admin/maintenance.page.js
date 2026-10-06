@@ -58,7 +58,7 @@ export const AdminMaintenancePage = {
             <div class="card quick-access-card">
               <h3>Quick admin actions</h3>
               <div class="quick-card-grid">
-                <a href="${ROUTES.ADMIN_ACCOUNTS}" class="quick-card">Manage Personnel Accounts</a>
+                <a href="${ROUTES.ADMIN_ACCOUNTS}" class="quick-card">Account Management</a>
                 <a href="${ROUTES.ADMIN_INVENTORY}" class="quick-card">Inventory Management</a>
                 <a href="${ROUTES.ADMIN_REQUESTS}" class="quick-card">Request Queue</a>
               </div>

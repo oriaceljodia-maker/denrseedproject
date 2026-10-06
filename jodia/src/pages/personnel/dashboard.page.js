@@ -5,6 +5,7 @@ import { Router } from '../../router/router.js';
 import { ROUTES } from '../../config/constants.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeAttr, escapeHtml } from '../../../utils/formatters.js';
+import { RequestLetterComponent } from '../../components/request-letter.component.js';
 
 export const PersonnelDashboardPage = {
   seeds: [],
@@ -37,10 +38,11 @@ export const PersonnelDashboardPage = {
             <form id="quick-request-form" class="quick-request-form">
               <div class="form-group"><label for="quick-request-seed">Select Seed *</label><select id="quick-request-seed" class="form-input" required><option value="">-- Choose a seed --</option></select></div>
               <div class="form-group"><label for="quick-request-quantity">Quantity *</label><input id="quick-request-quantity" class="form-input" type="number" min="0.001" step="0.001" placeholder="e.g., 10 or 0.5" required /></div>
-              <div class="form-group"><label for="quick-request-purpose">Notes / Purpose *</label><textarea id="quick-request-purpose" class="form-input" rows="4" placeholder="e.g., For reforestation project in Barangay..." required></textarea></div>
+              <div class="form-group"><label for="quick-request-purpose">Notes / Purpose (Optional)</label><textarea id="quick-request-purpose" class="form-input" rows="4" placeholder="e.g., For reforestation project in Barangay..."></textarea></div>
+              ${RequestLetterComponent.input('quick-request-letter')}
               <button class="btn btn-primary" type="submit">Submit Request</button>
             </form>
-            <aside class="quick-request-help"><h3>How it works</h3><ol><li>Select a seed variety from the dropdown.</li><li>Enter the quantity you need.</li><li>Add purpose or project notes.</li><li>Submit—an admin will review the request.</li></ol><p>✓ Requests are reviewed within 1–3 business days.</p></aside>
+            <aside class="quick-request-help"><h3>How it works</h3><ol><li>Select a seed variety from the dropdown.</li><li>Enter the quantity you need.</li><li>Add optional notes or a request letter.</li><li>Submit—an admin will review the request.</li></ol><p>✓ Requests are reviewed within 1–3 business days.</p></aside>
           </div>
         </section>
       </div>
@@ -73,18 +75,25 @@ export const PersonnelDashboardPage = {
   },
 
   bindEvents() {
-    document.getElementById('dashboard-view-all')?.addEventListener('click', async () => {
+    const viewAll = document.getElementById('dashboard-view-all');
+    if (viewAll) viewAll.onclick = async () => {
       await Router.navigate(await AuthService.getCurrentUser(), ROUTES.PERSONNEL_REQUESTS);
-    });
-    document.getElementById('quick-request-form')?.addEventListener('submit', async (event) => {
+    };
+    const form = document.getElementById('quick-request-form');
+    if (!form) return;
+    // Rebinding after a refresh replaces the handler instead of duplicating it.
+    form.onsubmit = async (event) => {
       event.preventDefault();
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton.disabled) return;
       const seedId = document.getElementById('quick-request-seed').value;
       const quantity = Number(document.getElementById('quick-request-quantity').value);
       const purpose = document.getElementById('quick-request-purpose').value.trim();
       const seed = this.seeds.find(item => item.id === seedId);
-      if (!seedId || !Number.isFinite(quantity) || quantity <= 0 || !purpose) return ToastComponent.show('Select a seed, enter a valid quantity, and provide a purpose.', 'error');
+      if (!seedId || !Number.isFinite(quantity) || quantity <= 0) return ToastComponent.show('Select a seed and enter a valid quantity.', 'error');
       if (!seed || quantity > SeedsService.getAvailableQuantity(seed)) return ToastComponent.show(`Only ${SeedsService.formatQuantity(seed)} is currently available.`, 'error');
       try {
+        submitButton.disabled = true;
         await RequestsService.createRequest(seedId, quantity, {
           purpose,
           planting_site: null,
@@ -92,12 +101,15 @@ export const PersonnelDashboardPage = {
           purpose_category: 'Request',
           beneficiaries_count: null,
           contact_number: null
-        });
+        }, document.getElementById('quick-request-letter')?.files?.[0] || null);
         ToastComponent.show('Request submitted for approval.', 'success');
+        form.reset();
         await this.init();
       } catch (err) {
         ToastComponent.show(err.message || 'Failed to submit request.', 'error');
+      } finally {
+        submitButton.disabled = false;
       }
-    });
+    };
   }
 };

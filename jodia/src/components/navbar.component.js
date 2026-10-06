@@ -31,7 +31,7 @@ export const NavbarComponent = {
         { path: ROUTES.ADMIN_LOGIN_TRAILS, label: 'Audit Trails', icon: 'trails' }
       ],
       account: [
-      { path: ROUTES.ADMIN_ACCOUNTS, label: 'Users', icon: 'users' },
+      { path: ROUTES.ADMIN_ACCOUNTS, label: 'Account Management', icon: 'users' },
       { path: ROUTES.ADMIN_MAINTENANCE, label: 'Maintenance', icon: 'maintenance' }
       ]
     };

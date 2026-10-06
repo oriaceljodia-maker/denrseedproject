@@ -7,6 +7,7 @@ import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { escapeHtml, escapeAttr, formatUnitTotals } from '../../../utils/formatters.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
+import { RequestLetterComponent } from '../../components/request-letter.component.js';
 
 export const PersonnelCatalogPage = {
   allSeeds: [],
@@ -216,38 +217,39 @@ export const PersonnelCatalogPage = {
         const seed = this.allSeeds.find(item => item.id === seedId);
 
         ModalComponent.open({
-          title: `Request ${seedName}`,
+          title: `Request ${escapeHtml(seedName)}`,
           bodyHtml: `
             <div class="form-group">
               <label for="req-quantity">Quantity (${escapeHtml(seed?.unit || 'packs')})</label>
               <input type="number" id="req-quantity" class="form-input" min="0.001" step="0.001" max="${escapeAttr(SeedsService.getAvailableQuantity(seed))}" value="1" required />
             </div>
             <div class="form-row">
-              <div class="form-group" style="flex:1;"><label for="req-site">Planting Site / Location</label><input id="req-site" class="form-input" placeholder="Barangay, municipality, or project site" required /></div>
+              <div class="form-group" style="flex:1;"><label for="req-site">Planting Site / Location (Optional)</label><input id="req-site" class="form-input" placeholder="Barangay, municipality, or project site" /></div>
               <div class="form-group" style="flex:1;"><label for="req-needed-date">Needed Date</label><input type="date" id="req-needed-date" class="form-input" /></div>
             </div>
             <div class="form-row">
               <div class="form-group" style="flex:1;"><label for="req-category">Purpose Category</label><select id="req-category" class="form-input"><option>Reforestation</option><option>Nursery Propagation</option><option>School / Community Activity</option><option>Research</option><option>Other</option></select></div>
               <div class="form-group" style="flex:1;"><label for="req-beneficiaries">Seedlings / Beneficiaries</label><input type="number" id="req-beneficiaries" min="0" class="form-input" placeholder="Optional" /></div>
             </div>
-            <div class="form-group"><label for="req-contact">Contact Number</label><input type="tel" id="req-contact" class="form-input" placeholder="For follow-up" required /></div>
+            <div class="form-group"><label for="req-contact">Contact Number (Optional)</label><input type="tel" id="req-contact" class="form-input" placeholder="For follow-up" /></div>
             <div class="form-group">
-              <label for="req-purpose">Purpose of Request</label>
-              <textarea id="req-purpose" class="form-input" rows="3" placeholder="Specify planting site / project..." required></textarea>
+              <label for="req-purpose">Purpose of Request (Optional)</label>
+              <textarea id="req-purpose" class="form-input" rows="3" placeholder="Specify planting site / project..."></textarea>
             </div>
+            ${RequestLetterComponent.input('req-letter')}
           `,
           confirmText: 'Submit Request',
           onConfirm: async () => {
             const qty = document.getElementById('req-quantity').value;
             const purpose = document.getElementById('req-purpose').value;
 
-            if (!Number.isFinite(Number(qty)) || Number(qty) <= 0 || !purpose || !document.getElementById('req-site').value.trim() || !document.getElementById('req-contact').value.trim()) {
-              ToastComponent.show('Please complete all fields.', 'error');
+            if (!Number.isFinite(Number(qty)) || Number(qty) <= 0) {
+              ToastComponent.show('Enter a valid quantity.', 'error');
               return false;
             }
             if (Number(qty) > SeedsService.getAvailableQuantity(seed)) {
               ToastComponent.show(`Only ${SeedsService.formatQuantity(seed)} is currently available.`, 'error');
-              return;
+              return false;
             }
 
             try {
@@ -259,7 +261,7 @@ export const PersonnelCatalogPage = {
                 purpose_category: document.getElementById('req-category').value,
                 beneficiaries_count: Number(document.getElementById('req-beneficiaries').value) || null,
                 contact_number: document.getElementById('req-contact').value.trim()
-              });
+              }, document.getElementById('req-letter')?.files?.[0] || null);
               ToastComponent.show('Request submitted for approval.', 'success');
             } catch (err) {
               ToastComponent.show(err.message || 'Failed to submit request.', 'error');

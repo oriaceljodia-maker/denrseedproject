@@ -457,6 +457,17 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+.form-hint { display:block; color:var(--text-muted); font-size:.75rem; margin-top:.4rem; }
+.request-letter-panel { background:#f7faf8; border:1px solid var(--border-color); border-radius:16px; padding:1rem; }
+.request-letter-panel h4 { color:var(--denr-green-primary, #116337); margin:0 0 .75rem; }
+.request-letter-card { border:1px solid var(--border-color); border-radius:12px; padding:.85rem; }
+.request-letter-filename { overflow-wrap:anywhere; font-size:.85rem; margin:.75rem 0; }
+.request-letter-preview { display:block; width:100%; height:420px; object-fit:contain; border:1px solid var(--border-color); border-radius:10px; background:white; margin-top:.75rem; }
+.request-letter-empty { min-height:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:1rem; background:white; border:1px solid var(--border-color); border-radius:10px; margin-top:.75rem; }
+.request-letter-empty span { font-size:2rem; margin-bottom:.75rem; }
+.request-letter-empty p { max-width:260px; color:var(--text-muted); font-size:.8rem; margin:.5rem 0 0; }
+.request-letter-links { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
+
 /* Operational UI refinement: clearer sections, controls, and data density. */
 .catalog-hero,
 .page-header {

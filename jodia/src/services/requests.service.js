@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { RequestLetterService } from './request-letter.service.js';
 
 export const RequestsService = {
   // Get all requests (Admin) or user requests (Personnel)
@@ -22,31 +23,47 @@ export const RequestsService = {
   },
 
   // Submit a seed request
-  async createRequest(seedId, quantityRequested, requestDetails) {
+  async createRequest(seedId, quantityRequested, requestDetails, letterFile = null) {
     const { data: { user } } = await supabase.auth.getUser();
     const quantity = Number(quantityRequested);
     if (!user?.id) throw new Error('Your session has expired. Please sign in again.');
     if (!seedId || !Number.isFinite(quantity) || quantity <= 0) throw new Error('Choose a seed and enter a valid quantity.');
     if (!requestDetails || typeof requestDetails !== 'object') throw new Error('Request details are incomplete.');
 
-    const { data, error } = await supabase
+    const requestId = crypto.randomUUID();
+    // Upload first so a failed upload never creates an incomplete request.
+    const letter = letterFile ? await RequestLetterService.upload(letterFile, user.id, requestId) : {};
+    const { data, error, status } = await supabase
       .from('requests')
       .insert([{
+        id: requestId,
         user_id: user.id,
         seed_id: seedId,
         quantity,
         purpose: String(requestDetails.purpose || '').trim() || null,
-        planting_site: requestDetails.planting_site,
+        planting_site: String(requestDetails.planting_site || '').trim() || null,
         needed_date: requestDetails.needed_date || null,
         purpose_category: requestDetails.purpose_category,
         beneficiaries_count: requestDetails.beneficiaries_count || null,
-        contact_number: requestDetails.contact_number,
-        status: 'PENDING'
+        contact_number: String(requestDetails.contact_number || '').trim() || null,
+        status: 'PENDING',
+        ...letter
       }])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // A lost response may hide a committed request. Do not remove its file.
+      if (!status || status >= 500) throw new Error('Submission could not be confirmed. Refresh My Requests before trying again.');
+      if (letter.request_letter_path) {
+        try {
+          await RequestLetterService.removeUnlinked(letter.request_letter_path);
+        } catch (cleanupError) {
+          throw new Error(`${error.message} The unattached upload could not be removed; please contact an admin.`);
+        }
+      }
+      throw error;
+    }
     return data;
   },
 
