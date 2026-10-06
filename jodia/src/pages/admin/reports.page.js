@@ -5,7 +5,6 @@ import { ModalComponent } from '../../components/modal.component.js';
 import { escapeAttr, escapeHtml } from '../../../utils/formatters.js';
 
 const dateText = value => value ? new Date(value).toLocaleDateString() : '—';
-const csvCell = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
 const statusLabel = value => String(value || '').replaceAll('_', ' ');
 
 export const AdminReportsPage = {
@@ -13,7 +12,7 @@ export const AdminReportsPage = {
 
   render() {
     return `<div class="admin-container reports-page">
-      <div class="page-header"><div><div class="eyebrow">Reports & analytics</div><h1 class="page-title">Inventory, Collection & Distribution Reports</h1><p class="page-subtitle">Filter live records, review demand patterns, and export report-ready files.</p></div><div class="report-actions"><button class="btn btn-secondary" id="report-csv">Export CSV</button><button class="btn btn-secondary" id="report-excel">Export Excel</button><button class="btn btn-danger" id="report-pdf">PDF</button></div></div>
+      <div class="page-header"><div><div class="eyebrow">Reports & analytics</div><h1 class="page-title">Inventory, Collection & Distribution Reports</h1><p class="page-subtitle">Filter live records, review demand patterns, and export report-ready files.</p></div><div class="report-actions"><button class="btn btn-secondary" id="report-excel">Export Excel</button><button class="btn btn-primary" id="report-pdf">Export PDF</button></div></div>
       <section class="card report-filters"><h2 class="section-title">Report filters</h2><div class="filter-bar"><select id="report-date-preset" class="form-input"><option value="all">All dates</option><option value="today">Today</option><option value="month">This month</option><option value="custom">Custom range</option></select><input type="date" id="report-date-from" class="form-input" aria-label="Start date" /><input type="date" id="report-date-to" class="form-input" aria-label="End date" /><select id="report-seed-filter" class="form-input"><option value="">All seeds</option></select><select id="report-category-filter" class="form-input"><option value="">All categories</option></select><select id="report-source-filter" class="form-input"><option value="">All sources / locations</option></select><select id="report-status-filter" class="form-input"><option value="">All request statuses</option><option value="PENDING">Pending</option><option value="APPROVED">Approved</option><option value="READY_FOR_RELEASE">Ready for Release</option><option value="RELEASED">Released</option><option value="REJECTED">Rejected</option><option value="CANCELLED">Cancelled</option></select></div></section>
       <section class="stats-grid" id="report-summary"></section>
       <section class="card"><h2 class="section-title">Inventory Availability</h2><p class="report-section-note">Current, reserved, and available quantities remain separated by their original unit.</p><div class="table-container"><table class="data-table"><thead><tr><th>Seed</th><th>Category</th><th>Source</th><th>Current Stock</th><th>Reserved</th><th>Available</th><th>Status</th></tr></thead><tbody id="report-inventory"></tbody></table></div></section>
@@ -42,7 +41,6 @@ export const AdminReportsPage = {
   bindEvents() {
     document.querySelectorAll('.report-filters .form-input').forEach(input => input.addEventListener('change', () => this.renderData()));
     document.getElementById('report-excel')?.addEventListener('click', () => this.downloadExcelReport());
-    document.getElementById('report-csv')?.addEventListener('click', () => this.downloadCsvReports());
     document.getElementById('report-pdf')?.addEventListener('click', () => this.printReport());
   },
 
@@ -84,7 +82,88 @@ export const AdminReportsPage = {
 
   reportRows() { const { seeds, requests } = this.filteredData(); return { inventory: [['Seed', 'Scientific Name', 'Category', 'Source', 'Current Stock', 'Reserved', 'Available', 'Status'], ...seeds.map(seed => [seed.species_name, seed.scientific_name, seed.category, seed.source_location, this.formatSeedQuantity(seed), this.formatSeedQuantity(seed, 'reserved_quantity'), SeedsService.formatQuantity(seed), this.getStatus(seed)])], collection: [['Seed', 'Seedlot No.', 'IPT No.', 'Collectors', 'Source', 'Date Collected', 'Quantity', 'Lab / Processing Status'], ...seeds.map(seed => [seed.species_name, seed.seedlot_no, seed.ipt_no, seed.collectors, seed.source_location, dateText(seed.date_collected), this.formatSeedQuantity(seed), seed.processing_status])], requests: [['Requested By', 'Seed', 'Quantity Requested', 'Purpose', 'Date Submitted', 'Status', 'Admin Note / Rejection Reason'], ...requests.map(request => [request.profiles?.full_name || 'Personnel', request.seeds?.species_name, this.formatQuantity(request), request.purpose_category || request.purpose, dateText(request.created_at), statusLabel(request.status), request.review_notes])], distribution: [['Requested By', 'Seed', 'Quantity', 'Needed Date', 'Status', 'Admin Note'], ...requests.filter(request => request.status !== 'PENDING').map(request => [request.profiles?.full_name || 'Personnel', request.seeds?.species_name, this.formatQuantity(request), dateText(request.needed_date), statusLabel(request.status), request.review_notes])] }; },
   downloadFile(name, content, type) { const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([content], { type })); link.download = name; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(link.href), 0); },
-  downloadCsvReports() { Object.entries(this.reportRows()).forEach(([name, rows]) => this.downloadFile(`denr-${name}-${new Date().toISOString().slice(0, 10)}.csv`, rows.map(row => row.map(csvCell).join(',')).join('\n'), 'text/csv;charset=utf-8')); ToastComponent.show('CSV reports downloaded.', 'success'); },
   downloadExcelReport() { const xmlEscape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); const cell = value => `<Cell><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`; const row = values => `<Row>${values.map(cell).join('')}</Row>`; const names = { inventory: 'Availability', collection: 'Collection', requests: 'Request History', distribution: 'Distribution' }; const workbook = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${Object.entries(this.reportRows()).map(([name, rows]) => `<Worksheet ss:Name="${names[name]}"><Table>${rows.map(row).join('')}</Table></Worksheet>`).join('')}</Workbook>`; this.downloadFile(`denr-seed-reports-${new Date().toISOString().slice(0, 10)}.xls`, workbook, 'application/vnd.ms-excel'); ToastComponent.show('Excel report downloaded.', 'success'); },
-  printReport() { const report = document.querySelector('.reports-page')?.cloneNode(true); if (!report) return; report.querySelector('.report-actions')?.remove(); report.querySelector('.report-filters')?.remove(); report.querySelectorAll('.btn-view-report-request').forEach(button => button.replaceWith(document.createTextNode('View in system'))); const popup = window.open('', '_blank', 'width=1100,height=800'); if (!popup) return ToastComponent.show('Allow pop-ups to create the PDF.', 'error'); popup.document.write(`<!doctype html><html><head><title>DENR Seed Reports</title><style>body{font-family:Arial,sans-serif;color:#102d4c;padding:28px}h1{font-size:24px}h2{font-size:17px;margin-top:25px}table{width:100%;border-collapse:collapse;margin:10px 0 20px}th{background:#137a38;color:white;text-align:left}th,td{padding:7px;border:1px solid #dce5df;font-size:10px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat-card{border:1px solid #dce5df;padding:10px;border-radius:7px}.stat-value{font-size:17px;font-weight:bold}.demand-panel{margin:18px 0}.demand-bar-row{display:grid;grid-template-columns:130px 1fr 25px;gap:7px;font-size:11px;margin:5px 0}.demand-bar-track{background:#e7f0e9}.demand-bar-track i{display:block;height:10px;background:#137a38}.badge{font-size:10px}.eyebrow,.report-section-note{color:#536b83}@media print{body{padding:0}}</style></head><body><h1>DENR TALIPAN — SEED REPORTS</h1><p>Generated: ${new Date().toLocaleString()} — Select “Save as PDF” in the print dialog.</p>${report.innerHTML}</body></html>`); popup.document.close(); popup.focus(); popup.print(); }
+  printReport() {
+    const report = document.querySelector('.reports-page')?.cloneNode(true);
+    if (!report) return;
+    report.querySelector('.page-header')?.remove();
+    report.querySelector('.report-filters')?.remove();
+    const requestTable = report.querySelector('#report-requests')?.closest('table');
+    requestTable?.querySelector('thead tr th:last-child')?.remove();
+    requestTable?.querySelectorAll('tbody tr').forEach(row => {
+      row.querySelector('.btn-view-report-request')?.closest('td')?.remove();
+      const emptyCell = row.querySelector('td[colspan]');
+      if (emptyCell) emptyCell.colSpan = 7;
+    });
+    const selectedText = id => {
+      const select = document.getElementById(id);
+      return select?.selectedOptions?.[0]?.textContent || 'All';
+    };
+    const preset = document.getElementById('report-date-preset')?.value;
+    const dates = preset === 'custom'
+      ? `${dateText(document.getElementById('report-date-from')?.value)} to ${dateText(document.getElementById('report-date-to')?.value)}`
+      : selectedText('report-date-preset');
+    const filters = [
+      ['Dates', dates], ['Seed', selectedText('report-seed-filter')],
+      ['Category', selectedText('report-category-filter')],
+      ['Source', selectedText('report-source-filter')],
+      ['Request status', selectedText('report-status-filter')]
+    ].map(([label, value]) => `<span><strong>${label}:</strong> ${escapeHtml(value)}</span>`).join('');
+    const popup = window.open('', '_blank', 'width=1100,height=800');
+    if (!popup) return ToastComponent.show('Allow pop-ups to create the PDF.', 'error');
+    popup.document.write(`<!doctype html><html lang="en"><head><meta charset="UTF-8" />
+      <title>DENR Seed Reports</title><style>
+      @page {
+        size: A4 landscape; margin: 12mm;
+        @bottom-left { content: "DENR Talipan | Seed Inventory System"; font: 9px Arial, sans-serif; color: #536b83; }
+        @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 9px Arial, sans-serif; color: #536b83; }
+      }
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { font-family: Arial, sans-serif; color: #102d4c; background: white; margin: 0; padding: 28px; font-size: 11px; line-height: 1.4; }
+      .report-brand { border-top: 7px solid #137a38; border-bottom: 1px solid #cbded1; padding: 12px 0; margin-bottom: 12px; }
+      .report-brand strong { font-size: 13px; color: #137a38; letter-spacing: 1px; }
+      h1 { font-size: 22px; margin: 4px 0; }
+      h2 { font-size: 15px; color: #116337; margin: 0 0 6px; break-after: avoid; }
+      h3 { font-size: 12px; margin: 0 0 8px; }
+      p { margin: 4px 0; }
+      .report-filters-summary { display: flex; flex-wrap: wrap; gap: 5px 18px; background: #eef6f0; border: 1px solid #cbded1; border-radius: 6px; padding: 9px 12px; margin-bottom: 14px; }
+      .stats-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; break-inside: avoid; }
+      .stat-card { border: 1px solid #cbded1; border-top: 3px solid #137a38; background: #f5faf6; padding: 9px; border-radius: 6px; }
+      .stat-title { color: #536b83; font-size: 9px; text-transform: uppercase; }
+      .stat-value { font-size: 18px; font-weight: bold; margin-top: 3px; overflow-wrap: anywhere; }
+      .stat-value-units { font-size: 13px; }
+      .card { margin: 0 0 18px; }
+      .table-container { overflow: visible; }
+      table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 8px 0 16px; }
+      thead { display: table-header-group; }
+      tr { break-inside: avoid; }
+      th { background: #137a38; color: white; text-align: left; font-weight: bold; }
+      th, td { padding: 7px; border: 1px solid #d4e1d8; font-size: 10px; vertical-align: top; overflow-wrap: anywhere; }
+      tbody tr:nth-child(even) { background: #f2f7f3; }
+      td small { display: block; color: #536b83; }
+      .badge { display: inline-block; padding: 3px 6px; border: 1px solid currentColor; border-radius: 4px; font-size: 9px; font-weight: bold; }
+      .available, .badge-approved, .badge-released { color: #166534; background: #e2f2e6; }
+      .low-stock, .badge-pending { color: #854d0e; background: #fff3cd; }
+      .out-of-stock, .badge-rejected { color: #991b1b; background: #fee2e2; }
+      .badge-ready_for_release { color: #1e40af; background: #dbeafe; }
+      .badge-cancelled { color: #475569; background: #e2e8f0; }
+      .report-demand-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+      .demand-panel { border: 1px solid #d4e1d8; border-radius: 6px; padding: 10px; break-inside: avoid; }
+      .demand-bar-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 24px; align-items: center; gap: 7px; font-size: 10px; margin: 6px 0; }
+      .demand-bar-row span { overflow-wrap: anywhere; }
+      .demand-bar-track { background: #e7f0e9; border-radius: 3px; overflow: hidden; }
+      .demand-bar-track i { display: block; height: 10px; background: #137a38; }
+      .report-section-note, .report-generated { color: #536b83; font-size: 10px; }
+      .print-help { background: #eef6f0; padding: 8px 12px; margin-bottom: 12px; }
+      @media print { body { padding: 0; } .print-help { display: none; } }
+      </style></head><body>
+      <p class="print-help">Choose Save as PDF in the print dialog. If colors are missing, enable Background graphics under More settings.</p>
+      <header class="report-brand"><strong>DENR TALIPAN</strong><h1>Inventory, Collection &amp; Distribution Reports</h1>
+        <p class="report-generated">Seed Inventory System | Generated: ${escapeHtml(new Date().toLocaleString())}</p></header>
+      <section class="report-filters-summary" aria-label="Selected report filters">${filters}</section>
+      ${report.innerHTML}</body></html>`);
+    popup.document.close();
+    // Wait for the document's styles/fonts before opening the print dialog.
+    popup.document.fonts.ready.then(() => { popup.focus(); popup.print(); });
+  }
 };
