@@ -2,7 +2,6 @@ import { AuthService } from '../../services/auth.service.js';
 import { Router } from '../../router/router.js';
 import { ToastComponent } from '../../components/toast.component.js';
 import { AccessRequestService } from '../../services/access-request.service.js';
-import { MaintenanceService } from '../../services/maintenance.service.js';
 
 export const LoginPage = {
   render() {
@@ -140,16 +139,10 @@ export const LoginPage = {
 
         if (!user) {
           // Session exists but profile lookup consistently failed / inactive.
-          const sessionData = await AuthService.getSessionDebug();
-          console.error('Login failed with active session but missing profile.', sessionData);
           throw new Error('Your account is inactive or has no profile. Please contact the administrator.');
         }
-        // Audit logging must not prevent a legitimate user from entering the app.
-        AuthService.recordSuccessfulLogin(user).catch((auditError) => {
-          console.warn('Unable to record successful login activity.', auditError);
-        });
-        ToastComponent.show(`Welcome back, ${user.fullName}`, 'success');
-        MaintenanceService.subscribe();
+        // Success is recorded after the authenticator check, not after the
+        // password alone. Never log sessions or tokens on failed sign-in.
         // Explicitly navigate (the global onAuthStateChange listener may race
         // and re-route to login before the session is fully settled).
         await Router.navigate(user);

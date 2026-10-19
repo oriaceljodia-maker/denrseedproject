@@ -7,6 +7,7 @@ import { MaintenanceBannerComponent } from '../components/maintenance-banner.com
 import { MaintenanceService } from '../services/maintenance.service.js';
 import { LoadingComponent } from '../components/loading.component.js';
 import { PersonnelMaintenanceComponent } from '../components/personnel-maintenance.component.js';
+import { MfaPage } from '../pages/auth/mfa.page.js';
 
 // Page Controller Imports
 import { LoginPage } from '../pages/auth/login.page.js';
@@ -28,13 +29,19 @@ import { PersonnelDashboardPage } from '../pages/personnel/dashboard.page.js';
 import { ProfilePage } from '../pages/profile/profile.page.js';
 
 export const Router = {
+  navigationVersion: 0,
   async navigate(user, path = window.location.pathname) {
+    const navigationVersion = ++this.navigationVersion;
+    MfaPage.dispose();
     const targetPath = Guards.determineTargetRoute(user, path);
     // The sign-in screen is intentionally immediate. For authenticated pages,
     // wait briefly so quick route changes do not flash a loader.
-    const showLoader = targetPath !== ROUTES.LOGIN;
+    const isAuthPage = [ROUTES.LOGIN, ROUTES.MFA, ROUTES.FORCE_PASSWORD].includes(targetPath);
+    const showLoader = !isAuthPage;
     const loaderTimer = showLoader
-      ? window.setTimeout(() => LoadingComponent.show('Loading page…'), 160)
+      ? window.setTimeout(() => {
+        if (navigationVersion === this.navigationVersion) LoadingComponent.show('Loading page…');
+      }, 160)
       : null;
     try {
     console.debug('Navigating to', targetPath, 'for user', user?.role || 'guest');
@@ -47,7 +54,6 @@ export const Router = {
     HeaderComponent.render(user);
 
     const root = document.getElementById('app-root');
-    const isAuthPage = targetPath === ROUTES.LOGIN || targetPath === ROUTES.FORCE_PASSWORD;
 
     // Build page content
     let content = '';
@@ -58,6 +64,11 @@ export const Router = {
       case ROUTES.LOGIN:
         content = LoginPage.render();
         binder = () => LoginPage.bindEvents();
+        break;
+
+      case ROUTES.MFA:
+        content = MfaPage.render();
+        binder = () => MfaPage.init(user);
         break;
 
       case ROUTES.FORCE_PASSWORD:
@@ -135,14 +146,15 @@ export const Router = {
     }
 
     let maintenanceConfig = MaintenanceService.config;
-    if (user) {
+    if (user?.mfaVerified && !isAuthPage) {
       try {
         maintenanceConfig = await MaintenanceService.load();
       } catch (error) {
         console.warn('Maintenance settings are unavailable. Run the maintenance SQL migration.', error);
       }
     }
-    const personnelMaintenanceActive = user?.role === ROLES.PERSONNEL && Boolean(maintenanceConfig.maintenance_enabled);
+    if (navigationVersion !== this.navigationVersion) return;
+    const personnelMaintenanceActive = !isAuthPage && user?.role === ROLES.PERSONNEL && Boolean(maintenanceConfig.maintenance_enabled);
     if (personnelMaintenanceActive) {
       document.getElementById('app-header')?.classList.add('hidden');
       content = PersonnelMaintenanceComponent.render(maintenanceConfig);
@@ -153,14 +165,15 @@ export const Router = {
       PersonnelMaintenanceComponent.stopWatching();
     }
 
-    const bannerHtml = personnelMaintenanceActive ? '' : MaintenanceBannerComponent.render(maintenanceConfig);
+    const bannerHtml = isAuthPage || personnelMaintenanceActive ? '' : MaintenanceBannerComponent.render(maintenanceConfig);
     const footerHtml = personnelMaintenanceActive ? '' : FooterComponent.render();
     root.innerHTML = bannerHtml + content + footerHtml;
     if (hasNavbar) NavbarComponent.bindEvents(user);
+    if (user?.mfaVerified && !isAuthPage) MaintenanceService.subscribe();
     if (binder) await binder();
     } finally {
       if (loaderTimer) window.clearTimeout(loaderTimer);
-      LoadingComponent.hide();
+      if (navigationVersion === this.navigationVersion) LoadingComponent.hide();
     }
   }
 };

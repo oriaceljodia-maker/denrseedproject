@@ -1,0 +1,253 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { SourceTextModule, SyntheticModule, createContext } from 'node:vm';
+
+const root = new URL('../', import.meta.url);
+async function load(file, stubs = {}, globals = {}) {
+  const context = createContext({ console, ...globals });
+  const cache = new Map();
+  async function get(url) {
+    if (cache.has(url.href)) return cache.get(url.href);
+    const stub = stubs[url.href.slice(root.href.length)];
+    const module = stub
+      ? new SyntheticModule(Object.keys(stub), function () {
+        for (const [key, value] of Object.entries(stub)) this.setExport(key, value);
+      }, { context, identifier: url.href })
+      : new SourceTextModule(await readFile(url, 'utf8'), { context, identifier: url.href });
+    cache.set(url.href, module);
+    return module;
+  }
+  const module = await get(new URL(file, root));
+  await module.link((specifier, parent) => get(new URL(specifier, parent.identifier)));
+  await module.evaluate();
+  return module.namespace;
+}
+const verifiedFactor = { id: 'connected', factor_type: 'totp', status: 'verified' };
+function mockAuth({ level = 'aal1', factors = [], fail = null } = {}) {
+  const calls = { enrolled: 0, removed: [], verified: [] };
+  const mfa = {
+    listFactors: async () => ({ data: { all: factors, totp: factors.filter(f => f.factor_type === 'totp' && f.status === 'verified') }, error: null }),
+    getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: level }, error: null }),
+    enroll: async () => {
+      calls.enrolled++;
+      return { data: { id: 'new-factor', totp: { qr_code: '<svg fill="#111"></svg>', secret: 'TEST-SECRET-ONLY', uri: 'otpauth://test' } }, error: null };
+    },
+    unenroll: async ({ factorId }) => { calls.removed.push(factorId); return { error: null }; },
+    challengeAndVerify: async data => {
+      calls.verified.push(data);
+      if (!fail) { level = 'aal2'; factors = [verifiedFactor]; }
+      return { error: fail };
+    }
+  };
+  return { supabase: { auth: { mfa } }, calls, mfa };
+}
+async function service(backend) {
+  return (await load('src/services/mfa.service.js', { 'src/config/supabase.js': { supabase: backend.supabase } })).MfaService;
+}
+
+test('both roles must enroll/verify before any portal, profile or password route', async () => {
+  const values = new Map();
+  const { Guards } = await load('src/router/guards.js', {}, { sessionStorage: { getItem: key => values.get(key) } });
+  for (const role of ['admin', 'personnel']) {
+    for (const path of ['/admin/dashboard', '/personnel/catalog', '/profile', '/force-password', '/login']) {
+      assert.equal(Guards.determineTargetRoute({ role }, path), '/verify-authenticator');
+      assert.equal(Guards.determineTargetRoute({ role, mfaVerified: false, requiresPasswordChange: true }, path), '/verify-authenticator');
+    }
+  }
+  values.set('denr-password-recovery', 'true');
+  assert.equal(Guards.determineTargetRoute({ role: 'admin' }, '/force-password'), '/verify-authenticator');
+  assert.equal(Guards.determineTargetRoute({ role: 'admin', mfaVerified: true }, '/verify-authenticator'), '/force-password');
+  assert.equal(Guards.determineTargetRoute(null, '/verify-authenticator'), '/login');
+});
+
+test('verified sessions keep role restrictions and new passwords remain required', async () => {
+  const { Guards } = await load('src/router/guards.js', {}, { sessionStorage: { getItem: () => null } });
+  assert.equal(Guards.determineTargetRoute({ role: 'admin', mfaVerified: true }, '/verify-authenticator'), '/admin/dashboard');
+  assert.equal(Guards.determineTargetRoute({ role: 'personnel', mfaVerified: true }, '/admin/accounts'), '/personnel/dashboard');
+  assert.equal(Guards.determineTargetRoute({ role: 'admin', mfaVerified: true }, '/personnel/catalog'), '/admin/dashboard');
+  assert.equal(Guards.determineTargetRoute({ role: 'personnel', mfaVerified: true, requiresPasswordChange: true }, '/verify-authenticator'), '/force-password');
+});
+
+test('password-only, stale AAL2 and phone-only sessions never satisfy TOTP', async () => {
+  for (const options of [{ factors: [verifiedFactor] }, { level: 'aal2' }, { level: 'aal2', factors: [{ ...verifiedFactor, factor_type: 'phone' }] }]) {
+    assert.equal((await (await service(mockAuth(options))).getStatus()).verified, false);
+  }
+  assert.equal((await (await service(mockAuth({ level: 'aal2', factors: [verifiedFactor] }))).getStatus()).verified, true);
+});
+
+test('factor lookup or assurance errors fail closed', async () => {
+  const backend = mockAuth();
+  const mfa = await service(backend);
+  backend.mfa.listFactors = async () => ({ error: new Error('Offline') });
+  await assert.rejects(mfa.getStatus(), /Offline/);
+});
+
+test('interrupted enrollment removes only unverified TOTP and concurrent renders reuse one QR', async () => {
+  const backend = mockAuth({ factors: [
+    { id: 'unfinished', factor_type: 'totp', status: 'unverified' },
+    { id: 'phone', factor_type: 'phone', status: 'verified' }
+  ] });
+  const mfa = await service(backend);
+  const [a, b] = await Promise.all([mfa.beginEnrollment('owner'), mfa.beginEnrollment('owner')]);
+  assert.equal(a, b);
+  assert.equal(backend.calls.enrolled, 1);
+  assert.deepEqual(backend.calls.removed, ['unfinished']);
+  assert.equal((await mfa.beginEnrollment('owner')).secret, 'TEST-SECRET-ONLY');
+  mfa.clear();
+  assert.equal(mfa.pendingEnrollment, null);
+});
+
+test('existing verified factors are never deleted or replaced by setup', async () => {
+  const backend = mockAuth({ factors: [verifiedFactor] });
+  await assert.rejects((await service(backend)).beginEnrollment('owner'), /already connected/);
+  assert.deepEqual(backend.calls.removed, []);
+  assert.equal(backend.calls.enrolled, 0);
+});
+
+test('sign-out during enrollment cannot restore a secret into memory', async () => {
+  const backend = mockAuth();
+  let finish;
+  backend.mfa.enroll = () => new Promise(resolve => { finish = resolve; });
+  const mfa = await service(backend);
+  const pending = mfa.beginEnrollment('owner');
+  await new Promise(resolve => setImmediate(resolve));
+  mfa.clear();
+  finish({ data: { id: 'id', totp: { qr_code: '<svg/>', secret: 'never-store' } }, error: null });
+  await assert.rejects(pending, /cancelled/);
+  assert.equal(mfa.pendingEnrollment, null);
+});
+
+test('QR works for raw SVG and SDK data URLs containing color hashes', async () => {
+  const mfa = await service(mockAuth());
+  for (const qr of ['<svg fill="#123"></svg>', 'data:image/svg+xml;utf-8,<svg fill="#123"></svg>']) {
+    const src = mfa.qrImageSource(qr);
+    assert.ok(!src.includes('#'));
+    assert.equal(decodeURIComponent(src.split(',')[1]), '<svg fill="#123"></svg>');
+  }
+  const encoded = 'data:image/svg+xml,%3Csvg%2F%3E';
+  assert.equal(mfa.qrImageSource(encoded), encoded);
+  assert.throws(() => mfa.qrImageSource('https://third-party.example/secret'), /could not be displayed/);
+});
+
+test('invalid/expired codes never complete MFA; valid leading-zero codes are forwarded intact', async () => {
+  const backend = mockAuth();
+  const mfa = await service(backend);
+  for (const code of ['SETUPKEY', '12345', '1234567', '', '12 456']) {
+    await assert.rejects(mfa.verify('factor', code), /six-digit/);
+  }
+  assert.equal(backend.calls.verified.length, 0);
+  const expired = await service(mockAuth({ fail: new Error('Code expired') }));
+  await assert.rejects(expired.verify('factor', '123456'), /expired/);
+  await mfa.verify('factor', '001234');
+  assert.equal(backend.calls.verified[0].code, '001234');
+  assert.equal(mfa.pendingEnrollment, null);
+});
+
+test('setup screen displays an encoded QR and key, rejects bad codes and prevents double submission', async () => {
+  const backend = mockAuth();
+  const elements = new Map();
+  const element = () => ({
+    isConnected: true, value: '', hidden: true, style: {}, textContent: '',
+    focus() {}, appendChild(child) { if (!this.value) this.value = child.value; }
+  });
+  const document = {
+    getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
+    createElement: () => element()
+  };
+  const navigations = [];
+  let audits = 0;
+  const { MfaPage } = await load('src/pages/auth/mfa.page.js', {
+    'src/config/supabase.js': { supabase: backend.supabase },
+    'src/services/auth.service.js': { AuthService: {
+      getCurrentUser: async () => ({ id: 'owner', role: 'personnel', mfaVerified: true }),
+      recordSuccessfulLogin: async () => { audits++; }
+    } },
+    'src/router/router.js': { Router: { navigate: async (...args) => navigations.push(args) } }
+  }, { document });
+  assert.match(MfaPage.render(), /inputmode="numeric"/);
+  assert.match(MfaPage.render(), /pattern="\[0-9\]\{6\}"/);
+  await MfaPage.init({ id: 'owner', email: 'staff@example.com' });
+  assert.equal(document.getElementById('mfa-enrollment').hidden, false);
+  assert.equal(document.getElementById('mfa-form').hidden, false);
+  assert.equal(document.getElementById('mfa-setup-key').textContent, 'TEST-SECRET-ONLY');
+  assert.ok(!document.getElementById('mfa-qr').src.includes('#'));
+  const code = document.getElementById('mfa-code');
+  code.value = 'LETTERS'; code.oninput();
+  assert.equal(code.value, '');
+  await document.getElementById('mfa-form').onsubmit({ preventDefault() {} });
+  assert.equal(navigations.length, 0);
+  assert.equal(audits, 0);
+  assert.equal(backend.calls.verified.length, 0);
+  let finish;
+  const verify = backend.mfa.challengeAndVerify;
+  backend.mfa.challengeAndVerify = async params => {
+    await new Promise(resolve => { finish = resolve; });
+    return verify(params);
+  };
+  code.value = '001234';
+  const first = document.getElementById('mfa-form').onsubmit({ preventDefault() {} });
+  await document.getElementById('mfa-form').onsubmit({ preventDefault() {} });
+  assert.equal(document.getElementById('mfa-submit').disabled, true);
+  finish();
+  await first;
+  assert.equal(navigations.length, 1);
+  assert.equal(navigations[0][0].mfaVerified, true);
+  assert.equal(audits, 1);
+  assert.equal(backend.calls.verified.length, 1);
+});
+
+test('enrolled users see a challenge without creating or displaying another secret', async () => {
+  const backend = mockAuth({ factors: [verifiedFactor] });
+  const elements = new Map();
+  const element = () => ({ isConnected: true, value: '', hidden: true, style: {}, focus() {}, appendChild(child) { this.value = child.value; } });
+  const document = {
+    getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
+    createElement: () => element()
+  };
+  const { MfaPage } = await load('src/pages/auth/mfa.page.js', {
+    'src/config/supabase.js': { supabase: backend.supabase },
+    'src/services/auth.service.js': { AuthService: {} },
+    'src/router/router.js': { Router: {} }
+  }, { document });
+  await MfaPage.init({ id: 'owner', email: 'staff@example.com' });
+  assert.equal(backend.calls.enrolled, 0);
+  assert.equal(document.getElementById('mfa-enrollment').hidden, true);
+  assert.equal(document.getElementById('mfa-form').hidden, false);
+  assert.equal(elements.has('mfa-setup-key'), false);
+});
+
+test('auth callback releases the SDK lock and does not re-render an unchanged MFA screen', async () => {
+  let callback;
+  let start;
+  let underLock = false;
+  let routes = 0;
+  const timers = [];
+  const location = { pathname: '/admin/dashboard' };
+  const user = { id: 'user', role: 'admin', mfaVerified: false };
+  await load('main.js', {
+    'src/config/supabase.js': { supabase: { auth: { onAuthStateChange: fn => { callback = fn; } } } },
+    'src/services/auth.service.js': { AuthService: {
+      isPasswordRecoveryLink: () => false,
+      beginPasswordRecovery() {}, clearPasswordRecovery() {},
+      getCurrentUser: async () => { assert.equal(underLock, false); return user; }
+    } },
+    'src/services/mfa.service.js': { MfaService: { clear() {} } },
+    'src/services/maintenance.service.js': { MaintenanceService: { unsubscribe() {} } },
+    'src/router/router.js': { Router: { navigate: async (u, path) => { routes++; location.pathname = path; } } }
+  }, {
+    document: { addEventListener: (name, fn) => { start = fn; } },
+    sessionStorage: { getItem: () => null },
+    window: { location, addEventListener() {}, setTimeout: fn => { timers.push(fn); }, clearTimeout() {} }
+  });
+  await start();
+  assert.equal(location.pathname, '/verify-authenticator');
+  underLock = true;
+  assert.equal(callback('TOKEN_REFRESHED'), undefined);
+  underLock = false;
+  timers.shift()();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(routes, 1);
+  callback('MFA_CHALLENGE_VERIFIED');
+  assert.equal(timers.length, 0);
+});

@@ -5,6 +5,7 @@ export const ROLES = {
 
 export const ROUTES = {
   LOGIN: '/login',
+  MFA: '/verify-authenticator',
   FORCE_PASSWORD: '/force-password',
   PROFILE: '/profile',
   ADMIN_DASHBOARD: '/admin/dashboard',

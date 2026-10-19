@@ -7,6 +7,21 @@
   padding: 1.5rem;
 }
 
+.mfa-layout { background: #f1f6f3; }
+.mfa-card { max-width: 480px; background: #fff; }
+.mfa-card [hidden] { display: none !important; }
+.mfa-card .auth-header { padding: 1.5rem 2rem 1.25rem; }
+.mfa-card .auth-logo { width: 64px; height: 64px; margin-bottom: .65rem; }
+.mfa-account { overflow-wrap: anywhere; font-weight: 700; color: var(--denr-navy-primary); }
+.mfa-instructions { padding-left: 1.3rem; line-height: 1.65; font-size: .9rem; color: var(--text-muted); }
+.mfa-qr-wrap { display: grid; place-items: center; margin: 1rem 0; padding: .75rem; background: #fff; border: 1px solid #dbe8df; border-radius: 14px; }
+.mfa-qr-wrap img { width: 220px; height: 220px; max-width: 100%; object-fit: contain; }
+.mfa-manual-setup { margin: 1rem 0; font-size: .85rem; line-height: 1.6; }
+.mfa-manual-setup summary { color: var(--denr-green-primary); cursor: pointer; font-weight: 700; }
+.mfa-setup-key { display: block; padding: .8rem; border-radius: 8px; background: #f1f6f3; overflow-wrap: anywhere; user-select: all; }
+.mfa-help { color: var(--text-muted); font-size: .82rem; line-height: 1.55; }
+.mfa-code { text-align: center; font-size: 1.5rem; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
+
 .auth-card {
   width: 100%;
   max-width: 450px;

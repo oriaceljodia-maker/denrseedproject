@@ -7,6 +7,12 @@ export const Guards = {
       return ROUTES.LOGIN;
     }
 
+    // Mandatory for both roles and for existing password/recovery sessions.
+    // Missing or failed status must never grant access to a protected page.
+    if (user.mfaVerified !== true) {
+      return ROUTES.MFA;
+    }
+
     if (sessionStorage.getItem('denr-password-recovery') === 'true') {
       return ROUTES.FORCE_PASSWORD;
     }
@@ -16,7 +22,7 @@ export const Guards = {
     }
 
     // Redirect to default route if user is at login or password page
-    if (currentPath === ROUTES.LOGIN || currentPath === ROUTES.FORCE_PASSWORD || currentPath === '/') {
+    if ([ROUTES.LOGIN, ROUTES.MFA, ROUTES.FORCE_PASSWORD, '/'].includes(currentPath)) {
       return user.role === ROLES.ADMIN ? ROUTES.ADMIN_DASHBOARD : ROUTES.PERSONNEL_DASHBOARD;
     }
 

@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { ProfileService } from './profile.service.js';
+import { MfaService } from './mfa.service.js';
 
 export const AuthService = {
   isPasswordRecoveryLink() {
@@ -58,12 +59,16 @@ export const AuthService = {
       return null;
     }
 
+    // The profile's own SELECT stays available before MFA for account status
+    // and routing. Portal data is protected separately by restrictive RLS.
+    const mfa = await MfaService.getStatus();
     return {
       id: session.user.id,
       email: session.user.email,
       fullName: profile.full_name,
       role: profile.role,
       requiresPasswordChange: profile.requires_password_change,
+      mfaVerified: mfa.verified,
       department: profile.department || '',
       phone: profile.phone || '',
       office: profile.office || '',
@@ -74,9 +79,16 @@ export const AuthService = {
 
   // Authenticate user with credentials
   async login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
+    MfaService.clear();
+    this.clearPasswordRecovery();
+    this.signInInProgress = true;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return data;
+    } finally {
+      this.signInInProgress = false;
+    }
   },
 
   // Supabase sends a one-time recovery link; no password is exposed to the application.
@@ -100,11 +112,6 @@ export const AuthService = {
     if (error) throw error;
   },
 
-  async getSessionDebug() {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    return { session, error };
-  },
-
   // Force first-login password update
   async updatePassword(newPassword) {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
@@ -125,6 +132,9 @@ export const AuthService = {
 
   // Logout session
   async logout() {
-    await supabase.auth.signOut();
+    MfaService.clear();
+    this.clearPasswordRecovery();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   }
 };

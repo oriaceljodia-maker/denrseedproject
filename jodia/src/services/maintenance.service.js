@@ -48,5 +48,10 @@ export const MaintenanceService = {
       })
       .subscribe();
     return this.channel;
+  },
+
+  unsubscribe() {
+    if (this.channel) supabase.removeChannel(this.channel);
+    this.channel = null;
   }
 };
