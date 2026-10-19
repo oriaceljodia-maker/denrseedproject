@@ -90,7 +90,7 @@ export const AdminAccountsPage = {
     }));
   },
 
-  async createUser({ email, fullName, password, role = 'personnel' }) {
+  async createUser({ email, fullName, password = '', role = 'personnel' }) {
     if (!email || !fullName || password.length < 12) {
       ToastComponent.show('Email, full name, and a temporary password of at least 12 characters are required.', 'error');
       return false;
@@ -106,7 +106,7 @@ export const AdminAccountsPage = {
         }
         this.selectedAccessRequestId = null;
       }
-      ToastComponent.show(`${role === 'admin' ? 'Admin' : 'Personnel'} account created. Give the temporary password to the user through an approved secure channel.`, 'success');
+      ToastComponent.show(`${role === 'admin' ? 'Admin' : 'Personnel'} account created. Share the temporary password privately with the user.`, 'success');
       await this.loadAccounts();
       await this.loadAccessRequests();
       return true;
@@ -133,7 +133,7 @@ export const AdminAccountsPage = {
           <div class="form-group"><label for="new-user-fullname">Full name</label><input type="text" id="new-user-fullname" class="form-input" value="${escapeHtml(fullName)}" placeholder="Juan Dela Cruz" required /></div>
         </div>
         <div class="form-group"><label for="new-user-role">Role</label><select id="new-user-role" class="form-input"><option value="personnel">Personnel</option><option value="admin">Admin</option></select><small class="form-hint">Admin accounts can manage inventory, requests, and other accounts.</small></div>
-        <div class="form-group"><label for="new-user-password">Temporary password</label><input type="password" id="new-user-password" class="form-input" minlength="12" placeholder="At least 12 characters" required /></div>
+        <div class="form-group"><label for="new-user-password">Temporary password</label><input type="password" id="new-user-password" class="form-input" autocomplete="new-password" minlength="12" placeholder="At least 12 characters" required /></div>
       `,
       confirmText: 'Create Account',
       confirmClass: 'btn-primary',

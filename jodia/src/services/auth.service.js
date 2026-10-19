@@ -111,10 +111,12 @@ export const AuthService = {
     if (error) throw error;
 
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase
+    const { error: profileError } = await supabase
       .from('profiles')
       .update({ requires_password_change: false, updated_at: new Date() })
       .eq('id', user.id);
+
+    if (profileError) throw new Error('Your password changed, but account setup could not be completed. Contact an administrator.');
 
     this.clearPasswordRecovery();
 
