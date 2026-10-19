@@ -96,9 +96,9 @@ export const AdminDashboardPage = {
           <div class="analytics-grid"><article class="card analytics-card"><h3>Monthly Request Volume</h3><div id="monthly-request-chart" class="monthly-request-chart">Loading monthly data...</div></article><article class="card analytics-card"><h3>Requests by Purpose</h3><div id="purpose-category-chart" class="purpose-category-chart">Loading purpose data...</div></article></div>
         </section>
 
-        <section class="card low-stock-alerts-card" aria-label="Low stock alerts">
-          <div class="low-stock-alerts-header"><h2 class="section-title">Low Stock Alerts</h2><button type="button" id="btn-view-low-stock" class="btn btn-secondary low-stock-view-all">View All</button></div>
-          <div id="dashboard-low-stock-alerts" class="low-stock-alerts-list"><p class="audit-trail-empty">Loading low stock alerts...</p></div>
+        <section class="card low-stock-alerts-card" aria-label="Inventory status">
+          <div class="low-stock-alerts-header"><h2 class="section-title">Inventory Status</h2><button type="button" id="btn-view-low-stock" class="btn btn-secondary low-stock-view-all">View All</button></div>
+          <div id="dashboard-low-stock-alerts" class="low-stock-alerts-list"><p class="audit-trail-empty">Loading inventory status...</p></div>
         </section>
 
         <section class="dashboard-main-grid">
@@ -219,7 +219,7 @@ export const AdminDashboardPage = {
       DemandInsightsComponent.renderData(requests);
       this.latestRequests = requests;
       this.renderPlanningAnalytics(requests);
-      this.renderLowStockAlerts(lowStockSeeds);
+      this.renderInventoryStatus(seeds);
 
       // Calculate request trend percentage
       const trendEl = document.getElementById('stat-request-trend');
@@ -255,14 +255,18 @@ export const AdminDashboardPage = {
     }
   },
 
-  renderLowStockAlerts(seeds) {
+  renderInventoryStatus(seeds) {
     const container = document.getElementById('dashboard-low-stock-alerts');
     if (!container) return;
     if (!seeds.length) {
-      container.innerHTML = '<p class="audit-trail-empty">All seed inventory is above its low-stock alert level.</p>';
+      container.innerHTML = '<p class="audit-trail-empty">No seed inventory recorded yet.</p>';
       return;
     }
-    container.innerHTML = seeds.slice(0, 5).map(seed => {
+    const statusOrder = { 'out-of-stock': 0, 'low-stock': 1, 'in-stock': 2 };
+    const sortedSeeds = [...seeds].sort((a, b) =>
+      (statusOrder[SeedsService.getStockStatus(a).key] ?? 3) - (statusOrder[SeedsService.getStockStatus(b).key] ?? 3)
+    );
+    container.innerHTML = sortedSeeds.map(seed => {
       const status = SeedsService.getStockStatus(seed);
       return `<article class="low-stock-alert ${status.key}">
         <span class="low-stock-alert-icon" aria-hidden="true">◌</span>

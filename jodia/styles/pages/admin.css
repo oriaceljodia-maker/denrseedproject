@@ -508,6 +508,7 @@
 .low-stock-alert { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: .7rem; padding: .85rem .2rem; border-bottom: 1px solid rgba(11,39,69,.08); }
 .low-stock-alert:last-child { border-bottom: 0; }
 .low-stock-alert-icon { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 9px; color: var(--status-warning); background: rgba(245,158,11,.13); font-size: 1.35rem; line-height: 1; }
+.low-stock-alert.in-stock .low-stock-alert-icon { color: #166534; background: rgba(22,163,74,.12); }
 .low-stock-alert.out-of-stock .low-stock-alert-icon { color: var(--status-danger); background: rgba(239,68,68,.1); }
 .low-stock-alert strong, .low-stock-alert small { display: block; }
 .low-stock-alert strong { color: var(--denr-navy-primary); font-size: .88rem; }
