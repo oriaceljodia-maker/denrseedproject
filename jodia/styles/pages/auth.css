@@ -22,6 +22,15 @@
 .mfa-help { color: var(--text-muted); font-size: .82rem; line-height: 1.55; }
 .mfa-code { text-align: center; font-size: 1.5rem; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
 
+.account-setup-steps { list-style: none; margin: 0 0 1.25rem; padding: 0; display: grid; gap: .75rem; }
+.account-setup-steps li { display: flex; align-items: center; gap: .7rem; color: #60736a; font-size: .83rem; line-height: 1.4; }
+.account-setup-steps small { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; }
+.account-setup-number { display: grid; place-items: center; flex: 0 0 30px; height: 30px; border: 1px solid #c7d9cd; border-radius: 50%; background: #f1f6f3; font-weight: 800; }
+.account-setup-steps [aria-current="step"] { color: #12482c; font-weight: 800; }
+.account-setup-steps [aria-current="step"] .account-setup-number { color: #fff; background: #196b43; border-color: #196b43; }
+.account-setup-steps .is-complete .account-setup-number { color: #196b43; background: #e1f1e7; border-color: #a7cdb6; }
+#mfa-change-password { display: block; margin: 1rem 0; font-size: .85rem; text-align: left; }
+
 .auth-card {
   width: 100%;
   max-width: 450px;

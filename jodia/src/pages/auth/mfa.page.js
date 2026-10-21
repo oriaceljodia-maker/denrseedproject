@@ -2,11 +2,12 @@ import { AuthService } from '../../services/auth.service.js';
 import { MfaService } from '../../services/mfa.service.js';
 import { Router } from '../../router/router.js';
 import { ROUTES } from '../../config/constants.js';
+import { AccountSetupStepsComponent } from '../../components/account-setup-steps.component.js';
 
 export const MfaPage = {
   version: 0,
 
-  render() {
+  render(user) {
     return `
       <main class="auth-layout mfa-layout">
         <section class="auth-card mfa-card" aria-labelledby="mfa-title">
@@ -16,6 +17,7 @@ export const MfaPage = {
             <p class="auth-subtitle">Protect your DENR account</p>
           </div>
           <div class="auth-body">
+            ${user?.passwordSetupReady ? `<div id="account-setup-progress">${AccountSetupStepsComponent.render(2)}</div>` : ''}
             <p id="mfa-account" class="mfa-account"></p>
             <p id="mfa-status" role="status">Preparing your authenticator…</p>
             <div id="mfa-error" class="auth-alert" role="alert"></div>
@@ -47,6 +49,7 @@ export const MfaPage = {
               <button id="mfa-submit" class="btn btn-primary auth-btn" type="submit">Verify and continue</button>
             </form>
             <button id="mfa-retry" class="btn btn-secondary auth-btn" type="button" hidden>Try again</button>
+            <button id="mfa-change-password" class="auth-text-button" type="button" hidden>Back to Step 1: choose another password</button>
             <p class="mfa-help">Lost access to your authenticator? Contact your administrator for identity verification and recovery.</p>
             <button id="mfa-sign-out" class="auth-text-button" type="button">Cancel and sign out</button>
           </div>
@@ -61,19 +64,87 @@ export const MfaPage = {
     const statusText = document.getElementById('mfa-status');
     const errorBox = document.getElementById('mfa-error');
     const retry = document.getElementById('mfa-retry');
+    const changePassword = document.getElementById('mfa-change-password');
     const submit = document.getElementById('mfa-submit');
     const codeInput = document.getElementById('mfa-code');
     const factorSelect = document.getElementById('mfa-factor');
     let factorId = null;
     let busy = false;
+    let authenticatorVerified = false;
     document.getElementById('mfa-account').textContent = user.email;
+    changePassword.hidden = !user.passwordSetupReady;
 
     const showError = error => {
       errorBox.textContent = error.message || 'Verification is unavailable. Please try again.';
       errorBox.style.display = 'block';
     };
-    retry.onclick = () => Router.navigate(user, ROUTES.MFA);
+    const showCompletionError = error => {
+      showError(error);
+      retry.hidden = false;
+      retry.textContent = authenticatorVerified ? 'Continue setup' : 'Try again';
+      if (authenticatorVerified) statusText.textContent = 'Authenticator verified. Account setup still needs to finish.';
+    };
+
+    const finishAccess = async recordLogin => {
+      let verifiedUser = await AuthService.getCurrentUser();
+      if (!current()) return;
+      if (!verifiedUser?.mfaVerified) throw new Error('Your session could not be verified. Please sign in again.');
+      if (verifiedUser.passwordSetupReady) {
+        statusText.textContent = 'Authenticator verified. Saving your new password…';
+        // The form owns navigation; USER_UPDATED must not interrupt saving.
+        sessionStorage.setItem('denr-password-update-in-progress', 'true');
+        try {
+          await AuthService.completePasswordSetup();
+        } finally {
+          sessionStorage.removeItem('denr-password-update-in-progress');
+        }
+        verifiedUser = await AuthService.getCurrentUser();
+        if (!current()) return;
+        if (!verifiedUser?.mfaVerified) throw new Error('Please sign in again using your new password.');
+        if (verifiedUser.requiresPasswordChange) throw new Error('Your password was saved, but account setup is still pending. Please try again.');
+        const progress = document.getElementById('account-setup-progress');
+        if (progress) progress.innerHTML = AccountSetupStepsComponent.render(3);
+      }
+      if (recordLogin) {
+        AuthService.recordSuccessfulLogin(verifiedUser).catch(() => {
+          console.warn('Unable to record successful login activity.');
+        });
+      }
+      statusText.textContent = 'Opening your dashboard…';
+      await Router.navigate(verifiedUser, ROUTES.LOGIN);
+    };
+
+    retry.onclick = async () => {
+      if (busy) return;
+      busy = true;
+      retry.disabled = true;
+      try {
+        const latestUser = await AuthService.getCurrentUser();
+        if (current()) await Router.navigate(latestUser, ROUTES.MFA);
+      } catch (error) {
+        if (current()) showCompletionError(error);
+      } finally {
+        busy = false;
+        retry.disabled = false;
+      }
+    };
+    changePassword.onclick = async () => {
+      if (busy) return;
+      busy = true;
+      changePassword.disabled = true;
+      try {
+        AuthService.clearPasswordSetup();
+        const latestUser = await AuthService.getCurrentUser();
+        if (current()) await Router.navigate(latestUser, ROUTES.FORCE_PASSWORD);
+      } catch (error) {
+        if (current()) showError(error);
+      } finally {
+        busy = false;
+        changePassword.disabled = false;
+      }
+    };
     document.getElementById('mfa-sign-out').onclick = async event => {
+      if (busy) return;
       event.currentTarget.disabled = true;
       try {
         await AuthService.logout();
@@ -93,18 +164,18 @@ export const MfaPage = {
       errorBox.style.display = 'none';
       try {
         await MfaService.verify(factorSelect.value || factorId, codeInput.value.trim());
-        const verifiedUser = await AuthService.getCurrentUser();
         if (!current()) return;
-        if (!verifiedUser?.mfaVerified) throw new Error('Your session could not be verified. Please sign in again.');
-        AuthService.recordSuccessfulLogin(verifiedUser).catch(() => {
-          console.warn('Unable to record successful login activity.');
-        });
-        await Router.navigate(verifiedUser, ROUTES.LOGIN);
+        authenticatorVerified = true;
+        codeInput.value = '';
+        form.hidden = true;
+        document.getElementById('mfa-enrollment').hidden = true;
+        await finishAccess(true);
       } catch (error) {
         if (current()) {
-          showError(error);
+          if (authenticatorVerified) showCompletionError(error);
+          else showError(error);
           codeInput.value = '';
-          codeInput.focus();
+          if (!authenticatorVerified) codeInput.focus();
         }
       } finally {
         busy = false;
@@ -117,7 +188,10 @@ export const MfaPage = {
       const status = await MfaService.getStatus();
       if (!current()) return;
       if (status.verified) {
-        await Router.navigate(await AuthService.getCurrentUser(), ROUTES.LOGIN);
+        authenticatorVerified = true;
+        busy = true;
+        try { await finishAccess(Boolean(user.passwordSetupReady)); }
+        finally { busy = false; }
         return;
       }
       if (status.needsEnrollment) {
@@ -134,7 +208,7 @@ export const MfaPage = {
         };
         try { qr.src = MfaService.qrImageSource(setup.qr_code); }
         catch (error) { qr.hidden = true; showError(error); }
-        statusText.textContent = 'Connect Google Authenticator to continue. This is required for all admin and personnel accounts.';
+        statusText.textContent = 'Connect Google Authenticator, then enter its code to finish securely. This is required for all admin and personnel accounts.';
       } else {
         factorId = status.factors[0].id;
         statusText.textContent = 'Open Google Authenticator and enter the code for your DENR account.';
@@ -150,9 +224,8 @@ export const MfaPage = {
       codeInput.focus();
     } catch (error) {
       if (!current()) return;
-      statusText.textContent = 'Authenticator setup could not be prepared.';
-      showError(error);
-      retry.hidden = false;
+      if (!authenticatorVerified) statusText.textContent = 'Authenticator setup could not be prepared.';
+      showCompletionError(error);
     }
   },
 

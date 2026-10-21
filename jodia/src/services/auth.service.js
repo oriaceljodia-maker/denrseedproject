@@ -2,7 +2,37 @@ import { supabase } from '../config/supabase.js';
 import { ProfileService } from './profile.service.js';
 import { MfaService } from './mfa.service.js';
 
+// First-login/recovery passwords stay in this tab's memory until MFA succeeds.
+// Never put them in storage, URLs, profile rows, logs or email.
+let pendingPasswordSetup = null;
+
 export const AuthService = {
+  clearPasswordSetup() {
+    if (pendingPasswordSetup) pendingPasswordSetup.password = null;
+    pendingPasswordSetup = null;
+  },
+
+  preparePasswordSetup(userId, password) {
+    this.clearPasswordSetup();
+    if (!userId) throw new Error('Your session has expired. Please sign in again.');
+    if (typeof password !== 'string' || password.length < 8) {
+      throw new Error('Choose a password with at least 8 characters.');
+    }
+    pendingPasswordSetup = { userId, password, passwordSaved: false };
+  },
+
+  async completePasswordSetup() {
+    if (!pendingPasswordSetup) throw new Error('Please return to Step 1 and enter your new password again.');
+    const setup = pendingPasswordSetup;
+    // Back/forward or a route refresh must not save the same password twice.
+    if (!setup.completion) {
+      setup.completion = this.updatePassword(setup.password).then(() => {
+        if (pendingPasswordSetup === setup) this.clearPasswordSetup();
+      }).finally(() => { setup.completion = null; });
+    }
+    await setup.completion;
+  },
+
   isPasswordRecoveryLink() {
     const search = new URLSearchParams(window.location.search);
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -20,7 +50,11 @@ export const AuthService = {
   // Retrieve session user profile and status
   async getCurrentUser() {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) return null;
+    if (sessionError || !session) {
+      this.clearPasswordSetup();
+      return null;
+    }
+    if (pendingPasswordSetup && pendingPasswordSetup.userId !== session.user.id) this.clearPasswordSetup();
 
     // Retry the profile lookup a few times. Immediately after sign-in the
     // session may be present but the profile query can still be settling
@@ -60,6 +94,7 @@ export const AuthService = {
     // verified profile is treated as unavailable until the database profile is
     // created and can be read through RLS.
     if (!profile) {
+      this.clearPasswordSetup();
       return null;
     }
 
@@ -72,6 +107,7 @@ export const AuthService = {
       fullName: profile.full_name,
       role: profile.role,
       requiresPasswordChange: profile.requires_password_change,
+      passwordSetupReady: pendingPasswordSetup?.userId === session.user.id,
       mfaVerified: mfa.verified,
       department: profile.department || '',
       phone: profile.phone || '',
@@ -83,6 +119,7 @@ export const AuthService = {
 
   // Authenticate user with credentials
   async login(email, password) {
+    this.clearPasswordSetup();
     MfaService.clear();
     this.clearPasswordRecovery();
     this.signInInProgress = true;
@@ -118,12 +155,31 @@ export const AuthService = {
 
   // Force first-login password update
   async updatePassword(newPassword) {
+    const setup = pendingPasswordSetup;
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
     if (!user) throw new Error('Your session has expired. Please sign in again.');
 
-    const { data, error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) throw error;
+    // Native Supabase password changes for enrolled accounts require AAL2.
+    // Keep that protection: collect first, but save only after verification.
+    const mfa = await MfaService.getStatus();
+    if (!mfa.verified) throw new Error('Verify your authenticator before saving your new password.');
+    if (setup && (setup !== pendingPasswordSetup || setup.userId !== user.id)) {
+      throw new Error('Account setup changed. Please start again from Step 1.');
+    }
+
+    let data = { user };
+    if (!setup?.passwordSaved) {
+      const result = await supabase.auth.updateUser({ password: newPassword });
+      if (result.error) throw result.error;
+      data = result.data;
+      if (setup) {
+        // A profile-write retry must not submit an already accepted password.
+        setup.passwordSaved = true;
+        setup.password = null;
+      }
+    }
+    if (setup && setup !== pendingPasswordSetup) throw new Error('Setup was cancelled. Sign in using your new password.');
 
     const { error: profileError } = await supabase
       .from('profiles')
@@ -132,7 +188,7 @@ export const AuthService = {
       .select('id')
       .single();
 
-    if (profileError) throw new Error('Your password changed, but account setup could not be saved. Use your NEW password when signing in again and contact your administrator to repair account access.');
+    if (profileError) throw new Error('Your password changed, but account setup could not be saved. Choose Continue setup to retry. Use your NEW password if you sign in again; contact your administrator if this continues.');
 
     this.clearPasswordRecovery();
 
@@ -141,6 +197,7 @@ export const AuthService = {
 
   // Logout session
   async logout() {
+    this.clearPasswordSetup();
     MfaService.clear();
     this.clearPasswordRecovery();
     const { error } = await supabase.auth.signOut();

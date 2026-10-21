@@ -7,19 +7,15 @@ export const Guards = {
       return ROUTES.LOGIN;
     }
 
-    // Mandatory for both roles and for existing password/recovery sessions.
-    // Missing or failed status must never grant access to a protected page.
-    if (user.mfaVerified !== true) {
-      return ROUTES.MFA;
-    }
-
-    if (sessionStorage.getItem('denr-password-recovery') === 'true') {
+    // Collect a required new password first. It is saved only after MFA,
+    // so neither the dashboard nor database protections are bypassed.
+    const needsPassword = user.requiresPasswordChange || sessionStorage.getItem('denr-password-recovery') === 'true';
+    if (needsPassword && !user.passwordSetupReady) {
       return ROUTES.FORCE_PASSWORD;
     }
 
-    if (user.requiresPasswordChange) {
-      return ROUTES.FORCE_PASSWORD;
-    }
+    // A pending password must be finalized even if this session is already AAL2.
+    if (user.mfaVerified !== true || user.passwordSetupReady) return ROUTES.MFA;
 
     // Redirect to default route if user is at login or password page
     if ([ROUTES.LOGIN, ROUTES.MFA, ROUTES.FORCE_PASSWORD, '/'].includes(currentPath)) {

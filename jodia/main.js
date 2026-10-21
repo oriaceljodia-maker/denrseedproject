@@ -39,6 +39,7 @@ class App {
       if (event === 'SIGNED_OUT') {
         this.refreshVersion++;
         MfaService.clear();
+        AuthService.clearPasswordSetup();
         AuthService.clearPasswordRecovery();
         MaintenanceService.unsubscribe();
       }

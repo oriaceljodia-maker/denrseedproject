@@ -27,20 +27,29 @@ then publish the accompanying frontend improvements through Git/Netlify.
 
 If a user already saw “Your password changed, but account setup could not be
 completed”, Supabase Auth may already have accepted their new password. Have
-them sign in with that new password, verify their existing authenticator, and
-complete the password setup again using a different new password. Do not delete
+them sign in with that new password, choose a different new password in Step 1,
+and verify their existing authenticator to finish setup. Do not delete
 and recreate the account or remove its authenticator to resolve this policy error.
 
 ## What users see
 
-- Old or new account without verified TOTP: email/password, QR/setup key, first valid code, then password change if required, then the portal after signing in again.
+- Temporary-password account (admin or personnel): sign in with the temporary password, Step 1 choose/confirm a new password, Step 2 connect or verify Google Authenticator, Step 3 open the correct dashboard. No sign-out or second password login is required.
+- Step 1 collects the password; it does not save it yet. Supabase requires an AAL2 session for password changes on accounts with MFA. After Step 2 succeeds, the app saves the chosen password through Supabase Auth and clears the profile's password-setup flag under the existing TOTP-protected policies. No MFA bypass or direct Auth-table password update is added.
+- Old or new account without verified TOTP and without a required password change: email/password, QR/setup key, first valid code, then the portal.
 - Account with verified TOTP: email/password, code from the connected app, then the portal.
 - Already verified persisted session: refresh/navigation keeps the current MFA session. It does not ask for a code on every click. A fresh password sign-in requires a fresh TOTP challenge. There is no separate “trust this device” bypass.
-- Password reset: the recovery link creates a recovery session. A connected user verifies their authenticator before changing the password; an account without TOTP enrolls first. A reset email does not remove MFA.
-- Setup interrupted by reload: unfinished factors are discarded and a new QR is displayed. Remove the unfinished entry from Google Authenticator if necessary and scan the new QR. Verified factors are never deleted by setup.
+- Password reset: the recovery link creates a recovery session. The same three steps collect a new password, connect/verify the authenticator, save the password, and open the dashboard. A reset email does not remove MFA.
+- Setup interrupted by reload before the password is saved: the in-memory password is discarded and the user returns to Step 1. It is never written to localStorage/sessionStorage, URLs or logs. After continuing, any unfinished factor is replaced with a new QR; remove the unfinished app entry if necessary. Verified factors are never deleted by setup.
+- A password accepted by Supabase but followed by a failed profile update shows Continue setup. Retrying finalizes the profile without submitting the same password again. If signing out instead, use the new password next time. Back to Step 1 allows choosing a different password when Supabase rejects it.
 - Maintenance mode: authentication remains usable; the personnel maintenance screen appears only after MFA and required password setup.
 
 The setup key is equivalent to the authenticator secret. It stays in memory only and is displayed for initial connection. Never email it, add it to SQL, publish it, or share screenshots containing it. After setup, only code verification is shown.
+
+## Database file for the password-first screen order
+
+For an existing deployment that already ran mandatory TOTP and the profile-policy repair, this update needs no new tables, functions or policies. Copy the whole `password_setup_database_check.sql` file into a new Supabase SQL Editor query and run it to check those prerequisites. It is read-only and can be run again; every result should say PASS. If a result says CHECK REQUIRED, review it before deploying rather than running unrelated setup/rollback scripts. A passing configuration check is not a substitute for the user-flow checks below. No SQL has been applied automatically.
+
+The three-step guide appears at the top of the password form and on the following authenticator screen. Returning users whose password is already set keep the usual password-login → authenticator → dashboard flow. This update does not add invitations or change administrator-issued temporary passwords.
 
 ## Lost device
 
@@ -51,12 +60,14 @@ There is no self-service button that removes mandatory MFA and no invented recov
 Use accounts you control; do not share real setup secrets or tokens in test output.
 
 1. Existing admin and existing personnel without a factor both see setup, including on direct dashboard URLs and with an existing password-only session.
-2. A new temporary-password account completes TOTP, updates the password, signs in again and verifies a fresh code.
+2. A new temporary-password account sees Step 1 before any OTP/QR, chooses a password, completes TOTP in Step 2, and reaches its own dashboard immediately. The temporary password no longer works after saving; the next fresh sign-in uses the new password and the existing authenticator.
 3. An enrolled account sees code entry without a new QR. Incorrect/expired codes keep the portal inaccessible. Leading-zero codes work; setup-key letters cannot be submitted as an OTP.
 4. Reload a verified session and navigate using browser Back/Forward. There should be no repeated setup and no permanently visible loader.
 5. Test recovery email, lost device recovery, maintenance enable/disable, admin account creation and both roles' normal workflows.
 6. At the API/database level, a password-only session can read its own profile but cannot read inventory/requests/audit data, update profiles, manage accounts, or access private request letters. After MFA, the original ownership, role and maintenance restrictions still apply.
 
 The code's automated tests use mocked Auth and an isolated database fixture. They do not enroll real users or change the live project. Production email delivery, phone scanning and the project's TOTP settings still need the release checks above.
+
+For this password-first update, regression checks were updated but not executed, as requested. Verification was limited to source review and read-only checks of the live database; no production account, password, factor or policy was changed.
 
 References: [Supabase TOTP](https://supabase.com/docs/guides/auth/auth-mfa/totp), [MFA enforcement](https://supabase.com/docs/guides/auth/auth-mfa), [Admin MFA](https://supabase.com/docs/reference/javascript/auth-admin-deletefactor).

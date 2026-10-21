@@ -30,9 +30,12 @@ ALTER POLICY "Admins can update account status" ON public.profiles
 
 COMMIT;
 
--- Expected result: one row; both expressions call account_management_is_admin.
-SELECT policyname, cmd, qual, with_check
-FROM pg_policies
-WHERE schemaname = 'public'
-  AND tablename = 'profiles'
-  AND policyname = 'Admins can update account status';
+-- Expected result: repair_status = REPAIR APPLIED.
+SELECT CASE WHEN EXISTS (
+  SELECT 1 FROM pg_policies
+  WHERE schemaname = 'public' AND tablename = 'profiles'
+    AND policyname = 'Admins can update account status'
+    AND cmd = 'UPDATE'
+    AND qual LIKE '%account_management_is_admin%'
+    AND with_check LIKE '%account_management_is_admin%'
+) THEN 'REPAIR APPLIED' ELSE 'REPAIR NOT APPLIED' END AS repair_status;

@@ -87,7 +87,7 @@ test('password setup checks exactly one saved profile and preserves recovery sta
         }
       } },
       'src/services/profile.service.js': { ProfileService: {} },
-      'src/services/mfa.service.js': { MfaService: {} }
+      'src/services/mfa.service.js': { MfaService: { getStatus: async () => ({ verified: true }) } }
     }, { sessionStorage: { removeItem: () => calls.push('clear-recovery') } });
     if (profileError) {
       await assert.rejects(AuthService.updatePassword('NewPasswordForFixture!'), /Use your NEW password/);
@@ -108,19 +108,79 @@ test('expired sessions cannot initiate a password change', async () => {
   await assert.rejects(AuthService.updatePassword('NewPasswordForFixture!'), /session has expired/);
 });
 
-test('both roles must enroll/verify before any portal, profile or password route', async () => {
+test('both roles choose required passwords first but cannot skip MFA to reach a protected route', async () => {
   const values = new Map();
   const { Guards } = await load('src/router/guards.js', {}, { sessionStorage: { getItem: key => values.get(key) } });
   for (const role of ['admin', 'personnel']) {
     for (const path of ['/admin/dashboard', '/personnel/catalog', '/profile', '/force-password', '/login']) {
       assert.equal(Guards.determineTargetRoute({ role }, path), '/verify-authenticator');
-      assert.equal(Guards.determineTargetRoute({ role, mfaVerified: false, requiresPasswordChange: true }, path), '/verify-authenticator');
+      assert.equal(Guards.determineTargetRoute({ role, mfaVerified: false, requiresPasswordChange: true }, path), '/force-password');
+      assert.equal(Guards.determineTargetRoute({ role, mfaVerified: false, requiresPasswordChange: true, passwordSetupReady: true }, path), '/verify-authenticator');
+      assert.equal(Guards.determineTargetRoute({ role, mfaVerified: true, requiresPasswordChange: true, passwordSetupReady: true }, path), '/verify-authenticator');
     }
   }
   values.set('denr-password-recovery', 'true');
-  assert.equal(Guards.determineTargetRoute({ role: 'admin' }, '/force-password'), '/verify-authenticator');
+  assert.equal(Guards.determineTargetRoute({ role: 'admin' }, '/force-password'), '/force-password');
   assert.equal(Guards.determineTargetRoute({ role: 'admin', mfaVerified: true }, '/verify-authenticator'), '/force-password');
   assert.equal(Guards.determineTargetRoute(null, '/verify-authenticator'), '/login');
+});
+
+test('password-first setup waits for MFA, retries only the profile after a partial save, and forgets cancelled/account-switched setup', async () => {
+  for (const role of ['admin', 'personnel']) {
+    let verified = false;
+    let rejectProfile = true;
+    let activeId = 'owner';
+    const calls = [];
+    const profile = { full_name: 'Fixture', role, is_active: true, requires_password_change: true };
+    const { AuthService } = await load('src/services/auth.service.js', {
+      'src/config/supabase.js': { supabase: {
+        auth: {
+          getSession: async () => ({ data: { session: { user: { id: activeId, email: 'fixture@example.com' } } } }),
+          getUser: async () => ({ data: { user: { id: activeId } }, error: null }),
+          updateUser: async ({ password }) => {
+            assert.equal(verified, true);
+            assert.equal(password, 'ChosenPasswordFixture!');
+            calls.push('password');
+            return { data: { user: { id: activeId } }, error: null };
+          },
+          signOut: async () => ({ error: null })
+        },
+        from: () => ({
+          select: () => ({ eq: () => ({ single: async () => ({ data: profile, error: null }) }) }),
+          update: () => ({ eq: () => ({ select: () => ({ single: async () => {
+            calls.push('profile');
+            if (rejectProfile) return { error: { code: '42P17' } };
+            profile.requires_password_change = false;
+            return { data: { id: activeId }, error: null };
+          } }) }) })
+        })
+      } },
+      'src/services/profile.service.js': { ProfileService: { getAvatarUrl: () => '' } },
+      'src/services/mfa.service.js': { MfaService: { getStatus: async () => ({ verified }), clear() {} } }
+    }, { sessionStorage: { removeItem() {} } });
+    AuthService.preparePasswordSetup('owner', 'ChosenPasswordFixture!');
+    assert.equal((await AuthService.getCurrentUser()).passwordSetupReady, true);
+    assert.deepEqual(calls, []);
+    await assert.rejects(AuthService.completePasswordSetup(), /Verify your authenticator/);
+    assert.deepEqual(calls, []);
+    verified = true;
+    await assert.rejects(AuthService.completePasswordSetup(), /Continue setup/);
+    assert.deepEqual(calls, ['password', 'profile']);
+    rejectProfile = false;
+    await AuthService.completePasswordSetup();
+    assert.deepEqual(calls, ['password', 'profile', 'profile']);
+    const user = await AuthService.getCurrentUser();
+    assert.equal(user.passwordSetupReady, false);
+    assert.equal(user.requiresPasswordChange, false);
+    await assert.rejects(AuthService.completePasswordSetup(), /Step 1/);
+    AuthService.preparePasswordSetup('owner', 'ChosenPasswordFixture!');
+    await AuthService.logout();
+    assert.equal((await AuthService.getCurrentUser()).passwordSetupReady, false);
+    AuthService.preparePasswordSetup('owner', 'ChosenPasswordFixture!');
+    activeId = 'other-account';
+    assert.equal((await AuthService.getCurrentUser()).passwordSetupReady, false);
+    await assert.rejects(AuthService.completePasswordSetup(), /Step 1/);
+  }
 });
 
 test('verified sessions keep role restrictions and new passwords remain required', async () => {
@@ -129,6 +189,42 @@ test('verified sessions keep role restrictions and new passwords remain required
   assert.equal(Guards.determineTargetRoute({ role: 'personnel', mfaVerified: true }, '/admin/accounts'), '/personnel/dashboard');
   assert.equal(Guards.determineTargetRoute({ role: 'admin', mfaVerified: true }, '/personnel/catalog'), '/admin/dashboard');
   assert.equal(Guards.determineTargetRoute({ role: 'personnel', mfaVerified: true, requiresPasswordChange: true }, '/verify-authenticator'), '/force-password');
+});
+
+test('password screen stages the choice and opens MFA without saving or signing out', async () => {
+  const elements = new Map();
+  let onSubmit;
+  const element = () => ({ value: '', isConnected: true, style: {}, addEventListener() {} });
+  const document = {
+    getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
+    querySelectorAll: () => []
+  };
+  const form = document.getElementById('password-reset-form');
+  form.addEventListener = (event, handler) => { if (event === 'submit') onSubmit = handler; };
+  form.reset = () => {
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+  };
+  const calls = [];
+  const { ForcePasswordPage } = await load('src/pages/auth/force-password.page.js', {
+    'src/services/auth.service.js': { AuthService: {
+      getCurrentUser: async () => ({ id: 'owner', role: 'personnel', requiresPasswordChange: true, mfaVerified: false }),
+      preparePasswordSetup: (id, password) => calls.push(['stage', id, password]),
+      updatePassword: () => assert.fail('Must not save before authenticator verification'),
+      logout: () => assert.fail('Must not sign out during successful setup')
+    } },
+    'src/router/router.js': { Router: { navigate: async (user, path) => calls.push(['navigate', user.passwordSetupReady, path]) } }
+  }, { document });
+  assert.match(ForcePasswordPage.render(), /Account setup progress/);
+  ForcePasswordPage.bindEvents();
+  document.getElementById('new-password').value = 'ChosenPasswordFixture!';
+  document.getElementById('confirm-password').value = 'DoesNotMatchFixture!';
+  await onSubmit({ preventDefault() {} });
+  assert.deepEqual(calls, []);
+  document.getElementById('confirm-password').value = 'ChosenPasswordFixture!';
+  await onSubmit({ preventDefault() {} });
+  assert.deepEqual(calls, [['stage', 'owner', 'ChosenPasswordFixture!'], ['navigate', true, '/verify-authenticator']]);
+  assert.equal(document.getElementById('new-password').value, '');
 });
 
 test('password-only, stale AAL2 and phone-only sessions never satisfy TOTP', async () => {
@@ -277,6 +373,56 @@ test('enrolled users see a challenge without creating or displaying another secr
   assert.equal(document.getElementById('mfa-enrollment').hidden, true);
   assert.equal(document.getElementById('mfa-form').hidden, false);
   assert.equal(elements.has('mfa-setup-key'), false);
+});
+
+test('MFA finishes pending passwords in the same session and routes both roles directly to their dashboard', async () => {
+  for (const role of ['admin', 'personnel']) {
+    for (const level of ['aal1', 'aal2']) {
+      const backend = mockAuth({ level, factors: [verifiedFactor] });
+      const elements = new Map();
+      const element = () => ({ isConnected: true, value: '', hidden: true, style: {}, focus() {}, appendChild(child) { this.value = child.value; } });
+      const document = {
+        getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
+        createElement: element
+      };
+      let pending = true;
+      let saves = 0;
+      const paths = [];
+      const user = () => ({ id: 'owner', email: 'fixture@example.com', role, mfaVerified: true, passwordSetupReady: pending, requiresPasswordChange: pending });
+      const storage = new Map();
+      const sessionStorage = {
+        getItem: key => storage.get(key),
+        setItem: (key, value) => storage.set(key, value),
+        removeItem: key => storage.delete(key)
+      };
+      const { Guards } = await load('src/router/guards.js', {}, { sessionStorage });
+      const { MfaPage } = await load('src/pages/auth/mfa.page.js', {
+        'src/config/supabase.js': { supabase: backend.supabase },
+        'src/services/auth.service.js': { AuthService: {
+          getCurrentUser: async () => user(),
+          completePasswordSetup: async () => {
+            assert.equal(storage.get('denr-password-update-in-progress'), 'true');
+            assert.equal((await backend.mfa.getAuthenticatorAssuranceLevel()).data.currentLevel, 'aal2');
+            saves++; pending = false;
+          },
+          recordSuccessfulLogin: async () => {},
+          logout: () => assert.fail('Successful setup must not sign out')
+        } },
+        'src/router/router.js': { Router: { navigate: async (account, path) => paths.push(Guards.determineTargetRoute(account, path)) } }
+      }, { document, sessionStorage });
+      assert.match(MfaPage.render(user()), /aria-current="step"/);
+      await MfaPage.init(user());
+      if (level === 'aal1') {
+        assert.equal(saves, 0);
+        document.getElementById('mfa-code').value = '001234';
+        await document.getElementById('mfa-form').onsubmit({ preventDefault() {} });
+      }
+      assert.equal(saves, 1);
+      assert.deepEqual(paths, [role === 'admin' ? '/admin/dashboard' : '/personnel/dashboard']);
+      assert.equal(storage.size, 0);
+      assert.equal(backend.calls.enrolled, 0);
+    }
+  }
 });
 
 test('auth callback releases the SDK lock and does not re-render an unchanged MFA screen', async () => {

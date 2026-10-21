@@ -67,7 +67,7 @@ export const Router = {
         break;
 
       case ROUTES.MFA:
-        content = MfaPage.render();
+        content = MfaPage.render(user);
         binder = () => MfaPage.init(user);
         break;
 
