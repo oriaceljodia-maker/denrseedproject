@@ -46,6 +46,126 @@ async function service(backend) {
   return (await load('src/services/mfa.service.js', { 'src/config/supabase.js': { supabase: backend.supabase } })).MfaService;
 }
 
+function browserStorageFixture() {
+  const values = new Map();
+  return {
+    getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+    removeItem: key => values.delete(key)
+  };
+}
+
+test('Remember me retains only the native session and never bypasses a fresh password-only MFA check', async () => {
+  const localStorage = browserStorageFixture();
+  const sessionStorage = browserStorageFixture();
+  const key = 'sb-fixture-auth-token';
+  const storedSession = JSON.stringify({ access_token: 'fixture-aal2-token', refresh_token: 'fixture-refresh-token' });
+  const { AuthSessionStorage: storage } = await load('src/config/auth-session-storage.js', {}, { localStorage, sessionStorage });
+  storage.setRememberMe(true);
+  storage.setItem(key, storedSession);
+  assert.equal(localStorage.getItem(key), storedSession);
+  assert.equal(sessionStorage.getItem(key), null);
+
+  const newTab = browserStorageFixture();
+  const { AuthSessionStorage: reopened } = await load('src/config/auth-session-storage.js', {}, { localStorage, sessionStorage: newTab });
+  assert.equal(reopened.isRemembered(), true);
+  assert.equal(reopened.getItem(key), storedSession);
+  const { Guards } = await load('src/router/guards.js', {}, { sessionStorage: newTab });
+  assert.equal(Guards.determineTargetRoute({ role: 'personnel', mfaVerified: false }, '/personnel/dashboard'), '/verify-authenticator');
+  assert.equal(Guards.determineTargetRoute({ role: 'personnel', mfaVerified: true }, '/login'), '/personnel/dashboard');
+
+  storage.clear();
+  reopened.clear(); // The other tab's SIGNED_OUT handler also clears its state.
+  assert.equal(localStorage.getItem(key), null);
+  assert.equal(reopened.getItem(key), null);
+  assert.equal(reopened.isRemembered(), false);
+});
+
+test('unchecked sign-in survives a tab refresh but is not persisted for a new browser tab', async () => {
+  const localStorage = browserStorageFixture();
+  const sessionStorage = browserStorageFixture();
+  const key = 'sb-fixture-auth-token';
+  const { AuthSessionStorage: storage } = await load('src/config/auth-session-storage.js', {}, { localStorage, sessionStorage });
+  storage.setRememberMe(false);
+  storage.setItem(key, 'fixture-session');
+  assert.equal(localStorage.getItem(key), null);
+  assert.equal(sessionStorage.getItem(key), 'fixture-session');
+  const { AuthSessionStorage: refreshed } = await load('src/config/auth-session-storage.js', {}, { localStorage, sessionStorage });
+  assert.equal(refreshed.getItem(key), 'fixture-session');
+  const { AuthSessionStorage: reopened } = await load('src/config/auth-session-storage.js', {}, { localStorage, sessionStorage: browserStorageFixture() });
+  assert.equal(reopened.getItem(key), null);
+});
+
+test('pre-checkbox sessions move into the current tab without silently enabling Remember me', async () => {
+  const localStorage = browserStorageFixture();
+  const sessionStorage = browserStorageFixture();
+  const key = 'sb-fixture-auth-token';
+  localStorage.setItem(key, 'legacy-fixture-session');
+  const { AuthSessionStorage: storage } = await load('src/config/auth-session-storage.js', {}, { localStorage, sessionStorage });
+  assert.equal(storage.getItem(key), 'legacy-fixture-session');
+  assert.equal(storage.isRemembered(), false);
+  assert.equal(localStorage.getItem(key), null);
+  assert.equal(sessionStorage.getItem(key), 'legacy-fixture-session');
+});
+
+test('blocked browser storage cannot pretend to remember a user and still supports memory-only sign-in', async () => {
+  const blocked = { getItem: () => null, setItem: () => { throw new Error('Blocked'); }, removeItem() {} };
+  const { AuthSessionStorage: storage } = await load('src/config/auth-session-storage.js', {}, { localStorage: blocked, sessionStorage: blocked });
+  assert.throws(() => storage.setRememberMe(true), /Uncheck Remember me/);
+  storage.setRememberMe(false);
+  storage.setItem('sb-fixture-auth-token', 'memory-fixture-session');
+  assert.equal(storage.getItem('sb-fixture-auth-token'), 'memory-fixture-session');
+  storage.clear();
+  assert.equal(storage.getItem('sb-fixture-auth-token'), null);
+});
+
+test('login passes the explicit remember preference to session storage before native password sign-in', async () => {
+  const calls = [];
+  const { AuthService } = await load('src/services/auth.service.js', {
+    'src/config/supabase.js': { supabase: { auth: {
+      signInWithPassword: async credentials => {
+        calls.push('password-sign-in');
+        assert.equal(credentials.password, 'FixturePasswordOnly!');
+        return { data: {}, error: null };
+      }
+    } } },
+    'src/config/auth-session-storage.js': { AuthSessionStorage: { setRememberMe: value => calls.push(value) } },
+    'src/services/profile.service.js': { ProfileService: {} },
+    'src/services/mfa.service.js': { MfaService: { clear() {} } }
+  }, { sessionStorage: { removeItem() {} } });
+  await AuthService.login('fixture@example.com', 'FixturePasswordOnly!', true);
+  await AuthService.login('fixture@example.com', 'FixturePasswordOnly!');
+  assert.deepEqual(calls, [true, 'password-sign-in', false, 'password-sign-in']);
+  assert.equal(AuthService.signInInProgress, false);
+});
+
+test('temporary-password eye toggles visibility without submitting and resets when reopening', async () => {
+  let body;
+  let clicks = 0;
+  const input = { type: 'password', value: 'FixturePasswordOnly!' };
+  const attributes = {};
+  const toggle = { addEventListener: (event, handler) => { toggle.click = handler; }, setAttribute: (key, value) => { attributes[key] = value; } };
+  const { AdminAccountsPage } = await load('src/pages/admin/accounts.page.js', {
+    'src/services/user.service.js': { UserService: {} },
+    'src/services/access-request.service.js': { AccessRequestService: {} },
+    'src/components/toast.component.js': { ToastComponent: {} },
+    'src/components/modal.component.js': { ModalComponent: { open: options => { body = options.bodyHtml; input.type = 'password'; } } }
+  }, { document: { getElementById: id => id === 'new-user-password' ? input : toggle } });
+  AdminAccountsPage.createUser = () => { clicks++; };
+  AdminAccountsPage.openCreateUserModal();
+  assert.match(body, /type="button" id="toggle-new-user-password"/);
+  toggle.click();
+  assert.equal(input.type, 'text');
+  assert.equal(attributes['aria-label'], 'Hide temporary password');
+  toggle.click();
+  assert.equal(input.type, 'password');
+  assert.equal(attributes['aria-pressed'], 'false');
+  assert.equal(input.value, 'FixturePasswordOnly!');
+  assert.equal(clicks, 0);
+  AdminAccountsPage.openCreateUserModal();
+  assert.equal(input.type, 'password');
+});
+
 test('profile policy recursion is reported immediately without claiming an active account is missing', async () => {
   let reads = 0;
   const { AuthService } = await load('src/services/auth.service.js', {

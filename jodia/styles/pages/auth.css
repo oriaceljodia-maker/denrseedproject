@@ -20,6 +20,9 @@
 .mfa-manual-setup summary { color: var(--denr-green-primary); cursor: pointer; font-weight: 700; }
 .mfa-setup-key { display: block; padding: .8rem; border-radius: 8px; background: #f1f6f3; overflow-wrap: anywhere; user-select: all; }
 .mfa-help { color: var(--text-muted); font-size: .82rem; line-height: 1.55; }
+.auth-remember { display: flex; align-items: center; gap: .6rem; margin-top: 1rem; color: var(--denr-navy-primary); font-size: .88rem; font-weight: 700; cursor: pointer; }
+.auth-remember input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--denr-green-primary); cursor: pointer; }
+.auth-remember input:focus-visible { outline: 2px solid var(--denr-green-primary); outline-offset: 3px; }
 .mfa-code { text-align: center; font-size: 1.5rem; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
 
 .account-setup-steps { list-style: none; margin: 0 0 1.25rem; padding: 0; display: grid; gap: .75rem; }

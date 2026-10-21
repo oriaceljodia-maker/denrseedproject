@@ -45,6 +45,20 @@ and recreate the account or remove its authenticator to resolve this policy erro
 
 The setup key is equivalent to the authenticator secret. It stays in memory only and is displayed for initial connection. Never email it, add it to SQL, publish it, or share screenshots containing it. After setup, only code verification is shown.
 
+## Remember me and temporary-password visibility
+
+The Create Account modal now includes an eye button to show or hide the temporary password. It starts hidden whenever the modal is opened, and showing it does not submit or save the account.
+
+The login form has an unchecked “Remember me on this device” option above Sign In. This remembers a Supabase session, not the password, TOTP secret, QR code or last verification code. Browser password-manager support uses the native username/current-password autocomplete fields; the app does not implement password storage.
+
+- Checked: the native session is persisted in this browser. The first password sign-in still requires authenticator setup/verification and any mandatory password setup. Returning to the site can use an existing valid AAL2 session without another code.
+- Unchecked: the native session uses sessionStorage for this tab, or memory if browser storage is blocked. Refresh works while the tab session exists. Browsers can restore tabs/sessionStorage, so always sign out on shared computers rather than relying on closing a window.
+- Explicit sign-out removes the saved session and preference. A fresh password sign-in, another browser/device, cleared site storage or an expired/revoked session requires authentication again. A checkbox never sets mfaVerified and does not change the database's AAL2 requirement.
+- When first upgrading, an old localStorage session without a remember preference is moved into the current tab; the app does not silently opt existing users into Remember me.
+- Remember me is not a promise of a fixed number of days. Supabase session limits, refresh-token validity and account/factor status still apply. If persistent storage is blocked, the login form asks the user to uncheck Remember me.
+
+No SQL, email-template or Supabase dashboard change is required for these two features. Do not run a TOTP rollback or loosen policies to implement Remember me. Deploy the frontend normally, then check both checkbox states, sign-out, browser restart, first-time setup and an already connected account using accounts you control. Local automated/browser tests have not been run for this update, as requested.
+
 ## Database file for the password-first screen order
 
 For an existing deployment that already ran mandatory TOTP and the profile-policy repair, this update needs no new tables, functions or policies. Copy the whole `password_setup_database_check.sql` file into a new Supabase SQL Editor query and run it to check those prerequisites. It is read-only and can be run again; every result should say PASS. If a result says CHECK REQUIRED, review it before deploying rather than running unrelated setup/rollback scripts. A passing configuration check is not a substitute for the user-flow checks below. No SQL has been applied automatically.

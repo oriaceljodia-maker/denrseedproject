@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { AuthSessionStorage } from './auth-session-storage.js';
 
 
 const SUPABASE_URL =
@@ -17,4 +18,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error("Missing Supabase URL or Anon Key. Check your environment variables.");
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: AuthSessionStorage,
+    persistSession: true,
+    autoRefreshToken: true
+  }
+});

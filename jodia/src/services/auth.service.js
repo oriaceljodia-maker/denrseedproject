@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import { ProfileService } from './profile.service.js';
 import { MfaService } from './mfa.service.js';
+import { AuthSessionStorage } from '../config/auth-session-storage.js';
 
 // First-login/recovery passwords stay in this tab's memory until MFA succeeds.
 // Never put them in storage, URLs, profile rows, logs or email.
@@ -118,10 +119,11 @@ export const AuthService = {
   },
 
   // Authenticate user with credentials
-  async login(email, password) {
+  async login(email, password, rememberMe = false) {
     this.clearPasswordSetup();
     MfaService.clear();
     this.clearPasswordRecovery();
+    AuthSessionStorage.setRememberMe(rememberMe);
     this.signInInProgress = true;
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -202,5 +204,6 @@ export const AuthService = {
     this.clearPasswordRecovery();
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    AuthSessionStorage.clear();
   }
 };

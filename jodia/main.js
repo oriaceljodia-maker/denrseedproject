@@ -5,6 +5,7 @@ import { Router } from './src/router/router.js';
 import { Guards } from './src/router/guards.js';
 import { MaintenanceService } from './src/services/maintenance.service.js';
 import { ROUTES } from './src/config/constants.js';
+import { AuthSessionStorage } from './src/config/auth-session-storage.js';
 
 class App {
   static ready = false;
@@ -41,6 +42,7 @@ class App {
         MfaService.clear();
         AuthService.clearPasswordSetup();
         AuthService.clearPasswordRecovery();
+        AuthSessionStorage.clear();
         MaintenanceService.unsubscribe();
       }
       if (!this.ready || (event === 'SIGNED_IN' && AuthService.signInInProgress)) return;

@@ -37,13 +37,13 @@ export const LoginPage = {
 
               <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" class="form-input" placeholder="user@denr.gov.ph" required />
+                <input type="email" id="email" class="form-input" autocomplete="username" placeholder="user@denr.gov.ph" required />
               </div>
 
               <div class="form-group">
                 <label for="password">Password</label>
                 <div class="password-wrapper">
-                  <input type="password" id="password" class="form-input" placeholder="••••••••" required />
+                  <input type="password" id="password" class="form-input" autocomplete="current-password" placeholder="••••••••" required />
                   <button type="button" class="password-toggle" id="toggle-password" aria-label="Toggle password visibility">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
@@ -53,6 +53,11 @@ export const LoginPage = {
                 </div>
               </div>
 
+              <label class="auth-remember" for="remember-me">
+                <input type="checkbox" id="remember-me" aria-describedby="remember-me-help" />
+                <span>Remember me on this device</span>
+              </label>
+              <p id="remember-me-help" class="mfa-help">After authenticator verification, stay signed in on this browser. Use only on your own device; your password is not saved.</p>
               <button type="submit" id="btn-submit" class="btn btn-primary auth-btn">Sign In</button>
 
               <p class="auth-footnote"><button type="button" class="auth-text-button" id="show-password-reset">Forgot password?</button></p>
@@ -86,6 +91,7 @@ export const LoginPage = {
     const submitBtn = document.getElementById('btn-submit');
     const passwordInput = document.getElementById('password');
     const toggleBtn = document.getElementById('toggle-password');
+    const rememberMe = document.getElementById('remember-me');
     const signInTab = document.getElementById('show-sign-in');
     const accessTab = document.getElementById('show-access-request');
     const accessForm = document.getElementById('access-request-form');
@@ -127,7 +133,9 @@ export const LoginPage = {
       console.info('Login attempt started for', email);
 
       try {
-        await AuthService.login(email, password);
+        await AuthService.login(email, password, rememberMe.checked);
+        // Only Supabase's session may be stored; do not retain credentials in the form.
+        passwordInput.value = '';
         let user = await AuthService.getCurrentUser();
 
         // The profile may take a moment to settle right after sign-in. Retry
