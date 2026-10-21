@@ -99,6 +99,14 @@ AS $$ SELECT denr_security.has_verified_totp() AND EXISTS (
 REVOKE ALL ON FUNCTION public.current_user_is_admin() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.current_user_is_admin() TO authenticated;
 
+-- Replace the legacy UPDATE policy too. Its direct profiles subquery causes
+-- 42P17 recursion on profile updates, including first-login password setup.
+DROP POLICY IF EXISTS "Admins can update account status" ON public.profiles;
+CREATE POLICY "Admins can update account status" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING ((SELECT public.account_management_is_admin()))
+  WITH CHECK ((SELECT public.account_management_is_admin()));
+
 -- Older deployments may retain this RPC after its UI button was removed.
 -- Preserve its behavior, but require active administrator + MFA when present.
 DO $block$

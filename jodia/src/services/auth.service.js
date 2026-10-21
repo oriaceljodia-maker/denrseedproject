@@ -40,6 +40,10 @@ export const AuthService = {
         break;
       }
 
+      if (error?.code === '42P17') {
+        throw new Error('Your account could not be loaded because of a system access configuration error. Please contact your administrator.');
+      }
+
       if (attempt < 2) {
         await new Promise(resolve => setTimeout(resolve, 400));
       }
@@ -114,16 +118,21 @@ export const AuthService = {
 
   // Force first-login password update
   async updatePassword(newPassword) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('Your session has expired. Please sign in again.');
+
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
 
-    const { data: { user } } = await supabase.auth.getUser();
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ requires_password_change: false, updated_at: new Date() })
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select('id')
+      .single();
 
-    if (profileError) throw new Error('Your password changed, but account setup could not be completed. Contact an administrator.');
+    if (profileError) throw new Error('Your password changed, but account setup could not be saved. Use your NEW password when signing in again and contact your administrator to repair account access.');
 
     this.clearPasswordRecovery();
 

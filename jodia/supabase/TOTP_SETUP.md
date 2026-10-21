@@ -11,6 +11,26 @@ This release requires TOTP for both administrators and personnel, including exis
 
 No new redirect URL or email template is needed for `/verify-authenticator`; users reach it inside the site. Keep the existing `/force-password` redirect for reset emails.
 
+## Repair for existing deployments with a profiles recursion error
+
+If you see `infinite recursion detected in policy for relation "profiles"`,
+run the whole `fix_profile_policy_recursion.sql` file in a new SQL Editor query.
+It replaces the old self-referencing administrator UPDATE policy with the
+existing protected admin helper. Accounts, passwords, MFA factors and inventory
+are preserved. The updated `mandatory_totp.sql` also includes this correction
+for future setups; existing deployments only need the small repair script.
+
+The database policy affects account enable/disable, profile edits, and the
+profile flag saved after first-login or recovery password changes. A commit
+alone cannot repair policies already installed in Supabase. Apply the repair,
+then publish the accompanying frontend improvements through Git/Netlify.
+
+If a user already saw “Your password changed, but account setup could not be
+completed”, Supabase Auth may already have accepted their new password. Have
+them sign in with that new password, verify their existing authenticator, and
+complete the password setup again using a different new password. Do not delete
+and recreate the account or remove its authenticator to resolve this policy error.
+
 ## What users see
 
 - Old or new account without verified TOTP: email/password, QR/setup key, first valid code, then password change if required, then the portal after signing in again.

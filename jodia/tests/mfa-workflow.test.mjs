@@ -46,6 +46,68 @@ async function service(backend) {
   return (await load('src/services/mfa.service.js', { 'src/config/supabase.js': { supabase: backend.supabase } })).MfaService;
 }
 
+test('profile policy recursion is reported immediately without claiming an active account is missing', async () => {
+  let reads = 0;
+  const { AuthService } = await load('src/services/auth.service.js', {
+    'src/config/supabase.js': { supabase: {
+      auth: { getSession: async () => ({ data: { session: { user: { id: 'owner' } } } }) },
+      from: () => ({ select: () => ({ eq: () => ({ single: async () => {
+        reads++;
+        return { data: null, error: { code: '42P17', message: 'infinite recursion' } };
+      } }) }) })
+    } },
+    'src/services/profile.service.js': { ProfileService: {} },
+    'src/services/mfa.service.js': { MfaService: {} }
+  });
+  await assert.rejects(AuthService.getCurrentUser(), /system access configuration error/);
+  assert.equal(reads, 1);
+});
+
+test('password setup checks exactly one saved profile and preserves recovery state on database rejection', async () => {
+  for (const profileError of [null, { code: '42P17' }, { code: 'PGRST116' }]) {
+    const calls = [];
+    const { AuthService } = await load('src/services/auth.service.js', {
+      'src/config/supabase.js': { supabase: {
+        auth: {
+          getUser: async () => ({ data: { user: { id: 'owner' } }, error: null }),
+          updateUser: async () => { calls.push('password'); return { data: { user: { id: 'owner' } }, error: null }; }
+        },
+        from: table => {
+          assert.equal(table, 'profiles');
+          return { update: values => {
+            assert.equal(values.requires_password_change, false);
+            return { eq: (column, id) => {
+              assert.equal(column, 'id'); assert.equal(id, 'owner');
+              return { select: column => {
+                assert.equal(column, 'id');
+                return { single: async () => { calls.push('profile'); return { error: profileError }; } };
+              } };
+            } };
+          } };
+        }
+      } },
+      'src/services/profile.service.js': { ProfileService: {} },
+      'src/services/mfa.service.js': { MfaService: {} }
+    }, { sessionStorage: { removeItem: () => calls.push('clear-recovery') } });
+    if (profileError) {
+      await assert.rejects(AuthService.updatePassword('NewPasswordForFixture!'), /Use your NEW password/);
+      assert.deepEqual(calls, ['password', 'profile']);
+    } else {
+      await AuthService.updatePassword('NewPasswordForFixture!');
+      assert.deepEqual(calls, ['password', 'profile', 'clear-recovery']);
+    }
+  }
+});
+
+test('expired sessions cannot initiate a password change', async () => {
+  const { AuthService } = await load('src/services/auth.service.js', {
+    'src/config/supabase.js': { supabase: { auth: { getUser: async () => ({ data: { user: null }, error: null }) } } },
+    'src/services/profile.service.js': { ProfileService: {} },
+    'src/services/mfa.service.js': { MfaService: {} }
+  });
+  await assert.rejects(AuthService.updatePassword('NewPasswordForFixture!'), /session has expired/);
+});
+
 test('both roles must enroll/verify before any portal, profile or password route', async () => {
   const values = new Map();
   const { Guards } = await load('src/router/guards.js', {}, { sessionStorage: { getItem: key => values.get(key) } });

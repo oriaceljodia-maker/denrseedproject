@@ -19,8 +19,8 @@ test('mandatory TOTP SQL enforces MFA while preserving bootstrap and role/owner 
         $$ SELECT NULLIF(current_setting('request.jwt.claims', true), '')::jsonb $$;
       CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT (auth.jwt()->>'sub')::uuid $$;
       CREATE TABLE auth.mfa_factors (user_id uuid, factor_type text, status text);
-      CREATE TABLE public.profiles (id uuid PRIMARY KEY, role text, is_active boolean);
-      INSERT INTO public.profiles VALUES ('${admin}', 'admin', true), ('${personnel}', 'personnel', true),
+      CREATE TABLE public.profiles (id uuid PRIMARY KEY, role text, is_active boolean, requires_password_change boolean DEFAULT true);
+      INSERT INTO public.profiles (id, role, is_active) VALUES ('${admin}', 'admin', true), ('${personnel}', 'personnel', true),
         ('${unconnected}', 'personnel', true), ('${disabled}', 'admin', false);
       INSERT INTO auth.mfa_factors VALUES ('${admin}', 'totp', 'verified'), ('${personnel}', 'totp', 'verified'),
         ('${disabled}', 'totp', 'verified'), ('${unconnected}', 'totp', 'unverified');
@@ -28,6 +28,10 @@ test('mandatory TOTP SQL enforces MFA while preserving bootstrap and role/owner 
         $$ SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role='admin') $$;
       CREATE FUNCTION public.account_management_is_admin() RETURNS boolean LANGUAGE sql SECURITY DEFINER AS
         $$ SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role='admin' AND is_active) $$;
+      CREATE FUNCTION public.current_profile_role() RETURNS text LANGUAGE sql SECURITY DEFINER AS
+        $$ SELECT role FROM public.profiles WHERE id=auth.uid() $$;
+      CREATE FUNCTION public.current_profile_is_active() RETURNS boolean LANGUAGE sql SECURITY DEFINER AS
+        $$ SELECT COALESCE((SELECT is_active FROM public.profiles WHERE id=auth.uid()),false) $$;
       CREATE FUNCTION public.create_new_user_account() RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
         BEGIN IF NOT public.account_management_is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF; RETURN 'created'; END $$;
       CREATE TABLE public.seeds (id int);
@@ -48,7 +52,14 @@ test('mandatory TOTP SQL enforces MFA while preserving bootstrap and role/owner 
         $$ BEGIN DELETE FROM public.audit_trail; DELETE FROM public.login_activity; END $$;
       ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
       CREATE POLICY profile_read ON public.profiles FOR SELECT TO authenticated USING (id=auth.uid() OR public.current_user_is_admin());
-      CREATE POLICY profile_update ON public.profiles FOR UPDATE TO authenticated USING (id=auth.uid()) WITH CHECK (id=auth.uid());
+      CREATE POLICY profile_update ON public.profiles FOR UPDATE TO authenticated
+        USING (id=auth.uid() AND public.current_profile_is_active())
+        WITH CHECK (id=auth.uid() AND public.current_profile_is_active() AND role=public.current_profile_role());
+      -- Match the existing production UPDATE policy; even an own-row update
+      -- can recurse when PostgreSQL expands this self-referencing subquery.
+      CREATE POLICY "Admins can update account status" ON public.profiles FOR UPDATE TO authenticated
+        USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id=auth.uid() AND p.role='admin'))
+        WITH CHECK (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id=auth.uid() AND p.role='admin'));
       ALTER TABLE public.requests ENABLE ROW LEVEL SECURITY;
       CREATE POLICY request_owner ON public.requests FOR ALL TO authenticated
         USING (user_id=auth.uid() OR public.current_user_is_admin()) WITH CHECK (user_id=auth.uid());
@@ -73,6 +84,19 @@ test('mandatory TOTP SQL enforces MFA while preserving bootstrap and role/owner 
       try { return (await db.query(query)).rows; }
       finally { await db.exec('RESET ROLE'); }
     }
+    // Reproduce the deployed legacy policy and prove the standalone repair
+    // resolves 42P17 without changing passwords, accounts or MFA enrollment.
+    for (const repairFile of ['fix_profile_policy_recursion.sql', 'repair_live_account_access.sql']) {
+      await db.exec(`DROP POLICY "Admins can update account status" ON public.profiles;
+      CREATE POLICY "Admins can update account status" ON public.profiles FOR UPDATE TO authenticated
+        USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id=auth.uid() AND p.role='admin'))
+        WITH CHECK (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id=auth.uid() AND p.role='admin'));`);
+      await assert.rejects(asUser(personnel, 'aal2', `UPDATE public.profiles SET requires_password_change=false WHERE id='${personnel}' RETURNING id`),
+        error => error.code === '42P17' && /infinite recursion/.test(error.message));
+      const repair = await readFile(new URL('../supabase/' + repairFile, import.meta.url), 'utf8');
+      await db.exec(repair);
+      await db.exec(repair);
+    }
     for (const id of [admin, personnel, unconnected, disabled]) {
       assert.equal((await asUser(id, 'aal1', 'SELECT * FROM public.profiles')).length, 1);
       for (const table of ['seeds','requests','system_settings','audit_trail','login_activity','access_requests']) {
@@ -89,6 +113,14 @@ test('mandatory TOTP SQL enforces MFA while preserving bootstrap and role/owner 
     assert.equal((await asUser(personnel, 'aal2', 'SELECT * FROM public.requests')).length, 1);
     assert.equal((await asUser(personnel, 'aal2', 'SELECT * FROM public.profiles')).length, 1);
     assert.equal((await asUser(personnel, 'aal2', 'UPDATE public.profiles SET is_active=true RETURNING id')).length, 1);
+    for (const id of [admin, personnel]) {
+      assert.equal((await asUser(id, 'aal2', `UPDATE public.profiles SET requires_password_change=false WHERE id='${id}' RETURNING requires_password_change`))[0].requires_password_change, false);
+    }
+    assert.equal((await asUser(personnel, 'aal2', `UPDATE public.profiles SET is_active=false WHERE id='${admin}' RETURNING id`)).length, 0);
+    await assert.rejects(asUser(personnel, 'aal2', `UPDATE public.profiles SET role='admin' WHERE id='${personnel}'`), /row-level security/);
+    assert.equal((await asUser(admin, 'aal2', `UPDATE public.profiles SET is_active=false WHERE id='${personnel}' RETURNING is_active`))[0].is_active, false);
+    assert.equal((await asUser(personnel, 'aal2', `UPDATE public.profiles SET is_active=true WHERE id='${personnel}' RETURNING id`)).length, 0);
+    assert.equal((await asUser(admin, 'aal2', `UPDATE public.profiles SET is_active=true WHERE id='${personnel}' RETURNING is_active`))[0].is_active, true);
     await assert.rejects(asUser(personnel, 'aal2', 'SELECT public.create_new_user_account()'), /Not authorized/);
     assert.equal((await asUser(disabled, 'aal2', 'SELECT * FROM public.seeds')).length, 0);
     assert.equal((await asUser(unconnected, 'aal2', 'SELECT * FROM public.seeds')).length, 0);
