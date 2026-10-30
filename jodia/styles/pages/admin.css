@@ -836,6 +836,12 @@
 .seed-entry-form { display: grid; gap: .1rem; }
 .seed-entry-form .form-group { margin-bottom: .9rem; }
 .seed-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 .85rem; }
+.seed-batch-label { display: block; margin-top: .2rem; color: var(--text-muted); font-size: .75rem; }
+.seed-duplicate-notice { margin: 0 0 .9rem; padding: .8rem .9rem; border: 1px solid #e7c985; border-radius: var(--radius-md); background: #fff8e8; color: #724c08; font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+.seed-duplicate-notice.hidden { display: none; }
+.seed-duplicate-notice.is-error { border-color: #efb4b4; background: #fff2f2; color: #9b2828; }
+.seed-duplicate-notice p { margin: .3rem 0; }
+.seed-duplicate-notice ul { max-height: 9rem; margin: .4rem 0 0; padding-left: 1.2rem; overflow-y: auto; }
 .seed-stock-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
 .seed-image-field { margin-top: .15rem; }
 .seed-image-upload { display: grid; gap: .65rem; }

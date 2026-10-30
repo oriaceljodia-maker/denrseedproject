@@ -162,7 +162,7 @@ export const AdminInventoryPage = {
       const stockStatus = SeedsService.getStockStatus(seed);
       return `
         <tr>
-          <td class="inventory-seed-cell"><img class="inventory-seed-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><strong>${escapeHtml(seed.species_name)}</strong></td>
+          <td class="inventory-seed-cell"><img class="inventory-seed-image" src="${escapeAttr(SeedsService.getImageUrl(seed))}" alt="" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501004318641-b39e6451afbe?auto=format&fit=crop&w=160&q=80';" /><span><strong>${escapeHtml(seed.species_name)}</strong><small class="seed-batch-label">Seedlot: ${escapeHtml(seed.seedlot_no) || 'Not recorded'}</small></span></td>
           <td>${escapeHtml(seed.category) || 'Uncategorized'}</td>
           <td>
             ${escapeHtml(SeedsService.formatQuantity(seed))}${Number(seed.reserved_quantity) ? `<small style="display:block;color:var(--text-muted);margin-top:.25rem;">${escapeHtml(formatQuantity(seed.reserved_quantity, seed.unit || 'packs'))} reserved</small>` : ''}
@@ -198,6 +198,7 @@ export const AdminInventoryPage = {
       const filtered = this.allSeeds.filter(seed => {
         const matchesQuery = !query || 
           (seed.species_name || '').toLowerCase().includes(query) ||
+          (seed.seedlot_no || '').toLowerCase().includes(query) ||
           (seed.category || '').toLowerCase().includes(query);
         
         let matchesStock = true;
@@ -215,6 +216,29 @@ export const AdminInventoryPage = {
     stockFilter?.addEventListener('change', applyFilters);
   },
 
+  bindDuplicateWarning(prefix, excludeId = null) {
+    const speciesInput = document.getElementById(`${prefix}-species`);
+    const seedlotInput = document.getElementById(`${prefix}-seedlot`);
+    const notice = document.getElementById(`${prefix}-duplicate-warning`);
+    const requirement = document.getElementById(`${prefix}-seedlot-requirement`);
+    const update = () => {
+      const review = SeedsService.reviewDuplicates({ species_name: speciesInput.value, seedlot_no: seedlotInput.value }, this.allSeeds, excludeId);
+      notice.classList.toggle('hidden', !review.matches.length);
+      notice.classList.toggle('is-error', Boolean(review.error));
+      seedlotInput.required = review.matches.length > 0;
+      seedlotInput.setAttribute('aria-invalid', review.error ? 'true' : 'false');
+      requirement.textContent = review.matches.length ? '(required for another batch)' : '(optional)';
+      notice.innerHTML = review.matches.length ? `
+        <strong>Possible duplicate species</strong>
+        <p>${escapeHtml(review.error || 'This species is already listed. Save a separate record only for a different collection batch with its correct Seedlot No.')}</p>
+        <ul>${review.matches.map(seed => `<li><strong>${escapeHtml(seed.species_name)}</strong> - Seedlot: ${escapeHtml(seed.seedlot_no) || 'Not recorded'}${seed.source_location ? `; Source: ${escapeHtml(seed.source_location)}` : ''}${seed.date_collected ? `; Collected: ${escapeHtml(seed.date_collected)}` : ''}</li>`).join('')}</ul>
+      ` : '';
+    };
+    speciesInput.addEventListener('input', update);
+    seedlotInput.addEventListener('input', update);
+    update();
+  },
+
   bindAddButton() {
     document.getElementById('btn-add-seed')?.addEventListener('click', () => {
       let selectedImage = { file: null, imageUrl: '' };
@@ -223,8 +247,9 @@ export const AdminInventoryPage = {
         bodyHtml: `
           <div class="seed-entry-form">
             ${imageUploadField({ prefix: 'new' })}
+            <div id="new-duplicate-warning" class="seed-duplicate-notice hidden" role="status" aria-live="polite"></div>
             <div class="seed-form-grid">
-              <div class="form-group"><label for="new-species">Common Name</label><input type="text" id="new-species" class="form-input" required placeholder="e.g. Narra" /></div>
+              <div class="form-group"><label for="new-species">Common Name</label><input type="text" id="new-species" class="form-input" required placeholder="e.g. Narra" aria-describedby="new-duplicate-warning" /></div>
               <div class="form-group"><label for="new-scientific-name">Scientific Name</label><input type="text" id="new-scientific-name" class="form-input" placeholder="e.g. Pterocarpus indicus" /></div>
               <div class="form-group"><label for="new-category">Category</label><select id="new-category" class="form-input"><option value="Timber">Timber</option><option value="Fruit-bearing">Fruit-bearing</option><option value="Native">Native</option><option value="Ornamental">Ornamental</option><option value="Other">Other</option></select></div>
               <div class="form-group"><label for="new-source-location">Source / Location</label><input type="text" id="new-source-location" class="form-input" placeholder="e.g. Pagbilao Nursery" /></div>
@@ -232,7 +257,7 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="new-unit">Unit</label><select id="new-unit" class="form-input"><option value="g">g</option><option value="kg">kg</option><option value="pcs">pcs</option><option value="packs" selected>packs</option></select></div>
               <div class="form-group"><label for="new-processing-status">Lab / Processing Status</label><select id="new-processing-status" class="form-input"><option>Newly collected</option><option>Moisture content</option><option>For Germination Test</option><option>Germinating</option><option>Ready for Distribution</option></select></div>
               <div class="form-group"><label for="new-reorder">Low Stock Alert At</label><input type="number" id="new-reorder" class="form-input" min="0" step="0.001" value="10" required /></div>
-              <div class="form-group"><label for="new-seedlot">Seedlot No. <span class="field-optional">(optional)</span></label><input id="new-seedlot" class="form-input" placeholder="e.g. H00042" /></div>
+              <div class="form-group"><label for="new-seedlot">Seedlot No. <span class="field-optional" id="new-seedlot-requirement">(optional)</span></label><input id="new-seedlot" class="form-input" placeholder="e.g. H00042" aria-describedby="new-duplicate-warning" /></div>
               <div class="form-group"><label for="new-ipt">IPT No. <span class="field-optional">(optional)</span></label><input id="new-ipt" class="form-input" placeholder="e.g. PT-05-356" /></div>
               <div class="form-group"><label for="new-date-collected">Date Collected <span class="field-optional">(optional)</span></label><input type="date" id="new-date-collected" class="form-input" /></div>
               <div class="form-group"><label for="new-collectors">Collectors <span class="field-optional">(optional)</span></label><input id="new-collectors" class="form-input" placeholder="e.g. Juan Dela Cruz, Maria Santos" /></div>
@@ -259,7 +284,7 @@ export const AdminInventoryPage = {
 
           if (!species_name || !Number.isFinite(quantity) || quantity < 0 || !Number.isFinite(reorder_level) || reorder_level < 0) {
             ToastComponent.show('Enter a species name and valid non-negative stock and alert quantities.', 'error');
-            return;
+            return false;
           }
 
           try {
@@ -268,10 +293,12 @@ export const AdminInventoryPage = {
             await this.loadInventory();
           } catch (err) {
             ToastComponent.show(err.message || 'Failed to add seed.', 'error');
+            return false;
           }
         }
       });
       bindImageUploadField({ prefix: 'new', onChange: (image) => { selectedImage = image; } });
+      this.bindDuplicateWarning('new');
     });
   },
 
@@ -290,8 +317,9 @@ export const AdminInventoryPage = {
           title: `Update Stock: ${escapeHtml(name)}`,
           bodyHtml: `
             ${imageUploadField({ prefix: 'edit', imageUrl })}
+            <div id="edit-duplicate-warning" class="seed-duplicate-notice hidden" role="status" aria-live="polite"></div>
             <div class="seed-form-grid">
-              <div class="form-group"><label for="edit-species">Common Name</label><input id="edit-species" class="form-input" value="${escapeAttr(seed.species_name)}" required /></div>
+              <div class="form-group"><label for="edit-species">Common Name</label><input id="edit-species" class="form-input" value="${escapeAttr(seed.species_name)}" required aria-describedby="edit-duplicate-warning" /></div>
               <div class="form-group"><label for="edit-scientific-name">Scientific Name</label><input id="edit-scientific-name" class="form-input" value="${escapeAttr(seed.scientific_name || '')}" /></div>
               <div class="form-group"><label for="edit-category">Category</label><input id="edit-category" class="form-input" value="${escapeAttr(seed.category || '')}" /></div>
               <div class="form-group"><label for="edit-source-location">Source / Location</label><input id="edit-source-location" class="form-input" value="${escapeAttr(seed.source_location || '')}" /></div>
@@ -299,7 +327,7 @@ export const AdminInventoryPage = {
               <div class="form-group"><label for="edit-unit">Unit</label><select id="edit-unit" class="form-input">${['g', 'kg', 'pcs', 'packs'].map(unit => `<option ${seed.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}</select></div>
               <div class="form-group"><label for="edit-processing-status">Lab / Processing Status</label><select id="edit-processing-status" class="form-input">${['Newly collected', 'Moisture content', 'For Germination Test', 'Germinating', 'Ready for Distribution'].map(status => `<option ${seed.processing_status === status ? 'selected' : ''}>${status}</option>`).join('')}</select></div>
               <div class="form-group"><label for="edit-reorder">Low Stock Alert At</label><input type="number" id="edit-reorder" class="form-input" min="0" step="0.001" value="${escapeAttr(seed.reorder_level || 0)}" required /></div>
-              <div class="form-group"><label for="edit-seedlot">Seedlot No. <span class="field-optional">(optional)</span></label><input id="edit-seedlot" class="form-input" value="${escapeAttr(seed.seedlot_no || '')}" /></div>
+              <div class="form-group"><label for="edit-seedlot">Seedlot No. <span class="field-optional" id="edit-seedlot-requirement">(optional)</span></label><input id="edit-seedlot" class="form-input" value="${escapeAttr(seed.seedlot_no || '')}" aria-describedby="edit-duplicate-warning" /></div>
               <div class="form-group"><label for="edit-ipt">IPT No. <span class="field-optional">(optional)</span></label><input id="edit-ipt" class="form-input" value="${escapeAttr(seed.ipt_no || '')}" /></div>
               <div class="form-group"><label for="edit-date-collected">Date Collected <span class="field-optional">(optional)</span></label><input type="date" id="edit-date-collected" class="form-input" value="${escapeAttr(seed.date_collected || '')}" /></div>
               <div class="form-group"><label for="edit-collectors">Collectors <span class="field-optional">(optional)</span></label><input id="edit-collectors" class="form-input" value="${escapeAttr(seed.collectors || '')}" placeholder="e.g. Juan Dela Cruz, Maria Santos" /></div>
@@ -350,6 +378,7 @@ export const AdminInventoryPage = {
           }
         });
         bindImageUploadField({ prefix: 'edit', initialImageUrl: imageUrl, onChange: (image) => { selectedImage = image; } });
+        this.bindDuplicateWarning('edit', id);
       });
     });
   },

@@ -1,7 +1,34 @@
 import { supabase } from '../config/supabase.js';
 import { formatQuantity } from '../../utils/formatters.js';
 
+// Compare names and batch labels without changing the stored record.
+const normalizeSeedIdentity = (value) => String(value ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+const duplicateBatchMessage = 'This species and Seedlot No. already exist. Edit the existing record instead of adding the same batch again.';
+const seedWriteError = (error) => error.code === '23505' && error.message?.includes('idx_seeds_active_species_seedlot_unique')
+  ? new Error(duplicateBatchMessage)
+  : error;
+
 export const SeedsService = {
+  reviewDuplicates(seedData, seeds, excludeId = null) {
+    const species = normalizeSeedIdentity(seedData.species_name);
+    const seedlot = normalizeSeedIdentity(seedData.seedlot_no);
+    const matches = species ? (seeds || []).filter(seed => !seed.is_archived && seed.id !== excludeId && normalizeSeedIdentity(seed.species_name) === species) : [];
+    let error = '';
+    if (matches.length && !seedlot) {
+      error = 'This species already exists. Enter the actual Seedlot No. for a separate collection batch, or edit the existing record.';
+    } else if (matches.some(seed => normalizeSeedIdentity(seed.seedlot_no) === seedlot)) {
+      error = duplicateBatchMessage;
+    }
+    return { matches, error };
+  },
+
+  async validateDuplicateBatch(seedData, excludeId = null) {
+    // Recheck current inventory before saving, not just the page's cached list.
+    const seeds = await this.getAllSeeds();
+    const review = this.reviewDuplicates(seedData, seeds, excludeId);
+    if (review.error) throw new Error(review.error);
+  },
+
   getStockStatus(seed) {
     const quantity = this.getAvailableQuantity(seed);
     const alertAt = Number(seed?.reorder_level) || 0;
@@ -37,18 +64,20 @@ export const SeedsService = {
 
   // Add new seed entry
   async addSeed(seedData) {
+    await this.validateDuplicateBatch(seedData);
     const { data, error } = await supabase
       .from('seeds')
       .insert([seedData])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) throw seedWriteError(error);
     return data;
   },
 
   // Update existing seed entry
   async updateSeed(id, updates) {
+    await this.validateDuplicateBatch(updates, id);
     const { data, error } = await supabase
       .from('seeds')
       .update({ ...updates, updated_at: new Date() })
@@ -56,7 +85,7 @@ export const SeedsService = {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) throw seedWriteError(error);
     return data;
   },
 
