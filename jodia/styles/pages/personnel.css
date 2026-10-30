@@ -79,6 +79,13 @@
   color: var(--denr-green-primary);
 }
 
+.seed-reserved {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
 .seed-scientific-name { margin-top: .2rem; color: var(--text-muted); font-family: Georgia, serif; font-size: .82rem; font-style: italic; }
 
 .stock-indicator { color: var(--denr-navy-primary); }

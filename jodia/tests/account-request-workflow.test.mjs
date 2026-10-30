@@ -213,3 +213,53 @@ test('quick request allows blank purpose and repeated binding cannot double-subm
   await first;
   assert.equal(submit.disabled, false);
 });
+
+test('personnel catalog shows shared reserved stock and refreshes without deducting it twice', async () => {
+  const { SeedsService } = await loadModule('src/services/seeds.service.js', configStub({}));
+  const elements = Object.fromEntries([
+    'catalog-grid', 'catalog-overview-grid', 'catalog-category-filter', 'category-chips'
+  ].map(id => [id, { innerHTML: '' }]));
+  const { PersonnelCatalogPage } = await loadModule('src/pages/personnel/catalog.page.js', {
+    ...configStub({}),
+    'src/services/seeds.service.js': { SeedsService },
+    'src/services/requests.service.js': { RequestsService: {} },
+    'src/services/auth.service.js': { AuthService: {} },
+    'src/router/router.js': { Router: {} },
+    'src/services/maintenance.service.js': { MaintenanceService: {} },
+    'src/components/request-letter.component.js': { RequestLetterComponent: {} }
+  }, {
+    document: { getElementById: id => elements[id], querySelectorAll: () => [] },
+    window: { location: { pathname: '/personnel/catalog' } }
+  });
+  const seed = { id: 'banaba', species_name: 'Banaba', quantity: 63, reserved_quantity: 40, unit: 'g' };
+  PersonnelCatalogPage.renderCatalog([seed]);
+  assert.match(elements['catalog-grid'].innerHTML, /Available Quantity: <strong>23 g<\/strong>/);
+  assert.match(elements['catalog-grid'].innerHTML, /class="seed-reserved">40 g reserved<\/small>/);
+
+  for (const reserved_quantity of [0, null, undefined]) {
+    PersonnelCatalogPage.renderCatalog([{ ...seed, reserved_quantity }]);
+    assert.doesNotMatch(elements['catalog-grid'].innerHTML, /seed-reserved/);
+  }
+  PersonnelCatalogPage.renderCatalog([{ ...seed, quantity: 5, reserved_quantity: '1.25', unit: 'kg' }]);
+  assert.match(elements['catalog-grid'].innerHTML, /3\.75 kg<\/strong>/);
+  assert.match(elements['catalog-grid'].innerHTML, /1\.25 kg reserved/);
+
+  PersonnelCatalogPage.renderCatalog([{ ...seed, quantity: 40 }]);
+  assert.match(elements['catalog-grid'].innerHTML, /0 g<\/strong>/);
+  assert.match(elements['catalog-grid'].innerHTML, /40 g reserved/);
+  assert.match(elements['catalog-grid'].innerHTML, /data-name="Banaba" disabled/);
+
+  // The existing shared seed subscription must refresh the new reservation line.
+  let refresh;
+  SeedsService.subscribeToSeeds = callback => { refresh = callback; return {}; };
+  SeedsService.getAllSeeds = async () => [seed];
+  PersonnelCatalogPage.startLiveSync();
+  seed.reserved_quantity = 45;
+  await refresh();
+  assert.match(elements['catalog-grid'].innerHTML, /18 g<\/strong>/);
+  assert.match(elements['catalog-grid'].innerHTML, /45 g reserved/);
+  seed.reserved_quantity = 0;
+  await refresh();
+  assert.match(elements['catalog-grid'].innerHTML, /63 g<\/strong>/);
+  assert.doesNotMatch(elements['catalog-grid'].innerHTML, /seed-reserved/);
+});

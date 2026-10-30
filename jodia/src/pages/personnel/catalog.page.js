@@ -5,7 +5,7 @@ import { Router } from '../../router/router.js';
 import { ROUTES } from '../../config/constants.js';
 import { ModalComponent } from '../../components/modal.component.js';
 import { ToastComponent } from '../../components/toast.component.js';
-import { escapeHtml, escapeAttr, formatUnitTotals } from '../../../utils/formatters.js';
+import { escapeHtml, escapeAttr, formatQuantity, formatUnitTotals } from '../../../utils/formatters.js';
 import { MaintenanceService } from '../../services/maintenance.service.js';
 import { RequestLetterComponent } from '../../components/request-letter.component.js';
 
@@ -159,7 +159,10 @@ export const PersonnelCatalogPage = {
             ${seed.scientific_name ? `<div class="seed-scientific-name">${escapeHtml(seed.scientific_name)}</div>` : ''}
             <div class="seed-badge">${escapeHtml(seed.category) || 'General'}</div>
             ${seed.description ? `<p class="seed-description">${escapeHtml(seed.description)}</p>` : ''}
-            <div class="seed-stock">Available Quantity: <strong>${escapeHtml(SeedsService.formatQuantity(seed))}</strong></div>
+            <div class="seed-stock">
+              Available Quantity: <strong>${escapeHtml(SeedsService.formatQuantity(seed))}</strong>
+              ${Number(seed.reserved_quantity) > 0 ? `<small class="seed-reserved">${escapeHtml(formatQuantity(seed.reserved_quantity, seed.unit || 'packs'))} reserved</small>` : ''}
+            </div>
             <div class="stock-indicator">
               <span class="stock-dot ${stockStatus.key}"></span>
               ${stockStatus.label}
