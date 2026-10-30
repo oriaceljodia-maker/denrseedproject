@@ -225,7 +225,7 @@ export const PersonnelCatalogPage = {
             </div>
             <div class="form-row">
               <div class="form-group" style="flex:1;"><label for="req-site">Planting Site / Location (Optional)</label><input id="req-site" class="form-input" placeholder="Barangay, municipality, or project site" /></div>
-              <div class="form-group" style="flex:1;"><label for="req-needed-date">Needed Date</label><input type="date" id="req-needed-date" class="form-input" /></div>
+              <div class="form-group" style="flex:1;"><label for="req-needed-date">Date</label><input type="date" id="req-needed-date" class="form-input" /></div>
             </div>
             <div class="form-row">
               <div class="form-group" style="flex:1;"><label for="req-category">Purpose Category</label><select id="req-category" class="form-input"><option>Reforestation</option><option>Nursery Propagation</option><option>School / Community Activity</option><option>Research</option><option>Other</option></select></div>
