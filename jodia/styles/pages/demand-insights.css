@@ -51,6 +51,7 @@
   min-height: 11.5rem;
   display: grid;
   place-content: center;
+  justify-items: center;
   gap: 0.45rem;
   padding: 1.5rem;
   text-align: center;
