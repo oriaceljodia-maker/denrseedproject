@@ -29,7 +29,6 @@ export const PersonnelCatalogPage = {
         <section class="inventory-snapshot" aria-labelledby="inventory-snapshot-title">
           <div class="inventory-snapshot-copy">
             <h2 id="inventory-snapshot-title">Inventory Snapshot</h2>
-            <p>Live stock details for your field operations, with low-stock alerts and quick access to request forms.</p>
           </div>
           <div class="catalog-summary-grid" id="catalog-overview-grid" aria-label="Catalog summary"></div>
         </section>
